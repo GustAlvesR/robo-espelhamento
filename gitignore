@@ -1,0 +1,5 @@
+service_account.json
+state_espelhamento.json
+*.log
+.env
+__pycache__/
