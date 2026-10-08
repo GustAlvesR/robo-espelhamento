@@ -31,6 +31,9 @@ import logging
 import os
 import time
 import functools
+import threading
+import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -86,6 +89,20 @@ STATE_RETENTION_DAYS = int(os.getenv("STATE_RETENTION_DAYS", "5"))
 # Arquivo de estado (memória do robô entre execuções).
 # No Render, aponte para o Persistent Disk (ex.: /data/state_espelhamento.json).
 STATE_FILE = os.getenv("STATE_FILE", "state_espelhamento.json")
+
+# Onde guardar o estado: "file" (arquivo local/Persistent Disk) ou "sheets"
+# (aba oculta na planilha de resultados — recomendado no Web Service gratuito
+# do Render, cujo disco é apagado a cada reinício/hibernação).
+STATE_BACKEND = os.getenv("STATE_BACKEND", "sheets").lower()
+STATE_WORKSHEET_NAME = os.getenv("STATE_WORKSHEET_NAME", "_state_robo")
+STATE_CHUNK_SIZE = 40000  # limite do Sheets é 50.000 caracteres por célula
+
+# Web Service: o Render exige uma porta HTTP aberta. O PORT é injetado por ele.
+HTTP_PORT = int(os.getenv("PORT", "10000"))
+# URL pública (o Render define RENDER_EXTERNAL_URL automaticamente). Se existir,
+# o robô se auto-pinga para tentar evitar a hibernação do plano gratuito.
+SELF_PING_URL = os.getenv("SELF_PING_URL", os.getenv("RENDER_EXTERNAL_URL", ""))
+SELF_PING_MINUTES = int(os.getenv("SELF_PING_MINUTES", "10"))
 
 # Arquivo de log.
 # No Render os logs vão só para o console (aba Logs). Defina LOG_FILE para
@@ -204,7 +221,30 @@ def gspread_retry(max_retries=5, base_delay=2):
 #     caso o processo seja encerrado no meio de uma gravação.
 # =============================================================================
 
-def load_state() -> dict:
+def _get_state_worksheet(client):
+    spreadsheet = client.open_by_key(RESULTS_SPREADSHEET_ID)
+    try:
+        return spreadsheet.worksheet(STATE_WORKSHEET_NAME)
+    except WorksheetNotFound:
+        ws = spreadsheet.add_worksheet(title=STATE_WORKSHEET_NAME, rows=200, cols=1)
+        try:
+            ws.hide()  # aba técnica: esconde para não poluir a planilha
+        except Exception:
+            pass
+        return ws
+
+
+@gspread_retry()
+def load_state(client=None) -> dict:
+    if STATE_BACKEND == "sheets":
+        try:
+            ws = _get_state_worksheet(client)
+            partes = [r[0] for r in ws.get_all_values() if r]
+            texto = "".join(partes).strip()
+            return json.loads(texto) if texto else {}
+        except json.JSONDecodeError as e:
+            logging.error("Estado no Sheets inválido (%s). Iniciando vazio.", e)
+            return {}
     if not os.path.exists(STATE_FILE):
         return {}
     try:
@@ -215,14 +255,24 @@ def load_state() -> dict:
         return {}
 
 
-def save_state(state: dict) -> None:
-    """Gravação atômica: escreve em arquivo temporário e substitui o original."""
+@gspread_retry()
+def save_state(state: dict, client=None) -> None:
+    """Sheets: grava o JSON em pedaços (1 por linha, coluna A).
+    Arquivo: gravação atômica (temporário + os.replace)."""
+    texto = json.dumps(state, ensure_ascii=False, default=str)
+    if STATE_BACKEND == "sheets":
+        ws = _get_state_worksheet(client)
+        pedacos = [[texto[i:i + STATE_CHUNK_SIZE]]
+                   for i in range(0, len(texto), STATE_CHUNK_SIZE)] or [[""]]
+        ws.clear()
+        ws.update(values=pedacos, range_name="A1", raw=True)
+        return
     pasta = os.path.dirname(STATE_FILE)
     if pasta:
         os.makedirs(pasta, exist_ok=True)
     tmp_path = STATE_FILE + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2, default=str)
+        f.write(texto)
     os.replace(tmp_path, STATE_FILE)
 
 
@@ -556,7 +606,7 @@ def job():
             logging.warning("Aba de origem retornou vazia nesta execução.")
             return
 
-        state = load_state()
+        state = load_state(client)
         eventos_do_ciclo = []
         resultados = []
 
@@ -566,7 +616,7 @@ def job():
 
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
         cleanup_state(state, trip_numbers_ativos)
-        save_state(state)
+        save_state(state, client)
 
         client_escrita = client  # mesma sessão autenticada
         write_results(client_escrita, resultados)
@@ -583,16 +633,57 @@ def job():
         logging.exception("Erro inesperado durante o ciclo de verificação.")
 
 
+# =============================================================================
+# 9. SERVIDOR HTTP MÍNIMO (exigido pelo Web Service do Render) + KEEP-ALIVE
+# =============================================================================
+
+class _HealthHandler(BaseHTTPRequestHandler):
+    def _ok(self, body=True):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        if body:
+            self.wfile.write(b"ok")
+
+    def do_GET(self):
+        self._ok()
+
+    def do_HEAD(self):
+        self._ok(body=False)
+
+    def log_message(self, *args):  # silencia o log de cada requisição
+        pass
+
+
+def start_http_server():
+    server = HTTPServer(("0.0.0.0", HTTP_PORT), _HealthHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logging.info("Servidor HTTP de health-check ouvindo na porta %s.", HTTP_PORT)
+
+
+def self_ping():
+    if not SELF_PING_URL:
+        return
+    try:
+        urllib.request.urlopen(SELF_PING_URL, timeout=15).read()
+    except Exception as e:
+        logging.warning("Auto-ping falhou (%s).", e)
+
+
 def main():
     setup_logging()
+    start_http_server()
     logging.info(
         "Robô de monitoramento de espelhamento iniciado. Intervalo: %s min. "
         "Fuso: %s. Estado: %s",
-        CHECK_INTERVAL_MINUTES, TIMEZONE, STATE_FILE,
+        CHECK_INTERVAL_MINUTES, TIMEZONE,
+        f"aba '{STATE_WORKSHEET_NAME}'" if STATE_BACKEND == "sheets" else STATE_FILE,
     )
 
     job()  # executa uma vez imediatamente ao subir o robô
     schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(job)
+    if SELF_PING_URL:
+        schedule.every(SELF_PING_MINUTES).minutes.do(self_ping)
 
     while True:
         schedule.run_pending()
