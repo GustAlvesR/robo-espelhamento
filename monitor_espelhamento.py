@@ -78,6 +78,10 @@ CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "5"))
 # o espelhamento já deveria estar "OK".
 SLA_MINUTES_BEFORE_START = int(os.getenv("SLA_MINUTES_BEFORE_START", "90"))  # 1h30
 
+# Janela de contagem do % de espelhamento: começa X minutos ANTES do início
+# previsto e termina no fim previsto. 95 min = 1h35.
+JANELA_MINUTES_BEFORE_START = int(os.getenv("JANELA_MINUTES_BEFORE_START", "95"))
+
 # Meta de % de espelhamento durante a rota (usada apenas para compor a coluna
 # extra "status_geral" — Sim/Não do SLA continua sendo a regra 2 pedida).
 META_PERCENTUAL_ESPELHAMENTO = float(os.getenv("META_PERCENTUAL_ESPELHAMENTO", "95.0"))
@@ -463,25 +467,38 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             )
 
     # --- Regra 4: % de espelhamento ------------------------------------------
+    # A janela de contagem vai de (início previsto - 1h35) até o fim previsto.
+    # Só a parte de cada queda que cai DENTRO da janela entra na conta; quedas
+    # (ou trechos de queda) antes do início da janela ou depois do fim são
+    # ignorados. A queda em aberto é contada até min(agora, fim da janela).
+    inicio_janela = None
     duracao_total_rota = None
-    tempo_sem_sinal_total = dados["total_loss_seconds"]
-    # Se há uma queda em aberto agora, soma o tempo já decorrido dela também,
-    # para o percentual refletir a situação em tempo real (não só quedas já
-    # fechadas).
-    if dados["current_loss_start"]:
-        inicio_queda_aberta = _parse_iso(dados["current_loss_start"])
-        fim_para_calculo = now
-        if pd.notna(fim_previsto):
-            fim_para_calculo = min(now, fim_previsto.to_pydatetime())
-        if inicio_queda_aberta and fim_para_calculo > inicio_queda_aberta:
-            tempo_sem_sinal_total += (fim_para_calculo - inicio_queda_aberta).total_seconds()
-
+    duracao_janela = None
+    tempo_sem_sinal_total = dados["total_loss_seconds"]  # bruto, sem recorte
     percentual_espelhamento = None
+
     if pd.notna(inicio_previsto) and pd.notna(fim_previsto):
+        inicio_janela = (inicio_previsto - timedelta(minutes=JANELA_MINUTES_BEFORE_START)).to_pydatetime()
+        fim_janela = fim_previsto.to_pydatetime()
         duracao_total_rota = (fim_previsto - inicio_previsto).total_seconds()
-        if duracao_total_rota > 0:
+        duracao_janela = (fim_janela - inicio_janela).total_seconds()
+
+        def _overlap(ini, fim):
+            """Segundos de [ini, fim] que caem dentro da janela."""
+            if ini is None or fim is None:
+                return 0.0
+            return max(0.0, (min(fim, fim_janela) - max(ini, inicio_janela)).total_seconds())
+
+        sem_sinal_janela = 0.0
+        for per in dados["loss_periods"]:
+            sem_sinal_janela += _overlap(_parse_iso(per["perda"]), _parse_iso(per["retorno"]))
+        if dados["current_loss_start"]:
+            sem_sinal_janela += _overlap(_parse_iso(dados["current_loss_start"]), now)
+
+        tempo_sem_sinal_total = sem_sinal_janela
+        if duracao_janela > 0:
             percentual_espelhamento = max(
-                0.0, min(100.0, 100.0 * (1 - tempo_sem_sinal_total / duracao_total_rota))
+                0.0, min(100.0, 100.0 * (1 - sem_sinal_janela / duracao_janela))
             )
 
     # --- Status geral (extra, além do que foi pedido) ------------------------
@@ -503,10 +520,12 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         "Trip Number": trip_number,
         "Início Previsto": _fmt(inicio_previsto),
         "Fim Previsto": _fmt(fim_previsto),
+        "Início da Contagem": _fmt(inicio_janela),
         "Espelhamento Atual": status_atual,
         "SLA 1h30 Cumprido": dados["sla_result"] or "Pendente",
         "SLA Verificado Em": _fmt(_parse_iso(dados["sla_checked_at"])),
         "Duração Total da Rota": seconds_to_hhmm(duracao_total_rota) if duracao_total_rota else "",
+        "Duração da Janela": seconds_to_hhmm(duracao_janela) if duracao_janela else "",
         "Tempo Sem Sinal": seconds_to_hhmm(tempo_sem_sinal_total),
         "% Espelhamento": f"{percentual_espelhamento:.1f}%" if percentual_espelhamento is not None else "",
         "Qtd. Quedas de Sinal": len(dados["loss_periods"]) + (1 if dados["current_loss_start"] else 0),
