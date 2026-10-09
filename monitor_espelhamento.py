@@ -468,6 +468,9 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
     })
 
     status_anterior = dados["last_status"]
+    # Dados do veículo/rota, repassados também para o histórico de quedas.
+    info_veiculo = {titulo: _txt(row.get(chave))
+                    for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()}
 
     # --- Regra 3: detecção de queda / retorno de sinal ----------------------
     if status_atual == "NOK" and status_anterior != "NOK":
@@ -478,6 +481,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             "trip_number": trip_number,
             "evento": "PERDA",
             "duracao_segundos": "",
+            **info_veiculo,
         })
         logging.info("[%s] Perda de sinal detectada às %s.", trip_number, now)
 
@@ -498,6 +502,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             "trip_number": trip_number,
             "evento": "RETORNO",
             "duracao_segundos": duracao,
+            **info_veiculo,
         })
         logging.info(
             "[%s] Sinal restabelecido às %s (ficou %s sem sinal).",
@@ -658,12 +663,16 @@ def append_events(client: gspread.Client, eventos: list) -> None:
     spreadsheet = client.open_by_key(RESULTS_SPREADSHEET_ID)
     ws = get_or_create_worksheet(spreadsheet, EVENTS_WORKSHEET_NAME)
 
-    # Garante cabeçalho na primeira execução.
-    if not ws.get_all_values():
-        ws.append_row(
-            ["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"],
-            value_input_option="USER_ENTERED",
-        )
+    # Garante o cabeçalho completo: cria na 1ª execução e, se a aba já existia
+    # só com as 4 colunas antigas, completa o cabeçalho (linhas antigas ficam
+    # com as colunas novas em branco).
+    titulos_extra = [titulo for (_n, _l, titulo) in OPTIONAL_COLUMNS.values()]
+    cabecalho = ["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"] + titulos_extra
+    atual = ws.row_values(1)
+    if not atual:
+        ws.append_row(cabecalho, value_input_option="USER_ENTERED")
+    elif atual != cabecalho:
+        ws.update(values=[cabecalho], range_name="A1")
 
     linhas = []
     for ev in eventos:
@@ -674,6 +683,8 @@ def append_events(client: gspread.Client, eventos: list) -> None:
             ev["trip_number"],
             ev["evento"],
             duracao_fmt,
+            # Apóstrofo força texto no USER_ENTERED (preserva zeros à esquerda de IDs).
+            *[("'" + ev[titulo]) if ev.get(titulo) else "" for titulo in titulos_extra],
         ])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
 
