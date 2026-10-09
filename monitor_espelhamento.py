@@ -473,16 +473,33 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
                     for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()}
 
     # --- Regra 3: detecção de queda / retorno de sinal ----------------------
-    if status_atual == "NOK" and status_anterior != "NOK":
-        # Início de uma nova queda (ou rota já "nasceu" caída na 1ª leitura).
-        dados["current_loss_start"] = now.isoformat()
+    # O estado interno (current_loss_start / loss_periods) registra TODA queda,
+    # inclusive a da janela pré-início, porque o % de espelhamento usa essa
+    # janela. Já o HISTÓRICO (eventos) só recebe quedas a partir do início
+    # previsto da viagem:
+    #  - queda que começa e termina antes do início: não vai ao histórico;
+    #  - queda que começa antes e continua após o início: PERDA é registrada no
+    #    primeiro ciclo depois do início, e a duração do RETORNO conta só a
+    #    partir do início;
+    #  - queda que começa após o início: registrada normalmente.
+    if "loss_logged" not in dados:  # estado antigo: queda em aberto já estava no histórico
+        dados["loss_logged"] = bool(dados.get("current_loss_start"))
+
+    viagem_iniciada = bool(pd.isna(inicio_previsto)) or now >= inicio_previsto
+
+    def _registrar_evento(tipo: str, duracao):
         eventos.append({
             "timestamp_deteccao": now.isoformat(),
             "trip_number": trip_number,
-            "evento": "PERDA",
-            "duracao_segundos": "",
+            "evento": tipo,
+            "duracao_segundos": duracao,
             **info_veiculo,
         })
+
+    if status_atual == "NOK" and status_anterior != "NOK":
+        # Início de uma nova queda (ou rota já "nasceu" caída na 1ª leitura).
+        dados["current_loss_start"] = now.isoformat()
+        dados["loss_logged"] = False
         logging.info("[%s] Perda de sinal detectada às %s.", trip_number, now)
 
     elif status_atual == "OK" and status_anterior == "NOK":
@@ -497,17 +514,23 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         })
         dados["total_loss_seconds"] += duracao
         dados["current_loss_start"] = None
-        eventos.append({
-            "timestamp_deteccao": now.isoformat(),
-            "trip_number": trip_number,
-            "evento": "RETORNO",
-            "duracao_segundos": duracao,
-            **info_veiculo,
-        })
+        if dados["loss_logged"]:
+            # Duração no histórico: só a parte após o início da viagem.
+            inicio_hist = inicio_queda
+            if pd.notna(inicio_previsto):
+                inicio_hist = max(inicio_queda, inicio_previsto.to_pydatetime())
+            _registrar_evento("RETORNO", max((now - inicio_hist).total_seconds(), 0))
+        dados["loss_logged"] = False
         logging.info(
             "[%s] Sinal restabelecido às %s (ficou %s sem sinal).",
             trip_number, now, seconds_to_hhmm(duracao),
         )
+
+    # Queda em aberto e viagem já iniciada, ainda não enviada ao histórico.
+    if (status_atual == "NOK" and dados.get("current_loss_start")
+            and not dados["loss_logged"] and viagem_iniciada):
+        _registrar_evento("PERDA", "")
+        dados["loss_logged"] = True
 
     dados["last_status"] = status_atual
     dados["last_seen"] = now.isoformat()
