@@ -318,12 +318,65 @@ REQUIRED_COLUMNS = {
 }
 
 
+# Colunas informativas (opcionais) da aba Telemetria que são repassadas para a
+# aba de resultados. Para cada uma: nomes de cabeçalho aceitos (comparação sem
+# diferenciar maiúsculas, espaços ou "_") e a letra da coluna como reserva,
+# usada se nenhum cabeçalho bater. Se nada for encontrado, a coluna sai vazia
+# e o robô segue funcionando (só registra um aviso no log).
+OPTIONAL_COLUMNS = {
+    # chave interna:            (nomes aceitos,                                   letra, título na saída)
+    "vehicle_number":           (["vehicle_number"],                              "E", "Placa"),
+    "vehicle_number2":          (["vehicle_number2"],                             "F", "Placa 2"),
+    "origin_station_code":      (["origin_station_code"],                         "H", "Origin Station Code"),
+    "destination_station_code": (["destination_station_code"],                    "I", "Destination Station Code"),
+    "drive_id":                 (["drive_id", "driver_id"],                       "O", "Drive ID"),
+}
+
+
+def _norm_cab(texto) -> str:
+    return str(texto).strip().lower().replace(" ", "").replace("_", "")
+
+
+def _letra_para_indice(letra: str) -> int:
+    n = 0
+    for ch in letra.upper():
+        n = n * 26 + (ord(ch) - ord("A") + 1)
+    return n - 1
+
+
+def _resolver_colunas_opcionais(colunas_originais: list, excluir: set = frozenset()) -> dict:
+    """Devolve {nome_da_coluna_na_planilha: chave_interna} para as opcionais."""
+    por_nome = {_norm_cab(c): c for c in colunas_originais}
+    mapa = {}
+    for chave, (nomes, letra, _titulo) in OPTIONAL_COLUMNS.items():
+        achou = next((por_nome[_norm_cab(n)] for n in nomes if _norm_cab(n) in por_nome), None)
+        origem = "cabeçalho"
+        if achou is None:
+            idx = _letra_para_indice(letra)
+            if idx < len(colunas_originais):
+                candidata = colunas_originais[idx]
+                if candidata in excluir or candidata in mapa:
+                    logging.warning(
+                        "Coluna opcional '%s': a coluna %s ('%s') já é usada para outra finalidade; "
+                        "ignorada. Confira o cabeçalho na aba Telemetria.", chave, letra, candidata)
+                else:
+                    achou, origem = candidata, f"coluna {letra}"
+        if achou is None:
+            logging.warning("Coluna opcional '%s' não encontrada (nem pelo nome nem pela letra %s).",
+                            chave, letra)
+        elif achou not in mapa:
+            logging.info("Coluna '%s' <- '%s' (%s).", chave, achou, origem)
+            mapa[achou] = chave
+    return mapa
+
+
 @gspread_retry()
 def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
     """Lê a aba Telemetria e devolve um DataFrame já com as colunas
     necessárias renomeadas para nomes internos padronizados."""
     ws = client.open_by_key(SOURCE_SPREADSHEET_ID).worksheet(SOURCE_WORKSHEET_NAME)
-    registros = ws.get_all_records()  # usa a 1ª linha como cabeçalho
+    # numericise_ignore=['all']: tudo como texto (não perde zeros à esquerda de IDs/placas)
+    registros = ws.get_all_records(numericise_ignore=["all"])  # 1ª linha = cabeçalho
     df = pd.DataFrame(registros)
 
     if df.empty:
@@ -341,7 +394,13 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
                 f"'{SOURCE_WORKSHEET_NAME}'. Colunas disponíveis: {list(df.columns)}"
             )
         renomear[achou] = chave_interna
+
+    # Colunas informativas (opcionais). Resolvidas ANTES do rename das obrigatórias.
+    renomear.update(_resolver_colunas_opcionais(list(df.columns), excluir=set(renomear)))
     df = df.rename(columns=renomear)
+    for chave in OPTIONAL_COLUMNS:
+        if chave not in df.columns:
+            df[chave] = ""
 
     # Remove linhas sem trip_number (linhas em branco no fim da planilha).
     df = df[df["trip_number"].astype(str).str.strip() != ""]
@@ -535,7 +594,16 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         "Último Retorno": _fmt(_parse_iso(dados["loss_periods"][-1]["retorno"])) if dados["loss_periods"] else "",
         "Status Geral": status_geral,
         "Atualizado Em": _fmt(now),
+        # Colunas informativas, ao final para não deslocar as letras das colunas existentes.
+        **{titulo: _txt(row.get(chave)) for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()},
     }
+
+
+def _txt(value) -> str:
+    """Texto limpo para colunas informativas (NaN/None -> vazio)."""
+    if value is None or (not isinstance(value, str) and pd.isna(value)):
+        return ""
+    return str(value).strip()
 
 
 def _fmt(value) -> str:
