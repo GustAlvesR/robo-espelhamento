@@ -679,6 +679,13 @@ def get_or_create_worksheet(spreadsheet, nome_aba: str, linhas=1000, colunas=20)
         return spreadsheet.add_worksheet(title=nome_aba, rows=linhas, cols=colunas)
 
 
+def garantir_colunas(ws, minimo: int) -> None:
+    """Aumenta a grade da aba se ela tiver menos colunas do que o necessário
+    (abas criadas pelo robô nascem com 20 colunas)."""
+    if ws.col_count < minimo:
+        ws.add_cols(minimo - ws.col_count)
+
+
 @gspread_retry()
 def write_results(client: gspread.Client, resultados: list) -> None:
     """Sobrescreve a aba de resultados com o snapshot mais recente de todas
@@ -693,6 +700,7 @@ def write_results(client: gspread.Client, resultados: list) -> None:
         return
 
     cabecalho = list(resultados[0].keys())
+    garantir_colunas(ws, len(cabecalho))
     linhas = [cabecalho] + [[linha[c] for c in cabecalho] for linha in resultados]
 
     ws.clear()
@@ -708,28 +716,49 @@ def append_events(client: gspread.Client, eventos: list) -> None:
     spreadsheet = client.open_by_key(RESULTS_SPREADSHEET_ID)
     ws = get_or_create_worksheet(spreadsheet, EVENTS_WORKSHEET_NAME)
 
-    # Garante o cabeçalho completo: cria na 1ª execução e, se a aba já existia
-    # só com as 4 colunas antigas, completa o cabeçalho (linhas antigas ficam
-    # com as colunas novas em branco).
+    # Colunas do histórico:
+    #   1) as 4 do evento; 2) as 5 informativas (mesma posição de antes, para as
+    #   linhas já gravadas continuarem alinhadas); 3) TODAS as demais colunas da
+    #   aba Resultado_Espelhamento, na ordem em que ela as grava.
     titulos_extra = [titulo for (_n, _l, titulo) in OPTIONAL_COLUMNS.values()]
-    cabecalho = ["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"] + titulos_extra
+    modelo = next((ev["resultado"] for ev in eventos if ev.get("resultado")), {})
+    colunas_resultado = [c for c in modelo
+                         if c != "Trip Number" and c not in titulos_extra]
+    cabecalho = (["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"]
+                 + titulos_extra + colunas_resultado)
+    garantir_colunas(ws, len(cabecalho))
+
     atual = ws.row_values(1)
     if not atual:
         ws.append_row(cabecalho, value_input_option="USER_ENTERED")
     elif atual != cabecalho:
-        ws.update(values=[cabecalho], range_name="A1")
+        if cabecalho[:len(atual)] == atual:
+            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
+            # com as colunas novas em branco.
+            ws.update(values=[cabecalho], range_name="A1")
+        else:
+            logging.warning("Cabeçalho do histórico diferente do esperado; não foi alterado. "
+                            "Esperado: %s", cabecalho)
+
+    def _texto(v) -> str:
+        # Apóstrofo força texto no USER_ENTERED: o histórico fica idêntico ao
+        # que está em Resultado_Espelhamento (sem converter datas, % ou IDs).
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return v  # números (ex.: Qtd. Quedas) continuam numéricos
+        return ("'" + str(v)) if v not in ("", None) else ""
 
     linhas = []
     for ev in eventos:
         duracao = ev["duracao_segundos"]
         duracao_fmt = seconds_to_hhmm(duracao) if duracao != "" else ""
+        snap = ev.get("resultado") or {}
         linhas.append([
             _fmt(_parse_iso(ev["timestamp_deteccao"])),
             ev["trip_number"],
             ev["evento"],
             duracao_fmt,
-            # Apóstrofo força texto no USER_ENTERED (preserva zeros à esquerda de IDs).
-            *[("'" + ev[titulo]) if ev.get(titulo) else "" for titulo in titulos_extra],
+            *[_texto(ev.get(titulo)) for titulo in titulos_extra],
+            *[_texto(snap.get(c, "")) for c in colunas_resultado],
         ])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
 
@@ -754,8 +783,13 @@ def job():
         resultados = []
 
         for _, row in df.iterrows():
+            n_antes = len(eventos_do_ciclo)
             resultado_linha = process_trip(row, state, now, eventos_do_ciclo)
             resultados.append(resultado_linha)
+            # Cada evento do histórico leva o "retrato" completo da linha de
+            # Resultado_Espelhamento no momento em que o evento foi detectado.
+            for ev in eventos_do_ciclo[n_antes:]:
+                ev["resultado"] = resultado_linha
 
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
         cleanup_state(state, trip_numbers_ativos)
