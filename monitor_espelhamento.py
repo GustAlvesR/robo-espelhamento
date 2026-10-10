@@ -588,6 +588,30 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
                 0.0, min(100.0, 100.0 * (1 - sem_sinal_janela / duracao_janela))
             )
 
+    # --- Quedas contabilizadas: Qtd., Última Perda e Último Retorno ----------
+    # Só contam a partir do início da janela (início previsto - 1h35). Queda
+    # que termina antes disso é ignorada; queda que atravessa o início da
+    # janela entra com a perda "cortada" no início da janela.
+    quedas = []  # (perda, retorno | None), em ordem cronológica
+    for per in dados["loss_periods"]:
+        perda, retorno = _parse_iso(per["perda"]), _parse_iso(per["retorno"])
+        if perda is None or retorno is None:
+            continue
+        if inicio_janela is not None:
+            if retorno <= inicio_janela:
+                continue
+            perda = max(perda, inicio_janela)
+        quedas.append((perda, retorno))
+    if dados["current_loss_start"]:
+        perda_aberta = _parse_iso(dados["current_loss_start"])
+        if perda_aberta is not None and (inicio_janela is None or now > inicio_janela):
+            if inicio_janela is not None:
+                perda_aberta = max(perda_aberta, inicio_janela)
+            quedas.append((perda_aberta, None))
+    retornos = [r for _p, r in quedas if r is not None]
+    ultima_perda = quedas[-1][0] if quedas else None
+    ultimo_retorno = retornos[-1] if retornos else None
+
     # --- Status geral (extra, além do que foi pedido) ------------------------
     # Combina as duas condições de NOK já usadas hoje no acompanhamento de
     # espelhamento (SLA não cumprido OU percentual abaixo da meta), para a
@@ -615,11 +639,9 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         "Duração da Janela": seconds_to_hhmm(duracao_janela) if duracao_janela else "",
         "Tempo Sem Sinal": seconds_to_hhmm(tempo_sem_sinal_total),
         "% Espelhamento": f"{percentual_espelhamento:.1f}%" if percentual_espelhamento is not None else "",
-        "Qtd. Quedas de Sinal": len(dados["loss_periods"]) + (1 if dados["current_loss_start"] else 0),
-        "Última Perda": _fmt(_parse_iso(dados["loss_periods"][-1]["perda"])) if dados["loss_periods"] else (
-            _fmt(_parse_iso(dados["current_loss_start"])) if dados["current_loss_start"] else ""
-        ),
-        "Último Retorno": _fmt(_parse_iso(dados["loss_periods"][-1]["retorno"])) if dados["loss_periods"] else "",
+        "Qtd. Quedas de Sinal": len(quedas),
+        "Última Perda": _fmt(ultima_perda),
+        "Último Retorno": _fmt(ultimo_retorno),
         "Status Geral": status_geral,
         "Atualizado Em": _fmt(now),
         # Colunas informativas, ao final para não deslocar as letras das colunas existentes.
