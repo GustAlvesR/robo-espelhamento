@@ -3,6 +3,8 @@
 (o Render free só sustenta um serviço ligado 24/7)."""
 
 import hmac
+import json
+import math
 import logging
 import os
 import re
@@ -26,6 +28,16 @@ TOMTOM_TILE_URL = os.getenv(
 SESSAO_HORAS = int(os.getenv("SESSAO_HORAS", "12"))
 MAX_TILES_CACHE = 800
 MAX_FALHAS_LOGIN, JANELA_FALHAS_S = 5, 15 * 60
+
+
+def _limpar(v):
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    if isinstance(v, dict):
+        return {k: _limpar(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_limpar(x) for x in v]
+    return v
 
 
 def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
@@ -140,8 +152,12 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         snap = get_snapshot() or {}
         geo = snap.get("geo", {})
         rotas = [{**r, "_geo": geo.get(r["Trip Number"], {})} for r in snap.get("resultados", [])]
-        return jsonify({"atualizado_em": snap.get("atualizado_em", ""),
-                        "tomtom": snap.get("tomtom", {}), "rotas": rotas})
+        corpo = {"atualizado_em": snap.get("atualizado_em", ""),
+                 "tomtom": snap.get("tomtom", {}), "rotas": rotas}
+        # allow_nan=False + _limpar: um NaN vindo da planilha geraria JSON inválido
+        # e quebraria a página inteira.
+        return Response(json.dumps(_limpar(corpo), ensure_ascii=False, allow_nan=False, default=str),
+                        mimetype="application/json")
 
     @app.get("/tiles/<int:z>/<int:x>/<int:y>.png")
     @exige_login

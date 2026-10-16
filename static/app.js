@@ -225,14 +225,22 @@ async function atualizar() {
     aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
       + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
     aviso.style.color = parado ? "var(--nok)" : "";
-    render();
+    try {
+      render();
+    } catch (e) {
+      // Erro ao desenhar não é falha de conexão: mostra a causa para diagnóstico.
+      console.error(e);
+      aviso.textContent += ` · Erro ao desenhar: ${e.message}`;
+      aviso.style.color = "var(--nok)";
+    }
   } catch (e) {
+    console.error(e);
     // Servidor acordando (Render gratuito) ou queda momentânea: tenta de novo logo.
     falhasSeguidas += 1;
     proxima = 15000;
     aviso.textContent = falhasSeguidas < 8
-      ? "Servidor acordando, tentando de novo…"
-      : "Sem conexão com o servidor. Recarregue a página.";
+      ? `Servidor acordando, tentando de novo… (${e.message})`
+      : `Sem conexão com o servidor (${e.message}). Recarregue a página.`;
     aviso.style.color = "var(--alerta)";
   }
   setTimeout(atualizar, proxima);
