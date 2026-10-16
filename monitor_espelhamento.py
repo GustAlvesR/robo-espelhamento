@@ -1108,6 +1108,10 @@ def job():
         cleanup_state(state, trip_numbers_ativos)
         save_state(state, client)
 
+        if not _SNAPSHOT:
+            # Logo após reiniciar, o site já mostra as rotas enquanto a TomTom
+            # recalcula (a primeira passada pode levar mais de um minuto).
+            publicar_snapshot(resultados, {}, now)
         geo_por_trip = enriquecer_geo(client, df, resultados, now)
 
         client_escrita = client  # mesma sessão autenticada
