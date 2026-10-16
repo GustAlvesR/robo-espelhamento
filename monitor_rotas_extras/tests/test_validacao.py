@@ -91,28 +91,8 @@ def test_avaliar_nomenclatura_invalida_gera_alerta(cfg, bruto, agora):
     assert any("Nomenclatura fora do padrão" in a for a in av.alertas)
 
 
-def test_auto_aceite_elegivel_so_com_tudo_ok(cfg, bruto, agora):
-    r = parse_card(bruto(), TZ)
-    av = avaliar(r, agora, cfg, [LINHA_OK])
-    assert not av.elegivel_auto_aceite and av.motivo_sem_auto_aceite == "auto-aceite desligado"
-
-    cfg.auto_aceite.ativo = True
-    cfg.filtros.veiculos, cfg.filtros.origens = ["TOCO"], ["BRSP"]
-    av = avaliar(r, agora, cfg, [LINHA_OK])
-    assert av.hub.status == "OK"
-    assert av.elegivel_auto_aceite, av.motivo_sem_auto_aceite
-
-    av = avaliar(r, agora, cfg, [])
-    assert not av.elegivel_auto_aceite and "hub" in av.motivo_sem_auto_aceite
-
-    tarde = datetime(2026, 10, 16, 21, 0, tzinfo=TZ)
-    assert not avaliar(r, tarde, cfg, [LINHA_OK]).elegivel_auto_aceite
-
-
-def test_auto_aceite_bloqueado_por_hub_incompativel(cfg, bruto, agora):
-    cfg.auto_aceite.ativo = True
-    cfg.filtros.veiculos, cfg.filtros.origens = ["TOCO"], ["BRSP"]
+def test_hub_incompativel_vira_alerta(cfg, bruto, agora):
     linha = {**LINHA_OK, "POSSUI RESTRIÇÃO": "Sim", "PERFIL RESTRIÇÃO": "TOCO"}
     av = avaliar(parse_card(bruto(), TZ), agora, cfg, [linha])
     assert av.hub.status == "INCOMPATIVEL"
-    assert not av.elegivel_auto_aceite
+    assert any("INCOMPATIVEL" in a for a in av.alertas)

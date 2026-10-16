@@ -2,7 +2,8 @@
 
 Robô que abre a tela MENU > ROTA EXTRA do app AppSheet no Microsoft Edge, lê os cards a cada 45 s,
 cruza a origem da rota com a TABELA DE ENDEREÇO e avisa no Teams (com e-mail via Outlook como reserva)
-cada rota nova uma única vez. Auto-aceite existe, mas vem desligado.
+cada rota nova uma única vez. O robô só LÊ a tela: nunca clica em ACEITAR nem em recusar. O aceite
+continua sendo feito por uma pessoa do time, no app.
 
 Este projeto é independente do robô de espelhamento que está na raiz do repositório.
 
@@ -14,22 +15,38 @@ monitor_rotas_extras/
     config.py          carrega config.yaml + .env e valida
     seletores.py       TODOS os seletores e textos de tela (único lugar para ajustar)
     parser.py          parsing do card (veículo, origem, ETA, CPT, tempo limite) e validações
-    regras.py          filtros, alertas agregados e elegibilidade ao auto-aceite
+    regras.py          filtros e alertas agregados
     address_lookup.py  leitura da tabela de endereço, agrupamento de linhas, cache e cruzamento com o hub
-    scraper.py         Edge/Playwright: recarregar tela, extrair cards, aceitar, dumps
+    scraper.py         Edge/Playwright: recarregar tela, extrair cards (somente leitura), dumps
     notifier.py        Adaptive Card no Teams (Power Automate) e e-mail via Outlook, com retry
-    state.py           estado em JSON (deduplicação, cooldown de alertas, aceites)
+    state.py           estado em JSON (deduplicação, cooldown de alertas)
     main.py            loop, resiliência, heartbeat e modos de diagnóstico
   tests/               pytest (unitários + integração com páginas que imitam o AppSheet)
   config.example.yaml  configuração comentada
   .env.example         segredos (webhook, e-mails)
-  iniciar_monitor.bat  usado pelo Agendador de Tarefas
+  instalar.bat         instalação em um clique (ambiente virtual + dependências + config)
+  iniciar_monitor.bat  inicia o robô (também usado pelo Agendador de Tarefas)
 ```
 
 Gerados em tempo de execução (fora do Git): `config.yaml`, `.env`, `perfil_edge/` (login), `dados/`
 (estado e cache da tabela), `logs/`, `dumps/`.
 
 ## 1. Instalação no Windows corporativo (sem administrador)
+
+Baixar o código: no GitHub, abra a branch do projeto > botão "Code" > "Download ZIP", extraia e entre na
+pasta `monitor_rotas_extras`. (Ou use o ZIP enviado na conversa, que já é só esta pasta.)
+
+Caminho rápido: instale o Python (passo 1) e dê dois cliques em `instalar.bat`. Ele faz os passos 2 e 3,
+cria `config.yaml` e `.env` e mostra o que falta preencher. Depois:
+
+```bat
+iniciar_monitor.bat --login         rem 1ª vez: login no AppSheet
+iniciar_monitor.bat --test-notify   rem testa o Teams
+iniciar_monitor.bat --once --dry-run
+iniciar_monitor.bat                 rem deixa rodando
+```
+
+Passo a passo manual:
 
 1. Python 3.10 ou superior. Se não tiver, use o instalador do python.org com "Install Now" (instala só
    para o seu usuário, sem admin) e marque "Add python.exe to PATH". Alternativas: Microsoft Store ou o
@@ -67,8 +84,7 @@ copy .env.example .env
   abrir pelo menu ou pelo pin do primeiro card, e a tela aberta pelo pin pode vir filtrada.
 - `.env`: `ROTAS_TEAMS_WEBHOOK_URL` e `ROTAS_EMAIL_DESTINATARIOS`. Nada de credencial no código.
 
-Chave desconhecida no YAML gera erro de propósito (um `ativ0` digitado errado em `auto_aceite` não pode
-passar despercebido).
+Chave desconhecida no YAML gera erro de propósito (um erro de digitação não passa despercebido).
 
 ## 3. Primeiro login (SSO)
 
@@ -131,7 +147,7 @@ E-mail (reserva): usa o Outlook desktop já logado, via COM, sem senha. Só é u
 ## 5. Testar antes de deixar rodando
 
 ```bat
-python -m rotas_extras --once --dry-run          rem um ciclo, só loga, não grava estado nem aceita
+python -m rotas_extras --once --dry-run          rem um ciclo, só loga, não envia nem grava estado
 python -m rotas_extras --once --dry-run --dump-html   rem idem + salva HTML/screenshot/cards em dumps\
 python -m rotas_extras --refresh-table           rem lê a tabela de endereço e atualiza o cache
 python -m rotas_extras --discover-table          rem diagnóstico da estrutura da tabela (ver seção 6)
@@ -204,19 +220,7 @@ o Edge continua rodando, mas se o computador suspender o robô para.
 - Alertas de sistema (Teams/e-mail): sessão expirada, ciclos falhando, 0 cards por muitos ciclos, cards sem
   ACEITAR reconhecível, falha ao ler a tabela. Heartbeat diário com o resumo.
 
-## 9. Auto-aceite (desligado por padrão)
-
-Só liga com `auto_aceite.ativo: true` E `filtros.veiculos` E `filtros.origens` preenchidos. Só aceita rota
-que passou em todos os filtros, sem alerta, com hub OK (se `exigir_hub_ok`), respeitando `max_por_hora`.
-O clique é feito no botão ACEITAR do card que tem o mesmo nome, ETA e CPT, relocalizado no DOM na hora
-do clique; depois o robô confere se o card saiu da lista. Nunca repete o clique na mesma rota. Cada
-tentativa vai para `logs/auto_aceite_auditoria.jsonl` com screenshot em `dumps\aceites\`.
-Recusa automática não existe.
-
-"aceita_provavel" significa que o card sumiu após o clique; o robô não tem como ler a confirmação no
-sistema do Mercado Livre. Confira no app nas primeiras vezes.
-
-## 10. Solução de problemas
+## 9. Solução de problemas
 
 - Proxy: o Edge usa o proxy do Windows sozinho. O envio ao Teams usa o proxy do sistema (variáveis
   `HTTPS_PROXY` ou configuração do Windows). Se o proxy usa arquivo PAC ou autenticação NTLM, o Python pode
@@ -237,7 +241,7 @@ sistema do Mercado Livre. Confira no app nas primeiras vezes.
   `cards.json`; os seletores ficam todos em `rotas_extras/seletores.py`.
 - Logs: `logs/monitor.log` (rotação em 5 x 5 MB). Use `--verbose` para nível DEBUG.
 
-## 11. Riscos e limitações
+## 10. Riscos e limitações
 
 - Depende do layout do AppSheet. IDs e classes mudam; usamos aria-label, role, data-testid, prefixo de id e
   texto, mas uma mudança no app (renomear "ACEITAR", trocar o tipo de view) quebra a leitura. Há alertas
@@ -250,14 +254,12 @@ sistema do Mercado Livre. Confira no app nas primeiras vezes.
   ficar ociosa, mas não há garantia absoluta de que leu a sincronização mais recente.
 - A leitura da tabela de endereço ainda não foi validada no HTML real (falta a saída do `--discover-table`).
   O cruzamento origem x hub depende do conteúdo real de Localização Fixa/Micro Região, que eu não conheço.
-- Políticas: automação de navegador, uso de webhook externo e principalmente auto-aceite podem violar
-  regras da sua empresa ou do Mercado Livre (termos de uso do AppSheet/da operação, justiça na distribuição
-  das rotas). Confirme com o gestor antes de ligar o auto-aceite. Aceite indevido tem custo operacional
-  real (veículo comprometido sem disponibilidade).
+- Políticas: automação de navegador e uso de webhook externo podem esbarrar em regras da empresa ou do
+  Mercado Livre. O robô só lê a tela (não aceita nem recusa), o que reduz o risco, mas vale avisar o gestor.
 - Recarregar o app a cada 45 s gera tráfego e leituras no AppSheet; se o app tiver cota ou auditoria de
   acesso, isso pode chamar atenção. Ajuste `intervalo_s` se necessário.
 
-## 12. Testes
+## 11. Testes
 
 ```bat
 pip install -r requirements-dev.txt

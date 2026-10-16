@@ -44,22 +44,15 @@ def test_cooldown_de_alertas(agora):
     assert est.pode_alertar("vazio", agora, None)
 
 
-def test_aceites_na_ultima_hora(agora):
-    est = Estado(None)
-    est.registrar_clique_aceite(agora - timedelta(minutes=70))
-    est.registrar_clique_aceite(agora - timedelta(minutes=10))
-    assert est.aceites_ultima_hora(agora) == 1
-
-
 def test_persistencia_e_arquivo_corrompido(tmp_path, bruto, agora):
     caminho = tmp_path / "estado.json"
     est = Estado.carregar(caminho)
     r = parse_card(bruto(), TZ)
     est.registrar_presentes([r], agora)
-    est.marcar_aceite(r.chave, "aceita_provavel", "ok", agora)
+    est.marcar_notificada(r.chave, agora)
     est.salvar()
     de_novo = Estado.carregar(caminho)
-    assert de_novo.aceite_da_rota(r.chave)["status"] == "aceita_provavel"
+    assert de_novo.rotas[r.chave]["status"] == "notificada"
     assert json.loads(caminho.read_text(encoding="utf-8"))["versao"] == 1
 
     caminho.write_text("{quebrado", encoding="utf-8")

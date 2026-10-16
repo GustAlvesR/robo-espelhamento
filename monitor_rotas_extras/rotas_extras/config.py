@@ -126,17 +126,6 @@ class NotificacaoCfg:
 
 
 @dataclass
-class AutoAceiteCfg:
-    ativo: bool = False
-    max_por_hora: int = 2
-    exigir_hub_ok: bool = True
-    confirmar_dialogo: bool = False
-    textos_confirmacao: list[str] = field(default_factory=lambda: ["OK", "CONFIRMAR", "SIM"])
-    timeout_confirmacao_s: int = 10
-    arquivo_auditoria: str = "logs/auto_aceite_auditoria.jsonl"
-
-
-@dataclass
 class LogCfg:
     nivel: str = "INFO"
     arquivo: str = "logs/monitor.log"
@@ -153,7 +142,6 @@ class Config:
     filtros: FiltrosCfg = field(default_factory=FiltrosCfg)
     hub: HubCfg = field(default_factory=HubCfg)
     notificacao: NotificacaoCfg = field(default_factory=NotificacaoCfg)
-    auto_aceite: AutoAceiteCfg = field(default_factory=AutoAceiteCfg)
     log: LogCfg = field(default_factory=LogCfg)
     estado_arquivo: str = "dados/estado.json"
     dumps_dir: str = "dumps"
@@ -207,7 +195,7 @@ def _construir(cls: type, dados: typing.Any, caminho: str = "") -> typing.Any:
     if not isinstance(dados, dict):
         raise ErroConfig(f"Seção '{caminho or 'raiz'}' deve ser um mapa")
     campos = {f.name: f for f in dataclasses.fields(cls) if f.init}
-    # Chave desconhecida costuma ser erro de digitação (ex.: "ativ0"), e em auto_aceite isso é perigoso.
+    # Chave desconhecida costuma ser erro de digitação; melhor falhar do que ignorar em silêncio.
     desconhecidas = sorted(set(dados) - set(campos))
     if desconhecidas:
         raise ErroConfig(f"Chave(s) desconhecida(s) em '{caminho or 'raiz'}': {', '.join(desconhecidas)}")
@@ -263,11 +251,6 @@ def validar(cfg: Config, exigir_url: bool = True) -> None:
         raise ErroConfig("hub.tabela.estrategia_linhas deve ser auto, coordenadas, ancestral ou blocos")
     if cfg.hub.perfil_indica not in {"proibidos", "permitidos"}:
         raise ErroConfig("hub.perfil_indica deve ser 'proibidos' ou 'permitidos'")
-    if cfg.auto_aceite.ativo and (not cfg.filtros.veiculos or not cfg.filtros.origens):
-        raise ErroConfig("auto_aceite.ativo exige filtros.veiculos e filtros.origens preenchidos "
-                         "(sem filtro, o robô aceitaria qualquer rota)")
-    if cfg.auto_aceite.ativo and cfg.auto_aceite.max_por_hora < 1:
-        raise ErroConfig("auto_aceite.max_por_hora deve ser >= 1")
 
 
 def carregar_config(caminho: str | Path, exigir_url: bool = True) -> Config:

@@ -18,7 +18,6 @@ from playwright.sync_api import Page, Playwright, sync_playwright
 from . import address_lookup, notifier, parser, regras, scraper
 from .config import Config, ErroConfig, carregar_config
 from .notifier import Mensagem, Notificador
-from .regras import ResultadoAceite
 from .state import Estado
 
 log = logging.getLogger("rotas_extras")
@@ -47,7 +46,7 @@ def configurar_log(cfg: Config, verbose: bool = False) -> None:
 
 
 class Monitor:
-    """Executa os ciclos de leitura, avaliação, auto-aceite e notificação."""
+    """Executa os ciclos de leitura, avaliação e notificação. Só lê a tela: nunca aceita nem recusa rotas."""
 
     def __init__(self, cfg: Config, pw: Playwright, notificador: Notificador, estado: Estado,
                  dry_run: bool = False, dump_html: bool = False):
@@ -144,7 +143,7 @@ class Monitor:
         self._envio_falhou_no_ciclo = False
         for chave, rota in unicas.items():
             if self.estado.precisa_processar(chave):
-                self._processar_rota(page, rota)
+                self._processar_rota(rota)
 
         removidas = self.estado.esquecer_ausentes(set(unicas), agora,
                                                   timedelta(minutes=cfg.monitor.esquecer_apos_min))
@@ -153,7 +152,7 @@ class Monitor:
 
     # ---------------- rotas ----------------
 
-    def _processar_rota(self, page: Page, rota: parser.Rota) -> None:
+    def _processar_rota(self, rota: parser.Rota) -> None:
         cfg, chave = self.cfg, rota.chave
         av = regras.avaliar(rota, self.agora(), cfg, self.cache.linhas)
         if av.motivo_filtro:
@@ -163,54 +162,17 @@ class Monitor:
         if av.hub and av.hub.status == "SEM_MATCH" and rota.origem:
             self._registrar_sem_match(rota)
 
-        aceite = self._talvez_aceitar(page, rota, av)
         if self._envio_falhou_no_ciclo:
             # Canais fora do ar: não gasta o ciclo com mais retries; a rota segue pendente.
             log.warning("Envio de %s adiado para o próximo ciclo (canais falharam neste ciclo)", chave)
             return
-        msg = notifier.mensagem_rota(rota, av, self.estado.primeira_vez(chave), self.agora(), cfg, aceite)
+        msg = notifier.mensagem_rota(rota, av, self.estado.primeira_vez(chave), self.agora(), cfg)
         if self.notificador.enviar(msg):
             self.estado.marcar_notificada(chave, self.agora())
         else:
             self._envio_falhou_no_ciclo = True
             n = self.estado.registrar_falha_notificacao(chave)
             log.error("Notificação de %s falhou (%dª vez); continua pendente para o próximo ciclo", chave, n)
-
-    def _talvez_aceitar(self, page: Page, rota: parser.Rota, av: regras.Avaliacao) -> ResultadoAceite | None:
-        anterior = self.estado.aceite_da_rota(rota.chave)
-        if anterior:
-            # Nunca repete o clique: o resultado anterior só é reaproveitado na mensagem.
-            return ResultadoAceite(anterior["status"], f"(tentativa anterior) {anterior['detalhe']}")
-        if not av.elegivel_auto_aceite:
-            return None
-        aa, agora = self.cfg.auto_aceite, self.agora()
-        if self.estado.aceites_ultima_hora(agora) >= aa.max_por_hora:
-            res = ResultadoAceite("limite_hora", f"limite de {aa.max_por_hora} aceite(s) por hora atingido")
-        elif self.dry_run:
-            res = ResultadoAceite("simulado", "dry-run: nenhum clique foi feito")
-        else:
-            try:
-                res = scraper.aceitar_rota(page, rota, self.cfg, self.cfg.caminho(self.cfg.dumps_dir) / "aceites")
-            except PWError as e:
-                log.exception("Erro no auto-aceite de %s", rota.chave)
-                res = ResultadoAceite("erro", str(e)[:200])
-            if res.clicou:
-                self.estado.registrar_clique_aceite(agora)
-        self.estado.marcar_aceite(rota.chave, res.status, res.detalhe, agora)
-        self._auditar(rota, av, res)
-        self._salvar_estado()
-        return res
-
-    def _auditar(self, rota: parser.Rota, av: regras.Avaliacao, res: ResultadoAceite) -> None:
-        caminho = self.cfg.caminho(self.cfg.auto_aceite.arquivo_auditoria)
-        caminho.parent.mkdir(parents=True, exist_ok=True)
-        registro = {"em": self.agora().isoformat(), "chave": rota.chave, "rota": rota.nome, "veiculo": rota.veiculo,
-                    "eta": rota.eta_texto, "cpt": rota.cpt_texto, "hub": av.hub.status if av.hub else None,
-                    "status": res.status, "detalhe": res.detalhe, "clicou": res.clicou,
-                    "screenshot": res.screenshot, "dry_run": self.dry_run}
-        with caminho.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(registro, ensure_ascii=False) + "\n")
-        log.warning("AUTO-ACEITE %s: %s (%s)", res.status, rota.chave, res.detalhe)
 
     def _registrar_sem_match(self, rota: parser.Rota) -> None:
         agora = self.agora()
@@ -296,7 +258,6 @@ class Monitor:
                             ("Notificadas", str(s["notificadas"])), ("Filtradas", str(s["filtradas"])),
                             ("Ciclos com falha", str(s["falhas"])), ("Último erro", s["ultimo_erro"] or "-"),
                             ("Última rota nova", s["ultima_rota_em"] or "-"), ("Tabela de endereço", tabela),
-                            ("Auto-aceite", "LIGADO" if self.cfg.auto_aceite.ativo else "desligado"),
                             ("Modo", "dry-run" if self.dry_run else "normal")])])
         if self.notificador.enviar(msg):
             self.estado.heartbeat_data = agora.date().isoformat()
@@ -393,7 +354,7 @@ def _mensagem_teste(cfg: Config) -> Mensagem:
 def _args(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="rotas_extras", description="Monitor de rotas extras do AppSheet")
     p.add_argument("--config", default="config.yaml", help="caminho do config.yaml")
-    p.add_argument("--dry-run", action="store_true", help="não notifica, não aceita e não grava o estado")
+    p.add_argument("--dry-run", action="store_true", help="não notifica e não grava o estado")
     p.add_argument("--once", action="store_true", help="executa um único ciclo")
     p.add_argument("--dump-html", action="store_true", help="salva HTML, screenshot e cards de cada ciclo")
     p.add_argument("--discover-table", action="store_true", help="diagnóstico da estrutura da tabela de endereço")
@@ -420,7 +381,7 @@ def main(argv: list[str] | None = None) -> int:
 
     estado = Estado.carregar(None if args.dry_run else cfg.caminho(cfg.estado_arquivo))
     notificador = Notificador(cfg.notificacao, dry_run=args.dry_run)
-    log.info("Iniciando (dry_run=%s, once=%s, auto_aceite=%s)", args.dry_run, args.once, cfg.auto_aceite.ativo)
+    log.info("Iniciando (dry_run=%s, once=%s)", args.dry_run, args.once)
     with sync_playwright() as pw:
         if args.login:
             return _modo_login(pw, cfg)

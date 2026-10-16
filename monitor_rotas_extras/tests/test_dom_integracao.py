@@ -1,6 +1,4 @@
 """Valida o JavaScript de extração contra páginas que imitam o AppSheet (tests/fixtures)."""
-from pathlib import Path
-
 import pytest
 from conftest import FIX, TZ
 
@@ -37,42 +35,12 @@ def test_extrai_todos_os_cards_com_rolagem_lazy(pagina):
     assert ext.cards[0]["chave_dom"].startswith("GRUPO_ROTA_EXTRA")
 
 
-def test_aceite_clica_no_card_certo(pagina, tmp_path):
+def test_leitura_nunca_clica_nos_cards(pagina):
     _abrir(pagina, "rotas.html")
-    cfg = Config()
-    cfg.auto_aceite.timeout_confirmacao_s = 3
-    rotas = [parse_card(c, TZ) for c in scraper.extrair_cards(pagina, cfg).cards]
-    alvo = next(r for r in rotas if r.nome.startswith("BRSP21") and r.veiculo == "TRUCK")
-    res = scraper.aceitar_rota(pagina, alvo, cfg, tmp_path)
-    assert res.status == "aceita_provavel", res
-    assert res.clicou and Path(res.screenshot).exists()
-    restantes = [parse_card(c, TZ) for c in scraper.extrair_cards(pagina, cfg).cards]
-    assert alvo.chave not in {r.chave for r in restantes}
-    # o outro card com o mesmo nome (TOCO) continua lá
-    assert any(r.nome.startswith("BRSP21") and r.veiculo == "TOCO" for r in restantes)
-    assert pagina.evaluate("window.cliques") == 1
-
-
-def test_aceite_com_dialogo(pagina, tmp_path):
-    _abrir(pagina, "rotas.html")
-    cfg = Config()
-    cfg.auto_aceite.timeout_confirmacao_s = 3
-    rotas = [parse_card(c, TZ) for c in scraper.extrair_cards(pagina, cfg).cards]
-    mg = next(r for r in rotas if r.origem == "BRMG03")
-    assert scraper.aceitar_rota(pagina, mg, cfg, tmp_path).status == "dialogo_pendente"
-
-    _abrir(pagina, "rotas.html")
-    cfg.auto_aceite.confirmar_dialogo = True
-    assert scraper.aceitar_rota(pagina, mg, cfg, tmp_path).status == "aceita_provavel"
-
-
-def test_aceite_de_card_inexistente(pagina, tmp_path):
-    _abrir(pagina, "rotas.html")
-    cfg = Config()
-    falsa = parse_card({"label": "BRSP99-X.Y", "descricao": "ETA 01/01/2027 10:00 | CPT 01/01/2027 12:00",
-                        "texto": ""}, TZ)
-    assert scraper.aceitar_rota(pagina, falsa, cfg, tmp_path).status == "nao_encontrada"
+    scraper.extrair_cards(pagina, Config())
+    scraper.extrair_cards(pagina, Config())
     assert pagina.evaluate("window.cliques || 0") == 0
+    assert pagina.locator('[role="button"][aria-label="ACEITAR"]').count() == 5
 
 
 def test_le_tabela_virtualizada_nos_dois_eixos(pagina):

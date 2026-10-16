@@ -19,7 +19,7 @@ def test_exemplo_carrega(tmp_path, monkeypatch):
     cfg = carregar_config(_copiar(tmp_path))
     assert cfg.monitor.intervalo_s == 45
     assert len(cfg.hub.tabela.colunas) == 16
-    assert cfg.auto_aceite.ativo is False
+    assert not hasattr(cfg, "auto_aceite")
     assert cfg.caminho("dados/x.json") == tmp_path / "dados/x.json"
     assert cfg.regex_nome.fullmatch("BRSP21-BRSP11-SSP34.SOW.VEN")
 
@@ -36,11 +36,11 @@ def test_env_sobrescreve_segredos(tmp_path, monkeypatch):
 
 def test_chave_desconhecida_e_erro(tmp_path):
     with pytest.raises(ErroConfig, match="ativ0"):
-        carregar_config(_copiar(tmp_path, 'app: {url_rotas: "x"}\nauto_aceite: {ativ0: true}\n'))
+        carregar_config(_copiar(tmp_path, 'app: {url_rotas: "x"}\nfiltros: {ativ0: true}\n'))
 
 
-def test_auto_aceite_exige_filtros(tmp_path):
-    with pytest.raises(ErroConfig, match="filtros"):
+def test_auto_aceite_nao_existe(tmp_path):
+    with pytest.raises(ErroConfig, match="auto_aceite"):
         carregar_config(_copiar(tmp_path, 'app: {url_rotas: "x"}\nauto_aceite: {ativo: true}\n'))
 
 

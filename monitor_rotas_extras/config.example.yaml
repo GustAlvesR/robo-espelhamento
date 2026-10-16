@@ -84,15 +84,6 @@ notificacao:
   cooldown_alertas_min: 30   # alertas de sistema (sessão, falhas) no máximo 1x por esse período
   proxy: ""                  # vazio = proxy do sistema (variáveis HTTPS_PROXY ou configuração do Windows)
 
-auto_aceite:
-  ativo: false               # DESLIGADO por padrão. Exige filtros.veiculos e filtros.origens preenchidos.
-  max_por_hora: 2
-  exigir_hub_ok: true        # só aceita se o hub casou sem ambiguidade e está compatível
-  confirmar_dialogo: false   # se o AppSheet pedir confirmação, clicar em OK/CONFIRMAR/SIM?
-  textos_confirmacao: ["OK", "CONFIRMAR", "SIM"]
-  timeout_confirmacao_s: 10
-  arquivo_auditoria: "logs/auto_aceite_auditoria.jsonl"
-
 log:
   nivel: "INFO"              # DEBUG para investigar
   arquivo: "logs/monitor.log"

@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 if TYPE_CHECKING:
     from .config import Config, EmailCfg, NotificacaoCfg, TeamsCfg
     from .parser import Rota
-    from .regras import Avaliacao, ResultadoAceite
+    from .regras import Avaliacao
 
 log = logging.getLogger(__name__)
 
@@ -105,9 +105,8 @@ def montar_html_email(msg: Mensagem) -> str:
     return "<div style='font-family:Segoe UI,Arial,sans-serif'>" + "".join(partes) + "</div>"
 
 
-def mensagem_rota(rota: "Rota", av: "Avaliacao", primeira_vez: datetime, agora: datetime, cfg: "Config",
-                  aceite: "ResultadoAceite | None" = None) -> Mensagem:
-    """Mensagem de nova rota com dados da rota, do hub, alertas e resultado do auto-aceite."""
+def mensagem_rota(rota: "Rota", av: "Avaliacao", primeira_vez: datetime, agora: datetime, cfg: "Config") -> Mensagem:
+    """Aviso de rota ofertada com dados da rota, do hub e alertas. O aceite é sempre manual, no app."""
     expira = primeira_vez + timedelta(minutes=cfg.monitor.janela_oferta_min)
     restante = expira - agora
     restante_txt = f"≤ {fmt_delta(restante)} (até ~{expira:%H:%M})" if restante.total_seconds() > 0 \
@@ -149,17 +148,10 @@ def mensagem_rota(rota: "Rota", av: "Avaliacao", primeira_vez: datetime, agora: 
                                                 f"perfil: {valor(cand, COL_PERFIL) or '-'}"))
         secoes.append(("Hub de origem", fatos_hub))
 
-    if aceite:
-        secoes.append(("Auto-aceite", [("Resultado", aceite.status), ("Detalhe", aceite.detalhe or "-")]))
-    elif cfg.auto_aceite.ativo:
-        secoes.append(("Auto-aceite", [("Resultado", "não tentado"), ("Motivo", av.motivo_sem_auto_aceite or "-")]))
-
-    if aceite and aceite.sucesso:
-        nivel, prefixo = "sucesso", "Rota extra ACEITA automaticamente"
-    elif av.alertas:
-        nivel, prefixo = "alerta", "Rota extra (com alertas)"
+    if av.alertas:
+        nivel, prefixo = "alerta", "Rota extra ofertada (com alertas)"
     else:
-        nivel, prefixo = "info", "Nova rota extra"
+        nivel, prefixo = "info", "Rota extra ofertada"
     if not av.nome_valido:
         prefixo = "Rota extra com nomenclatura fora do padrão"
     resumo = (f"{rota.veiculo or '?'} | ETA {fmt_dt(rota.eta)} | CPT {fmt_dt(rota.cpt)} | "

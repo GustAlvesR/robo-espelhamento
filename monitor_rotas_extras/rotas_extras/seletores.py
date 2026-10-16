@@ -8,6 +8,7 @@ from __future__ import annotations
 
 SELETORES: dict[str, object] = {
     # Tela ROTA EXTRA (cards)
+    # ACEITAR só é usado para LOCALIZAR os cards; o robô nunca clica nele.
     "aceitar": ['[role="button"][aria-label="ACEITAR" i]'],
     "aceitar_texto": "ACEITAR",  # fallback: role=button cujo texto normalizado é exatamente este
     "abrir_endereco": [
@@ -31,7 +32,6 @@ SELETORES: dict[str, object] = {
     "filtro_drawer": '[data-testid="filter-drawer"]',
     "filtro_indice": "nav.filtering-index",
     "voltar": '[aria-label="back"]',
-    "dialogo": '[role="dialog"], [role="alertdialog"]',
     # Só senha e o campo de conta do Google: input de e-mail comum pode existir em formulários do app.
     "campos_login": 'input[type="password"], input[name="identifier"]',
 }

@@ -1,4 +1,4 @@
-"""Estado persistente (JSON com gravação atômica): deduplicação, cooldown de alertas, aceites e contadores."""
+"""Estado persistente (JSON com gravação atômica): deduplicação, cooldown de alertas e contadores."""
 from __future__ import annotations
 
 import json
@@ -23,7 +23,6 @@ class Estado:
         self.caminho = caminho
         self.rotas: dict[str, dict] = {}
         self.alertas: dict[str, str] = {}
-        self.aceites: list[str] = []
         self.origens_sem_match: dict[str, str] = {}
         self.contadores: dict[str, int] = {"ciclos_vazios": 0, "falhas_seguidas": 0}
         self.stats: dict = self._stats_zerados()
@@ -51,7 +50,6 @@ class Estado:
             return est
         est.rotas = dados.get("rotas", {})
         est.alertas = dados.get("alertas", {})
-        est.aceites = dados.get("aceites", [])
         est.origens_sem_match = dados.get("origens_sem_match", {})
         est.contadores.update(dados.get("contadores", {}))
         est.stats.update(dados.get("stats", {}))
@@ -62,7 +60,7 @@ class Estado:
         if self.caminho is None:
             return
         self.caminho.parent.mkdir(parents=True, exist_ok=True)
-        dados = {"versao": 1, "rotas": self.rotas, "alertas": self.alertas, "aceites": self.aceites,
+        dados = {"versao": 1, "rotas": self.rotas, "alertas": self.alertas,
                  "origens_sem_match": self.origens_sem_match, "contadores": self.contadores,
                  "stats": self.stats, "heartbeat_data": self.heartbeat_data}
         tmp = self.caminho.with_suffix(".tmp")
@@ -120,22 +118,6 @@ class Estado:
     def registrar_falha_notificacao(self, chave: str) -> int:
         self.rotas[chave]["tentativas"] = self.rotas[chave].get("tentativas", 0) + 1
         return self.rotas[chave]["tentativas"]
-
-    def aceite_da_rota(self, chave: str) -> dict | None:
-        return self.rotas.get(chave, {}).get("aceite")
-
-    def marcar_aceite(self, chave: str, status: str, detalhe: str, agora: datetime) -> None:
-        self.rotas[chave]["aceite"] = {"status": status, "detalhe": detalhe, "em": agora.isoformat()}
-
-    # ---------------- auto-aceite ----------------
-
-    def aceites_ultima_hora(self, agora: datetime) -> int:
-        limite = agora - timedelta(hours=1)
-        self.aceites = [t for t in self.aceites if datetime.fromisoformat(t) > limite]
-        return len(self.aceites)
-
-    def registrar_clique_aceite(self, agora: datetime) -> None:
-        self.aceites.append(agora.isoformat())
 
     # ---------------- alertas de sistema ----------------
 

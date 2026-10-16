@@ -31,9 +31,6 @@ def monitor(navegador, tmp_path, monkeypatch):
     cfg.navegador.espera_cards_s = 1
     cfg.filtros.veiculos = ["TOCO", "TRUCK"]
     cfg.filtros.origens = ["BRSP21"]
-    cfg.auto_aceite.ativo = True
-    cfg.auto_aceite.max_por_hora = 1
-    cfg.auto_aceite.timeout_confirmacao_s = 3
 
     def abrir_contexto(pw, cfg, forcar_visivel=False):
         return navegador.new_context(viewport={"width": 1200, "height": 800})
@@ -55,16 +52,16 @@ def test_dois_ciclos(monitor, tmp_path):
     monitor.ciclo_protegido()
     assert monitor.estado.contadores["falhas_seguidas"] == 0
     titulos = [m.titulo for m in monitor.canal.mensagens]
+    # BRSP21 TOCO, BRSP21 TRUCK (mesmo nome, ETA/CPT diferentes) e o nome fora do padrão; BRSP10 e BRMG03 filtradas
     assert len(titulos) == 3, titulos
-    assert any("ACEITA automaticamente" in t and "BRSP21" in t for t in titulos)
+    assert sum("Rota extra ofertada: BRSP21-BRSP11-SSP34.SOW.VEN" in t for t in titulos) == 2
     assert any("nomenclatura fora do padrão" in t for t in titulos)
+    assert [v["status"] for v in monitor.estado.rotas.values()].count("filtrada") == 2
+    hub = dict(monitor.canal.mensagens[0].secoes[1][1])
+    assert hub["Situação"] == "OK" and hub["Perfil restrição"] == "CARRETA"
 
-    status = {k.split("|")[0] + "|" + k.split("|")[1]: v["status"] for k, v in monitor.estado.rotas.items()}
-    assert list(status.values()).count("filtrada") == 2
-    aceites = [v["aceite"]["status"] for v in monitor.estado.rotas.values() if "aceite" in v]
-    assert sorted(aceites) == ["aceita_provavel", "limite_hora"]
-    assert (tmp_path / "logs" / "auto_aceite_auditoria.jsonl").read_text(encoding="utf-8").count("\n") == 2
-
+    # nada foi clicado e os cards continuam na tela; o 2º ciclo não repete avisos
+    assert monitor.page.evaluate("window.cliques || 0") == 0
     monitor.ciclo_protegido()
     assert len(monitor.canal.mensagens) == 3
     monitor.estado.salvar()
@@ -85,7 +82,6 @@ class CanalQuebrado:
 
 def test_falha_de_envio_mantem_pendente_e_reenvia(monitor):
     quebrado = CanalQuebrado()
-    monitor.cfg.auto_aceite.ativo = False
     monitor.notificador.canais = [quebrado]
     monitor.ciclo_protegido()
     assert quebrado.chamadas == 1  # depois da 1ª falha, o resto do ciclo não tenta de novo

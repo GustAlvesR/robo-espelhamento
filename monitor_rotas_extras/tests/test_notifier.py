@@ -9,7 +9,7 @@ from rotas_extras.config import EmailCfg, NotificacaoCfg, TeamsCfg
 from rotas_extras.notifier import (CanalOutlook, CanalTeams, ErroEnvio, Mensagem, Notificador, mensagem_rota,
                                    montar_payload_teams)
 from rotas_extras.parser import parse_card
-from rotas_extras.regras import ResultadoAceite, avaliar
+from rotas_extras.regras import avaliar
 
 MSG = Mensagem(titulo="T", resumo="R", alertas=["a1"], secoes=[("Hub", [("Endereço", "Rua A")])], link="https://x")
 
@@ -118,9 +118,9 @@ def test_mensagem_rota(cfg, bruto, agora):
     hub = dict(msg.secoes[1][1])
     assert hub["Endereço"] == "Rua A" and hub["Situação"] == "OK"
     assert msg.nivel == "info" and not msg.alertas
+    assert msg.titulo.endswith("Rota extra ofertada: BRSP21-BRSP11-SSP34.SOW.VEN")
+    assert len(msg.secoes) == 2
 
     ruim = parse_card(bruto(label="XPTO", labels=["XPTO"]), TZ)
-    msg = mensagem_rota(ruim, avaliar(ruim, agora, cfg, linhas), agora, agora, cfg,
-                        ResultadoAceite("simulado", "dry-run"))
+    msg = mensagem_rota(ruim, avaliar(ruim, agora, cfg, linhas), agora, agora, cfg)
     assert "nomenclatura fora do padrão" in msg.titulo and msg.nivel == "alerta"
-    assert dict(msg.secoes[-1][1])["Resultado"] == "simulado"

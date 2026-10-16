@@ -1,22 +1,21 @@
-"""Navegador (Edge via Playwright) e tela ROTA EXTRA: carregar, extrair cards, aceitar e salvar dumps."""
+"""Navegador (Edge via Playwright) e tela ROTA EXTRA: carregar, extrair cards e salvar dumps.
+
+Somente leitura: o robô nunca clica em ACEITAR nem em recusar.
+"""
 from __future__ import annotations
 
 import json
 import logging
-import re
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from playwright.sync_api import BrowserContext, Page, Playwright
-from playwright.sync_api import Error as PWError
 from playwright.sync_api import TimeoutError as PWTimeout
 
 from .address_lookup import JS_DOIS_FRAMES, JS_PRELUDIO
-from .parser import Rota, normalizar
-from .regras import ResultadoAceite
+from .parser import normalizar
 from .seletores import SELETORES
 
 if TYPE_CHECKING:
@@ -121,43 +120,6 @@ JS_LISTA_CRESCEU = "([sel, altura, botoes]) => {" + JS_CARDS + r"""
   const el = (bs.length ? rolavel(bs[bs.length - 1], 'y') : null) || document.scrollingElement;
   return el.scrollHeight > altura + 1 || bs.length > botoes;
 }"""
-
-# Marca o botão ACEITAR do card que tem o nome e as datas da rota; o clique é feito pelo Playwright.
-JS_MARCAR_ALVO = "([sel, alvo]) => {" + JS_CARDS + r"""
-  const botoes = botoesAceitar(sel);
-  const achados = [];
-  for (const b of botoes) {
-    const c = cardDe(b, botoes, sel);
-    if (!c) continue;
-    const d = dadosCard(c, sel, botoes);
-    const tudo = norm(d.descricao + ' ' + d.texto);
-    if (!d.labels.some(l => norm(l) === norm(alvo.nome))) continue;
-    if (alvo.eta && !tudo.includes(norm(alvo.eta))) continue;
-    if (alvo.cpt && !tudo.includes(norm(alvo.cpt))) continue;
-    achados.push(b);
-  }
-  if (!achados.length) return {status: 'nao_encontrada', n: 0};
-  achados[0].setAttribute('data-monitor-alvo', alvo.token);
-  achados[0].scrollIntoView({block: 'center'});
-  return {status: 'ok', n: achados.length};
-}"""
-
-# Após o clique: 'dialogo' se abriu confirmação, 'sumiu' se o card não tem mais ACEITAR disponível.
-JS_POS_CLIQUE = "([sel, alvo, ignorarDialogo]) => {" + JS_CARDS + r"""
-  const dlg = [...document.querySelectorAll(sel.dialogo)].find(d => d.getBoundingClientRect().height > 0);
-  if (dlg && !ignorarDialogo) return 'dialogo';
-  const botoes = botoesAceitar(sel);
-  for (const b of botoes) {
-    const c = cardDe(b, botoes, sel);
-    if (!c) continue;
-    const d = dadosCard(c, sel, botoes);
-    const tudo = norm(d.descricao + ' ' + d.texto);
-    if (d.labels.some(l => norm(l) === norm(alvo.nome)) && (!alvo.eta || tudo.includes(norm(alvo.eta)))
-        && (!alvo.cpt || tudo.includes(norm(alvo.cpt)))) return null;
-  }
-  return 'sumiu';
-}"""
-
 
 # --------------------------------------------------------------------------------------------
 # Navegador
@@ -271,83 +233,6 @@ def extrair_cards(page: Page, cfg: "Config") -> Extracao:
     if ext.botoes_sem_card:
         log.warning("%d botão(ões) ACEITAR sem card identificável (layout mudou?)", ext.botoes_sem_card)
     return ext
-
-
-# --------------------------------------------------------------------------------------------
-# Auto-aceite
-# --------------------------------------------------------------------------------------------
-
-def aceitar_rota(page: Page, rota: Rota, cfg: "Config", pasta_evidencias: Path) -> ResultadoAceite:
-    """Clica em ACEITAR no card exato (nome + ETA + CPT), reavaliando o DOM antes e depois do clique."""
-    alvo = {"nome": rota.nome, "eta": rota.eta_texto, "cpt": rota.cpt_texto, "token": uuid.uuid4().hex[:12]}
-    seletor_alvo = f'[data-monitor-alvo="{alvo["token"]}"]'
-
-    ultimo_erro = ""
-    for _ in range(3):
-        if not _marcar_alvo(page, alvo, cfg):
-            return ResultadoAceite("nao_encontrada", "card não encontrado no DOM atual")
-        try:
-            # Timeout no click = nenhum clique foi disparado (o Playwright só clica após as checagens).
-            page.locator(seletor_alvo).click(timeout=3000)
-            break
-        except PWError as e:
-            ultimo_erro = str(e).splitlines()[0][:150]
-            log.info("ACEITAR marcado ficou indisponível (re-render do app?); remarcando: %s", ultimo_erro)
-    else:
-        return ResultadoAceite("erro", f"botão ACEITAR não ficou clicável após 3 tentativas: {ultimo_erro}")
-    log.warning("AUTO-ACEITE: clique em ACEITAR para %s", rota.chave)
-    try:
-        res = _confirmar_aceite(page, alvo, cfg)
-    except PWError as e:
-        res = ResultadoAceite("nao_confirmada", f"erro após o clique: {str(e)[:200]}", True)
-    return _com_evidencia(page, pasta_evidencias, rota, res)
-
-
-def _marcar_alvo(page: Page, alvo: dict, cfg: "Config") -> bool:
-    page.evaluate(JS_ROLAR_CARDS, [SELETORES, True])
-    for _ in range(cfg.navegador.max_rolagens):
-        marcado = page.evaluate(JS_MARCAR_ALVO, [SELETORES, alvo])
-        if marcado["status"] == "ok":
-            if marcado["n"] > 1:
-                log.warning("Há %d cards idênticos para %s; aceitando o primeiro", marcado["n"], alvo["nome"])
-            _aguardar_render(page)
-            return True
-        if not _rolar_lista(page, cfg):
-            return False
-    return False
-
-
-def _confirmar_aceite(page: Page, alvo: dict, cfg: "Config") -> ResultadoAceite:
-    aa = cfg.auto_aceite
-    timeout = aa.timeout_confirmacao_s * 1000
-    try:
-        estado = page.wait_for_function(JS_POS_CLIQUE, arg=[SELETORES, alvo, False], timeout=timeout).json_value()
-    except PWTimeout:
-        return ResultadoAceite("nao_confirmada", "card continua com ACEITAR após o clique", True)
-    if estado == "dialogo":
-        if not aa.confirmar_dialogo:
-            return ResultadoAceite("dialogo_pendente",
-                                   "AppSheet abriu confirmação e confirmar_dialogo=false; conclua manualmente", True)
-        nomes = "|".join(re.escape(t) for t in aa.textos_confirmacao)
-        botao = page.locator(SELETORES["dialogo"]).get_by_role("button", name=re.compile(rf"^\s*({nomes})\s*$", re.I))
-        try:
-            botao.first.click(timeout=5000)
-            page.wait_for_function(JS_POS_CLIQUE, arg=[SELETORES, alvo, True], timeout=timeout)
-        except PWTimeout:
-            return ResultadoAceite("nao_confirmada", "diálogo não confirmado ou card ainda ativo", True)
-    return ResultadoAceite("aceita_provavel", "card saiu da lista após o clique (confira no app)", True)
-
-
-def _com_evidencia(page: Page, pasta: Path, rota: Rota, res: ResultadoAceite) -> ResultadoAceite:
-    try:
-        pasta.mkdir(parents=True, exist_ok=True)
-        nome = re.sub(r"[^A-Za-z0-9._-]+", "_", f"{datetime.now():%Y%m%d_%H%M%S}_{rota.nome}")[:120]
-        caminho = pasta / f"{nome}.png"
-        page.screenshot(path=str(caminho), full_page=True)
-        res.screenshot = str(caminho)
-    except Exception:
-        log.exception("Não consegui salvar a evidência do auto-aceite")
-    return res
 
 
 # --------------------------------------------------------------------------------------------
