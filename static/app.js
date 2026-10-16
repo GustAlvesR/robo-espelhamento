@@ -199,23 +199,46 @@ function render() {
   desenharDetalhe();
 }
 
+let falhasSeguidas = 0;
+
+function idadeCicloMin(texto) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(texto || "");
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
+  return Math.round((Date.now() - d.getTime()) / 60000);
+}
+
 async function atualizar() {
+  const aviso = document.getElementById("atualizado");
+  let proxima = 60000;
   try {
-    const resp = await fetch("/api/rotas", { credentials: "same-origin" });
+    const resp = await fetch("/api/rotas", { credentials: "same-origin", cache: "no-store" });
     if (resp.status === 401) { location.href = "/login"; return; }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const j = await resp.json();
+    falhasSeguidas = 0;
     dados = j.rotas || [];
     const tt = j.tomtom || {};
-    document.getElementById("atualizado").textContent =
-      `Ciclo: ${j.atualizado_em || "aguardando"}` + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
+    const idade = idadeCicloMin(j.atualizado_em);
+    // Ciclo normal é a cada 5 min; acima de 15 o robô ficou parado (hibernação ou erro).
+    const parado = idade !== null && idade > 15 ? ` · ATENÇÃO: sem ciclo há ${idade} min` : "";
+    aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
+      + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
+    aviso.style.color = parado ? "var(--nok)" : "";
     render();
   } catch (e) {
-    document.getElementById("atualizado").textContent = "Sem conexão com o servidor";
+    // Servidor acordando (Render gratuito) ou queda momentânea: tenta de novo logo.
+    falhasSeguidas += 1;
+    proxima = 15000;
+    aviso.textContent = falhasSeguidas < 8
+      ? "Servidor acordando, tentando de novo…"
+      : "Sem conexão com o servidor. Recarregue a página.";
+    aviso.style.color = "var(--alerta)";
   }
+  setTimeout(atualizar, proxima);
 }
 
 for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });
 }
 atualizar();
-setInterval(atualizar, 60000);
