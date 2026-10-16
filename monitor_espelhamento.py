@@ -351,6 +351,10 @@ OPTIONAL_COLUMNS = {
     "drive_id":                 (["drive_id", "driver_id"],                       "O", "Drive ID"),
 }
 
+# Status da viagem no DBLH (PRE VIAGEM / EM TRANSITO). Vai para a última coluna do
+# Resultado ("Status Viagem") e decide no site se o trajeto é só previsto.
+STATUS_VIAGEM_NOMES = {"statuscorrigido"}
+
 
 def _norm_cab(texto) -> str:
     return str(texto).strip().lower().replace(" ", "").replace("_", "")
@@ -420,6 +424,12 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
     for chave in OPTIONAL_COLUMNS:
         if chave not in df.columns:
             df[chave] = ""
+
+    # Sem reserva por letra: pegar a coluna errada aqui marcaria rotas como "não iniciadas".
+    col_status = next((c for c in df.columns if _norm_cab(c) in STATUS_VIAGEM_NOMES), None)
+    df["status_viagem"] = df[col_status] if col_status else ""
+    if col_status is None:
+        logging.warning("Coluna status_corrigido não encontrada; 'Status Viagem' sai vazio.")
 
     # Remove linhas sem trip_number (linhas em branco no fim da planilha).
     df = df[df["trip_number"].astype(str).str.strip() != ""]
@@ -596,14 +606,15 @@ def casar_rastreamento(df: pd.DataFrame, registros: list, now: datetime) -> dict
     return {i: reg for i, (_pr, reg) in escolhido.items()}
 
 
-def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime) -> pd.DataFrame:
+def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
     """Acrescenta ao DataFrame as colunas trk_* (ignição, posição etc.).
+    Devolve (df, hora do relatório da seguradora ou None).
     Qualquer falha aqui NÃO derruba o ciclo: as colunas saem vazias."""
     df = _colunas_trk_vazias(df)
     try:
         carregado = carregar_rastreamento(client)
         if carregado is None:
-            return df
+            return df, None
         registros, ref = carregado
         defasagem = max(0, round((now - ref).total_seconds() / 60)) if ref else None
         status_base = ("" if defasagem is None else
@@ -643,8 +654,8 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime) -> pd.D
                      defasagem if defasagem is not None else "?")
     except Exception:
         logging.exception("Falha ao ler o rastreamento da seguradora; seguindo sem ele.")
-        return _colunas_trk_vazias(df)
-    return df
+        return _colunas_trk_vazias(df), None
+    return df, ref
 
 
 def _valor(v):
@@ -1066,10 +1077,11 @@ def enriquecer_geo(client, df: pd.DataFrame, resultados: list, now: datetime) ->
         return {}
 
 
-def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime) -> None:
+def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None) -> None:
     global _SNAPSHOT
     _SNAPSHOT = {
         "atualizado_em": _fmt(now),
+        "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
         "geo": geo_por_trip,
         "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
@@ -1091,7 +1103,7 @@ def job():
             logging.warning("Aba de origem retornou vazia nesta execução.")
             return
 
-        df = enriquecer_com_rastreamento(client, df, now)
+        df, ref_rastreamento = enriquecer_com_rastreamento(client, df, now)
 
         state = load_state(client)
         eventos_do_ciclo = []
@@ -1113,14 +1125,18 @@ def job():
         if not _SNAPSHOT:
             # Logo após reiniciar, o site já mostra as rotas enquanto a TomTom
             # recalcula (a primeira passada pode levar mais de um minuto).
-            publicar_snapshot(resultados, {}, now)
+            # Cópias: a etapa TomTom altera os dicts enquanto o site os serializa.
+            publicar_snapshot([dict(r) for r in resultados], {}, now, ref_rastreamento)
         geo_por_trip = enriquecer_geo(client, df, resultados, now)
+        # Depois das colunas TomTom, para ser a última e não deslocar as existentes.
+        for r, status_viagem in zip(resultados, df["status_viagem"]):
+            r["Status Viagem"] = _txt(status_viagem)
 
         client_escrita = client  # mesma sessão autenticada
         write_results(client_escrita, resultados)
         append_events(client_escrita, eventos_do_ciclo)
 
-        publicar_snapshot(resultados, geo_por_trip, now)
+        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento)
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s).",

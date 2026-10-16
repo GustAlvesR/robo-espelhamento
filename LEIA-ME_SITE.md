@@ -20,7 +20,7 @@ funcionando como antes, só sem mapa e sem previsão.
    pip install -r requirements.txt
    $env:TOMTOM_API_KEY="NOVA_CHAVE"; python testar_tomtom.py
    ```
-   As quatro linhas precisam sair `OK`. Se alguma sair `FALHA`, me mande a saída.
+   As cinco linhas precisam sair `OK`. Se alguma sair `FALHA`, me mande a saída.
 
 A chave nunca vai para o navegador: os tiles do mapa passam pelo servidor, e só
 para quem está logado.
@@ -72,13 +72,30 @@ usar `/health`.
 
 ## O que o robô acrescenta nas planilhas
 
-Três colunas no fim de `Resultado_Espelhamento` e do histórico:
+Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 
 - `Previsão TomTom`: chegada estimada.
 - `Desvio vs Fim Previsto (min)`: positivo é atraso.
 - `Risco de Atraso`: `Atraso provável` (desvio acima da tolerância), `No prazo`,
   `No destino`, `Encerrada`, `Posição antiga`, `Sem posição`,
   `Sem coord. da estação`.
+- `Status Viagem`: cópia da coluna `status_corrigido` da Telemetria (PRE VIAGEM,
+  EM TRANSITO). Se a coluna sumir, sai vazia e o site usa o horário de início previsto.
+
+## Uso do mapa
+
+- Clicar num caminhão, numa rota ou num item da lista isola aquela rota. Para voltar:
+  botão "Ver todos", clique numa área vazia do mapa ou tecla Esc.
+- Rota isolada: tracejado = viagem não iniciada; cinza = trecho já percorrido; azul =
+  falta percorrer. O "percorrido" é o trajeto previsto cortado no ponto mais próximo do
+  caminhão (não há histórico de posições); com o caminhão a mais de 30 km do trajeto,
+  o corte não é feito.
+- A lista vem por gravidade: sem sinal agora, NOK, atraso provável e o resto.
+- "Angellira: há X min" no topo é a posição mais recente do último relatório importado;
+  fica vermelho acima de 1 hora.
+- "Exportar CSV" baixa a lista com os filtros atuais (separador `;`, abre direto no Excel).
+- O mapa fica escuro quando o computador está no modo escuro. Se você definiu
+  `TOMTOM_TILE_URL` no Render, troque `style=street-light` por `style={estilo}`.
 
 ## Como a previsão é calculada (e onde ela erra)
 

@@ -25,6 +25,7 @@ button, input, select { font: inherit; color: inherit; }
 .kpi.nok b { color: var(--nok); } .kpi.alerta b { color: var(--alerta); }
 .usuario { display: flex; gap: 12px; align-items: center; color: var(--suave); font-size: 12px; }
 .usuario form { margin: 0; }
+#angellira.velho { color: var(--nok); font-weight: 600; }
 .link { background: none; border: 0; color: var(--acento); cursor: pointer; padding: 0; }
 
 .painel { display: grid; grid-template-columns: 380px 1fr; height: calc(100% - 56px); }
@@ -32,6 +33,9 @@ button, input, select { font: inherit; color: inherit; }
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; border-bottom: 1px solid var(--linha); }
 .filtros input { grid-column: 1 / -1; }
 .filtros input, .filtros select { padding: 6px 8px; border: 1px solid var(--linha); border-radius: 6px; background: var(--bg); width: 100%; }
+.acoes { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;
+  border-bottom: 1px solid var(--linha); color: var(--suave); font-size: 12px; }
+.link:disabled { color: var(--suave); cursor: default; }
 .lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .lista li { padding: 9px 12px; border-bottom: 1px solid var(--linha); cursor: pointer; border-left: 4px solid var(--pend); }
 .lista li.ok { border-left-color: var(--ok); } .lista li.nok { border-left-color: var(--nok); }
@@ -51,6 +55,8 @@ button, input, select { font: inherit; color: inherit; }
 .pt.ok { background: var(--ok); } .pt.nok { background: var(--nok); } .pt.pend { background: var(--pend); }
 .pt.anel { border: 2px solid var(--alerta); } .pt.cidade { border: 1px dashed var(--suave); }
 .pt.origem { background: transparent; border: 2px solid var(--pend); width: 8px; height: 8px; }
+.tr { display: inline-block; width: 18px; margin-right: 4px; vertical-align: 3px; border-top: 3px solid var(--acento); }
+.tr.previsto { border-top-style: dashed; } .tr.percorrido { border-top-color: var(--pend); }
 .mini { width: 9px; height: 14px; display: inline-block; margin-right: 4px; vertical-align: -2px; }
 
 .caminhao { display: grid; place-items: center; border-radius: 50%; border: 2px solid transparent;
@@ -60,6 +66,9 @@ button, input, select { font: inherit; color: inherit; }
 .caminhao.cidade { border-style: dashed; border-color: var(--suave); }
 .caminhao.atraso.cidade { border-color: var(--alerta); }
 
+.ver-todos { position: absolute; top: 10px; left: 54px; z-index: 600; padding: 6px 12px; cursor: pointer;
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.ver-todos kbd { font: 11px var(--mono); color: var(--suave); border: 1px solid var(--linha); border-radius: 3px; padding: 0 4px; margin-left: 4px; }
 .detalhe { position: absolute; top: 10px; right: 10px; z-index: 600; width: 340px; max-height: calc(100% - 20px);
   overflow-y: auto; background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; }
 .detalhe h3 { margin: 0 0 8px; font-family: var(--mono); font-size: 15px; display: flex; justify-content: space-between; }
@@ -85,5 +94,6 @@ button, input, select { font: inherit; color: inherit; }
   .kpis { order: 3; flex-basis: 100%; }
   .kpi { padding: 3px 8px; font-size: 13px; }
   .legenda { display: none; }
-  .detalhe { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 65%; }
+  .detalhe { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 50%; }
+  .ver-todos kbd { display: none; }
 }
