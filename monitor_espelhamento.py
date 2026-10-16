@@ -137,6 +137,9 @@ def now_local() -> datetime:
 
 # Valores esperados na coluna "Espelhamento" da planilha de origem.
 STATUS_OK = "OK"
+# Uma mudança de status (OK <-> Não espelhado) só vale depois de lida em N ciclos
+# seguidos. 1 = comportamento antigo (aceita na primeira leitura).
+CONFIRMACAO_LEITURAS = max(1, int(os.getenv("CONFIRMACAO_LEITURAS", "2")))
 STATUS_NOK = "NAO ESPELHADO"  # comparado após normalização (ver classify_status)
 
 
@@ -704,6 +707,26 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
     })
 
     status_anterior = dados["last_status"]
+
+    # Confirmação da mudança: evita quedas falsas quando a Telemetria "pisca"
+    # (várias rotas trocando de status no mesmo segundo durante a atualização do
+    # DBLH). Confirmada, a mudança é datada na PRIMEIRA leitura, então a duração
+    # das quedas continua correta.
+    t_mudanca = now
+    if status_anterior is not None and status_atual != status_anterior:
+        if dados.get("pendente_status") == status_atual:
+            dados["pendente_leituras"] = dados.get("pendente_leituras", 1) + 1
+        else:
+            dados["pendente_status"], dados["pendente_leituras"] = status_atual, 1
+            dados["pendente_desde"] = now.isoformat()
+        if dados["pendente_leituras"] >= CONFIRMACAO_LEITURAS:
+            t_mudanca = _parse_iso(dados.get("pendente_desde")) or now
+            dados["pendente_status"] = None
+        else:
+            status_atual = status_anterior
+    else:
+        dados["pendente_status"] = None
+
     # Dados do veículo/rota, repassados também para o histórico de quedas.
     info_veiculo = {titulo: _txt(row.get(chave))
                     for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()}
@@ -734,18 +757,18 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
 
     if status_atual == "NOK" and status_anterior != "NOK":
         # Início de uma nova queda (ou rota já "nasceu" caída na 1ª leitura).
-        dados["current_loss_start"] = now.isoformat()
+        dados["current_loss_start"] = t_mudanca.isoformat()
         dados["loss_logged"] = False
-        logging.info("[%s] Perda de sinal detectada às %s.", trip_number, now)
+        logging.info("[%s] Perda de sinal confirmada (desde %s).", trip_number, t_mudanca)
 
     elif status_atual == "OK" and status_anterior == "NOK":
         # Fim de uma queda em aberto.
-        inicio_queda = _parse_iso(dados.get("current_loss_start")) or now
-        duracao = (now - inicio_queda).total_seconds()
+        inicio_queda = _parse_iso(dados.get("current_loss_start")) or t_mudanca
+        duracao = (t_mudanca - inicio_queda).total_seconds()
         duracao = max(duracao, 0)
         dados["loss_periods"].append({
             "perda": inicio_queda.isoformat(),
-            "retorno": now.isoformat(),
+            "retorno": t_mudanca.isoformat(),
             "duracao_segundos": duracao,
         })
         dados["total_loss_seconds"] += duracao
@@ -755,11 +778,11 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             inicio_hist = inicio_queda
             if pd.notna(inicio_previsto):
                 inicio_hist = max(inicio_queda, inicio_previsto.to_pydatetime())
-            _registrar_evento("RETORNO", max((now - inicio_hist).total_seconds(), 0))
+            _registrar_evento("RETORNO", max((t_mudanca - inicio_hist).total_seconds(), 0))
         dados["loss_logged"] = False
         logging.info(
             "[%s] Sinal restabelecido às %s (ficou %s sem sinal).",
-            trip_number, now, seconds_to_hhmm(duracao),
+            trip_number, t_mudanca, seconds_to_hhmm(duracao),
         )
 
     # Queda em aberto e viagem já iniciada, ainda não enviada ao histórico.
@@ -1013,6 +1036,7 @@ def enriquecer_geo(client, df: pd.DataFrame, resultados: list, now: datetime) ->
     """Coordenadas das estações, posição do veículo e previsão TomTom.
     Acrescenta 3 colunas aos resultados. Nunca derruba o ciclo."""
     if not GEO.key:
+        logging.warning("TOMTOM_API_KEY não definida neste serviço: mapa e previsão desligados.")
         for r in resultados:
             r.update({"Previsão TomTom": "", "Desvio vs Fim Previsto (min)": "", "Risco de Atraso": ""})
         return {}
@@ -1137,6 +1161,7 @@ def main():
         CHECK_INTERVAL_MINUTES, TIMEZONE,
         f"aba '{STATE_WORKSHEET_NAME}'" if STATE_BACKEND == "sheets" else STATE_FILE,
     )
+    logging.info("TomTom: %s.", f"chave carregada (termina em ...{GEO.key[-4:]})" if GEO.key else "SEM CHAVE")
 
     job()  # executa uma vez imediatamente ao subir o robô
     schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(job)

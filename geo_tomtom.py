@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, date
 
-TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "")
+TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "").strip()
 TOMTOM_BASE = os.getenv("TOMTOM_BASE", "https://api.tomtom.com")
 TOMTOM_MAX_CHAMADAS_DIA = int(os.getenv("TOMTOM_MAX_CHAMADAS_DIA", "2000"))
 ETA_RECALCULO_MIN = int(os.getenv("ETA_RECALCULO_MIN", "30"))
