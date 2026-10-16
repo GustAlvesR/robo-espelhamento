@@ -24,7 +24,8 @@ USUARIOS_WORKSHEET_NAME = os.getenv("USUARIOS_WORKSHEET_NAME", "Usuarios_Site")
 TOMTOM_TILE_URL = os.getenv(
     "TOMTOM_TILE_URL",
     "https://api.tomtom.com/maps/orbis/display/raster/tile/{z}/{x}/{y}"
-    "?apiVersion=2&style=street-light&key={key}")
+    "?apiVersion=2&style={estilo}&key={key}")
+ESTILOS_MAPA = {"claro": "street-light", "escuro": "street-dark"}
 SESSAO_HORAS = int(os.getenv("SESSAO_HORAS", "12"))
 MAX_TILES_CACHE = 800
 MAX_FALHAS_LOGIN, JANELA_FALHAS_S = 5, 15 * 60
@@ -159,6 +160,7 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         geo = snap.get("geo", {})
         rotas = [{**r, "_geo": geo.get(r["Trip Number"], {})} for r in snap.get("resultados", [])]
         corpo = {"atualizado_em": snap.get("atualizado_em", ""),
+                 "angellira_em": snap.get("angellira_em", ""),
                  "tomtom": snap.get("tomtom", {}), "rotas": rotas}
         # allow_nan=False + _limpar: um NaN vindo da planilha geraria JSON inválido
         # e quebraria a página inteira.
@@ -167,14 +169,16 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     @app.get("/tiles/<int:z>/<int:x>/<int:y>.png")
     @exige_login
     def tile(z, x, y):
-        if not tomtom_key or not 0 <= z <= 20 or not (0 <= x < 2 ** z and 0 <= y < 2 ** z):
+        estilo = ESTILOS_MAPA.get(request.args.get("tema", "claro"))
+        if (not tomtom_key or not estilo or not 0 <= z <= 20
+                or not (0 <= x < 2 ** z and 0 <= y < 2 ** z)):
             abort(404)
-        chave = (z, x, y)
+        chave = (estilo, z, x, y)
         if chave in tiles:
             tiles.move_to_end(chave)
             corpo, tipo = tiles[chave]
         else:
-            url = TOMTOM_TILE_URL.format(z=z, x=x, y=y, key=tomtom_key)
+            url = TOMTOM_TILE_URL.format(z=z, x=x, y=y, key=tomtom_key, estilo=estilo)
             try:
                 with urllib.request.urlopen(url, timeout=10) as r:
                     corpo, tipo = r.read(), r.headers.get("Content-Type", "image/png")

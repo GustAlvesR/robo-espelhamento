@@ -5,7 +5,9 @@ const corCss = (nome) => getComputedStyle(document.documentElement)
   .getPropertyValue(nome.replace(/var\((.*)\)/, "$1")).trim();
 
 const mapa = L.map("mapa", { zoomControl: true }).setView([-19.5, -45.5], 5);
-L.tileLayer("/tiles/{z}/{x}/{y}.png", {
+const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
+const urlTiles = () => `/tiles/{z}/{x}/{y}.png?tema=${temaEscuro.matches ? "escuro" : "claro"}`;
+const fundo = L.tileLayer(urlTiles(), {
   maxZoom: 18, attribution: "© TomTom",
 }).addTo(mapa);
 
@@ -17,6 +19,7 @@ let dados = [];
 let selecionada = null;
 let semSinal = false;
 let ajustouVisao = false;
+let visaoAntes = null;
 
 const escHtml = (t) => String(t ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -30,21 +33,43 @@ function rumo(a, b) {
   return (Math.atan2(y, x) / rad + 360) % 360;
 }
 
+function distanciaKm(a, b) {
+  const rad = Math.PI / 180;
+  const h = Math.sin((b[0] - a[0]) * rad / 2) ** 2
+    + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin((b[1] - a[1]) * rad / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function pontoMaisProximo(pts, v) {
+  let melhor = 0, dMin = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const d = (pts[i][0] - v[0]) ** 2 + (pts[i][1] - v[1]) ** 2;
+    if (d < dMin) { dMin = d; melhor = i; }
+  }
+  return melhor;
+}
+
 // Não há rumo real no relatório da Angellira: aproxima pela direção do trajeto
 // previsto no ponto mais próximo do caminhão; sem trajeto, aponta para o destino.
 function rumoEstimado(g) {
   const v = g.veiculo;
   const pts = g.pontos || [];
   if (pts.length >= 2) {
-    let melhor = 0, dMin = Infinity;
-    for (let i = 0; i < pts.length; i++) {
-      const d = (pts[i][0] - v[0]) ** 2 + (pts[i][1] - v[1]) ** 2;
-      if (d < dMin) { dMin = d; melhor = i; }
-    }
-    const i = Math.min(melhor, pts.length - 2);
+    const i = Math.min(pontoMaisProximo(pts, v), pts.length - 2);
     return rumo(pts[i], pts[i + 1]);
   }
   return g.destino ? rumo(v, g.destino) : null;
+}
+
+// Também não há trajeto real: o "percorrido" é o trajeto previsto cortado no ponto
+// mais próximo do caminhão. Longe demais do trajeto, o corte não diz nada.
+const DIST_MAX_CORTE_KM = 30;
+function indiceDeCorte(r, g) {
+  const pts = g.pontos;
+  if (["No destino", "Encerrada"].includes(r["Risco de Atraso"])) return pts.length - 1;
+  if (!g.veiculo) return null;
+  const i = pontoMaisProximo(pts, g.veiculo);
+  return distanciaKm(pts[i], g.veiculo) <= DIST_MAX_CORTE_KM ? i : null;
 }
 
 function tamanhoIcone() {
@@ -82,6 +107,31 @@ function el(tag, attrs = {}, ...filhos) {
 const statusDe = (r) => r["Status Geral"] || "Pendente";
 const classeStatus = (r) => ({ OK: "ok", NOK: "nok" }[statusDe(r)] || "pend");
 
+function parseBr(texto) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(texto || "");
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
+}
+
+function minutosDesde(texto) {
+  const d = parseBr(texto);
+  return d ? Math.round((Date.now() - d.getTime()) / 60000) : null;
+}
+
+// PRE VIAGEM no status_corrigido do DBLH; sem status, vale o horário de início previsto.
+function aguardandoInicio(r) {
+  const st = String(r["Status Viagem"] || "").normalize("NFD").replace(/[^A-Za-z]/g, "").toUpperCase();
+  if (st) return st === "PREVIAGEM";
+  const ini = parseBr(r["Início Previsto"]);
+  return ini !== null && Date.now() < ini.getTime();
+}
+
+function gravidade(r) {
+  if (r["Espelhamento Atual"] === "NOK") return 0;
+  if (statusDe(r) === "NOK") return 1;
+  if (r["Risco de Atraso"] === "Atraso provável") return 2;
+  return 3;
+}
+
 function idade(min) {
   if (min === null || min === undefined) return "";
   if (min < 60) return `${min} min`;
@@ -100,32 +150,36 @@ function filtrar() {
     if (!q) return true;
     return ["Trip Number", "Placa", "Placa 2", "Origin Station Code", "Destination Station Code", "Cidade/UF"]
       .some((c) => String(r[c] || "").toUpperCase().includes(q));
-  });
+  }).sort((a, b) => gravidade(a) - gravidade(b));
 }
 
 function desenharKpis() {
   const cont = (f) => dados.filter(f).length;
   const kpis = [
-    ["Rotas", dados.length, "", () => limparFiltros()],
-    ["NOK", cont((r) => statusDe(r) === "NOK"), "nok", () => setFiltro("fStatus", "NOK")],
+    ["Rotas", dados.length, "", () => aplicarFiltro()],
+    ["NOK", cont((r) => statusDe(r) === "NOK"), "nok", () => aplicarFiltro("fStatus", "NOK")],
     ["Atraso provável", cont((r) => r["Risco de Atraso"] === "Atraso provável"), "alerta",
-      () => setFiltro("fRisco", "Atraso provável")],
-    ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok", () => {
-      limparFiltros(); semSinal = true; render(); }],
+      () => aplicarFiltro("fRisco", "Atraso provável")],
+    ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
+      () => aplicarFiltro(null, null, true)],
   ];
   const alvo = document.getElementById("kpis");
   alvo.replaceChildren(...kpis.map(([rot, n, cls, fn]) =>
     el("button", { class: `kpi ${cls}`, onclick: fn }, el("b", {}, String(n)), rot)));
 }
 
-function setFiltro(id, valor) { limparFiltros(); document.getElementById(id).value = valor; render(); }
-function limparFiltros() {
-  for (const id of ["fStatus", "fRisco"]) document.getElementById(id).value = "";
-  semSinal = false;
-  render();
+function aplicarFiltro(id, valor, sinal = false) {
+  for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
+  if (id) document.getElementById(id).value = valor;
+  semSinal = sinal;
+  if (selecionada) selecionar(null);
+  else render();
 }
 
 function desenharLista(lista) {
+  document.getElementById("contagem").textContent =
+    lista.length === dados.length ? `${dados.length} rotas` : `${lista.length} de ${dados.length} rotas`;
+  document.getElementById("exportar").disabled = !lista.length;
   const ul = document.getElementById("lista");
   if (!lista.length) { ul.replaceChildren(el("li", { class: "vazio" }, "Nenhuma rota com esses filtros.")); return; }
   ul.replaceChildren(...lista.map((r) => {
@@ -133,7 +187,7 @@ function desenharLista(lista) {
     const tagCls = risco === "Atraso provável" ? "atraso" : risco === "No prazo" ? "prazo" : "";
     return el("li", {
       class: `${classeStatus(r)} ${selecionada === r["Trip Number"] ? "sel" : ""}`,
-      onclick: () => selecionar(r["Trip Number"], true),
+      onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]), risco ? el("span", { class: `tag ${tagCls}` }, risco) : null),
       el("div", { class: "l2" },
@@ -143,16 +197,21 @@ function desenharLista(lista) {
   }));
 }
 
+// Com uma rota selecionada, só ela fica no mapa.
 function desenharMapa(lista) {
   camadaRotas.clearLayers();
   camadaVeiculos.clearLayers();
+  document.getElementById("verTodos").hidden = !selecionada;
+  const visiveis = selecionada ? dados.filter((r) => r["Trip Number"] === selecionada) : lista;
   const limites = [];
-  for (const r of lista) {
+  for (const r of visiveis) {
     const g = r._geo || {};
     const cor = corCss(COR[statusDe(r)] || COR.Pendente);
-    if (g.pontos && g.pontos.length) {
-      L.polyline(g.pontos, { color: cor, weight: 2, opacity: 0.35 }).addTo(camadaRotas)
-        .on("click", () => selecionar(r["Trip Number"], false));
+    if (!selecionada && g.pontos && g.pontos.length) {
+      L.polyline(g.pontos, {
+        color: cor, weight: 2, opacity: 0.35, dashArray: aguardandoInicio(r) ? "4 6" : null,
+        bubblingMouseEvents: false,
+      }).addTo(camadaRotas).on("click", () => selecionar(r["Trip Number"]));
     }
     const ponto = g.veiculo || g.origem;
     if (!ponto) continue;
@@ -169,15 +228,15 @@ function desenharMapa(lista) {
       // Sem posição da Angellira: marca a origem, sem fingir que é o caminhão.
       marcador = L.circleMarker(ponto, {
         radius: 5, color: atraso ? corCss("var(--alerta)") : cor, weight: atraso ? 3 : 2,
-        fillColor: cor, fillOpacity: 0.15,
+        fillColor: cor, fillOpacity: 0.15, bubblingMouseEvents: false,
       });
     }
     marcador.addTo(camadaVeiculos)
       .bindTooltip(g.veiculo ? dica : `${dica} · sem posição (na origem)`)
-      .on("click", () => selecionar(r["Trip Number"], false));
+      .on("click", () => selecionar(r["Trip Number"]));
   }
-  if (!ajustouVisao && limites.length) {
-    mapa.fitBounds(limites, { padding: [40, 40], maxZoom: 8 });
+  if (!ajustouVisao && !selecionada && limites.length) {
+    mapa.fitBounds(limites, { padding: [40, 40], maxZoom: 8, animate: false });
     ajustouVisao = true;
   }
 }
@@ -193,15 +252,17 @@ function desenharDetalhe() {
   const r = dados.find((x) => x["Trip Number"] === selecionada);
   if (!r) { box.hidden = true; return; }
   const g = r._geo || {};
-  if (g.pontos && g.pontos.length) L.polyline(g.pontos, { color: corCss("var(--acento)"), weight: 5 }).addTo(camadaSel);
-  if (g.origem) L.circleMarker(g.origem, { radius: 6, color: corCss("var(--texto)"), fillOpacity: 1 }).bindTooltip("Origem").addTo(camadaSel);
-  if (g.destino) L.circleMarker(g.destino, { radius: 6, color: corCss("var(--texto)"), fillColor: "#fff", fillOpacity: 1 }).bindTooltip("Destino").addTo(camadaSel);
+  desenharTrajeto(r, g);
+  const marco = { radius: 6, color: corCss("var(--texto)"), fillOpacity: 1, bubblingMouseEvents: false };
+  if (g.origem) L.circleMarker(g.origem, marco).bindTooltip("Origem").addTo(camadaSel);
+  if (g.destino) L.circleMarker(g.destino, { ...marco, fillColor: "#fff" }).bindTooltip("Destino").addTo(camadaSel);
 
   const desvio = r["Desvio vs Fim Previsto (min)"];
   box.replaceChildren(
     el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
     el("dl", {},
       ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
+      ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
       ...linha("Trecho", `${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`),
       ...linha("Início previsto", r["Início Previsto"]),
       ...linha("Fim previsto", r["Fim Previsto"]),
@@ -239,14 +300,88 @@ function desenharDetalhe() {
   box.hidden = false;
 }
 
-function selecionar(trip, centralizar) {
+function desenharTrajeto(r, g) {
+  const pts = g.pontos || [];
+  if (pts.length < 2) return;
+  const base = { weight: 5, bubblingMouseEvents: false };
+  const acento = corCss("var(--acento)");
+  const tracar = (trecho, estilo, dica) =>
+    L.polyline(trecho, { ...base, ...estilo }).bindTooltip(dica, { sticky: true }).addTo(camadaSel);
+  if (aguardandoInicio(r)) {
+    tracar(pts, { color: acento, dashArray: "10 8" }, "Trajeto previsto (viagem não iniciada)");
+    return;
+  }
+  const corte = indiceDeCorte(r, g);
+  if (corte === null) {
+    tracar(pts, { color: acento }, "Trajeto previsto");
+    return;
+  }
+  if (corte > 0) tracar(pts.slice(0, corte + 1), { color: corCss("var(--pend)"), opacity: 0.8 }, "Já percorrido (estimado)");
+  if (corte < pts.length - 1) tracar(pts.slice(corte), { color: acento }, "Falta percorrer");
+}
+
+function enquadrarSelecionada() {
+  const r = dados.find((x) => x["Trip Number"] === selecionada);
+  const g = (r && r._geo) || {};
+  const pts = [...(g.pontos || []), g.veiculo, g.origem, g.destino].filter(Boolean);
+  if (!pts.length) return;
+  // No computador o detalhe cobre a direita do mapa; no celular, a parte de baixo.
+  const box = document.getElementById("detalhe");
+  const celular = innerWidth <= 800;
+  mapa.fitBounds(pts, {
+    paddingTopLeft: [40, 40],
+    paddingBottomRight: celular ? [20, box.offsetHeight + 20] : [box.offsetWidth + 40, 40],
+    maxZoom: 12,
+    // Um zoom animado em andamento sobrescreve este ao terminar.
+    animate: false,
+  });
+}
+
+function selecionar(trip) {
+  if (trip && !selecionada) visaoAntes = { centro: mapa.getCenter(), zoom: mapa.getZoom() };
   selecionada = trip;
   render();
-  if (!trip || !centralizar) return;
-  const r = dados.find((x) => x["Trip Number"] === trip);
-  const g = (r && r._geo) || {};
-  if (g.pontos && g.pontos.length) mapa.fitBounds(g.pontos, { padding: [40, 40] });
-  else if (g.veiculo || g.origem) mapa.setView(g.veiculo || g.origem, 9);
+  if (trip) {
+    enquadrarSelecionada();
+    // No celular o mapa fica acima da lista: leva o mapa à tela, não o item.
+    const alvo = innerWidth <= 800 ? document.querySelector(".mapa-area") : document.querySelector("#lista li.sel");
+    if (alvo) alvo.scrollIntoView({ block: innerWidth <= 800 ? "start" : "nearest" });
+  } else if (visaoAntes) {
+    mapa.setView(visaoAntes.centro, visaoAntes.zoom);
+    visaoAntes = null;
+  } else {
+    // Seleção restaurada de um recarregamento: não há visão anterior, enquadra todas.
+    ajustouVisao = false;
+    desenharMapa(filtrar());
+  }
+}
+
+function celulaCsv(v) {
+  if (v === null || v === undefined) return "";
+  let s = String(v);
+  // Texto começando com = + - @ vira fórmula no Excel.
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = "'" + s;
+  return /[";\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportarCsv() {
+  const lista = filtrar();
+  if (!lista.length) return;
+  const colunas = [...new Set(lista.flatMap((r) => Object.keys(r)))].filter((c) => !c.startsWith("_"));
+  const linhas = [colunas, ...lista.map((r) => colunas.map((c) => r[c]))]
+    .map((l) => l.map(celulaCsv).join(";"));
+  // BOM + ";" para o Excel em português abrir com acentos e colunas certos.
+  const blob = new Blob(["\ufeff" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const d = new Date();
+  const p2 = (n) => String(n).padStart(2, "0");
+  const a = el("a", {
+    href: URL.createObjectURL(blob),
+    download: `torre-lh-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.csv`,
+  });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 
 function render() {
@@ -260,23 +395,30 @@ function render() {
 let falhasSeguidas = 0;
 const CHAVE_VISAO = "torreLH.visao";
 
-function idadeCicloMin(texto) {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(texto || "");
-  if (!m) return null;
-  const d = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
-  return Math.round((Date.now() - d.getTime()) / 60000);
+const ANGELLIRA_MAX_MIN = 60;
+
+function mostrarAngellira(texto) {
+  const span = document.getElementById("angellira");
+  const min = minutosDesde(texto);
+  const velho = min === null || min > ANGELLIRA_MAX_MIN;
+  span.textContent = min === null ? "Angellira: sem relatório"
+    : `Angellira: há ${idade(Math.max(0, min))}` + (velho ? " · desatualizado" : "");
+  span.title = texto ? `Posição mais recente no relatório: ${texto}` : "";
+  span.classList.toggle("velho", velho);
 }
 
 function aplicarDados(j) {
   const aviso = document.getElementById("atualizado");
   dados = j.rotas || [];
+  if (selecionada && !dados.some((r) => r["Trip Number"] === selecionada)) selecionada = null;
   const tt = j.tomtom || {};
-  const idade = idadeCicloMin(j.atualizado_em);
+  const idadeCiclo = minutosDesde(j.atualizado_em);
   // Ciclo normal é a cada 5 min; acima de 15 o robô ficou parado (hibernação ou erro).
-  const parado = idade !== null && idade > 15 ? ` · ATENÇÃO: sem ciclo há ${idade} min` : "";
+  const parado = idadeCiclo !== null && idadeCiclo > 15 ? ` · ATENÇÃO: sem ciclo há ${idadeCiclo} min` : "";
   aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
     + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
   aviso.style.color = parado ? "var(--nok)" : "";
+  mostrarAngellira(j.angellira_em);
   try {
     render();
   } catch (e) {
@@ -294,7 +436,7 @@ function salvarVisao() {
       lat: c.lat, lng: c.lng, zoom: mapa.getZoom(), sel: selecionada,
       busca: document.getElementById("busca").value,
       fStatus: document.getElementById("fStatus").value,
-      fRisco: document.getElementById("fRisco").value,
+      fRisco: document.getElementById("fRisco").value, semSinal,
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -306,6 +448,7 @@ function restaurarVisao() {
     mapa.setView([v.lat, v.lng], v.zoom);
     ajustouVisao = true;
     selecionada = v.sel || null;
+    semSinal = !!v.semSinal;
     for (const id of ["busca", "fStatus", "fRisco"]) document.getElementById(id).value = v[id] || "";
   } catch (e) { /* ignora estado inválido */ }
 }
@@ -333,6 +476,11 @@ async function atualizar() {
 }
 
 mapa.on("zoomend", () => desenharMapa(filtrar()));
+mapa.on("click", () => { if (selecionada) selecionar(null); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && selecionada) selecionar(null); });
+document.getElementById("verTodos").addEventListener("click", () => selecionar(null));
+document.getElementById("exportar").addEventListener("click", exportarCsv);
+temaEscuro.addEventListener("change", () => { fundo.setUrl(urlTiles()); render(); });
 
 for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });

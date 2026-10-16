@@ -21,7 +21,8 @@ TESTES = {
     "Rota de caminhão com trânsito":
         "https://api.tomtom.com/routing/1/calculateRoute/-19.97,-44.20:-23.19,-46.88/json"
         "?travelMode=truck&traffic=true&routeRepresentation=summaryOnly&key={k}",
-    "Tiles do mapa": TOMTOM_TILE_URL.format(z=5, x=11, y=17, key="{k}"),
+    "Tiles do mapa": TOMTOM_TILE_URL.format(z=5, x=11, y=17, key="{k}", estilo="street-light"),
+    "Tiles do mapa (escuro)": TOMTOM_TILE_URL.format(z=5, x=11, y=17, key="{k}", estilo="street-dark"),
 }
 
 falhou = False

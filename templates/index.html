@@ -13,6 +13,7 @@
   <div class="kpis" id="kpis"></div>
   <div class="usuario">
     <span id="atualizado"></span>
+    <span id="angellira"></span>
     <span>{{ nome }}</span>
     <form method="post" action="{{ url_for('logout') }}">
       <input type="hidden" name="csrf" value="{{ csrf_token() }}">
@@ -35,16 +36,20 @@
         <option>Sem coord. da estação</option><option>No destino</option><option>Encerrada</option>
       </select>
     </div>
+    <div class="acoes"><span id="contagem"></span><button id="exportar" type="button" class="link">Exportar CSV</button></div>
     <ul id="lista" class="lista"></ul>
   </aside>
   <section class="mapa-area">
     <div id="mapa"></div>
+    <button id="verTodos" type="button" class="ver-todos" hidden>← Ver todos <kbd>Esc</kbd></button>
     <div id="detalhe" class="detalhe" hidden></div>
     <div class="legenda">
       <span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--ok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--ok)"/></svg>OK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--nok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--nok)"/></svg>NOK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--pend)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--pend)"/></svg>Pendente</span>
       <span><i class="pt anel"></i>Atraso provável</span>
       <span><i class="pt cidade"></i>Posição só por cidade</span>
       <span><i class="pt origem"></i>Sem posição (na origem)</span>
+      <span><i class="tr previsto"></i>Trajeto não iniciado</span>
+      <span><i class="tr percorrido"></i>Já percorrido (estim.)</span>
     </div>
   </section>
 </main>
