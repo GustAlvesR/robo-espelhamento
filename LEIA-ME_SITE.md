@@ -94,7 +94,8 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - "Angellira: há X min" no topo é a posição mais recente do último relatório importado;
   fica vermelho acima de 1 hora.
 - "Exportar CSV" baixa a lista com os filtros atuais (separador `;`, abre direto no Excel).
-- O mapa fica escuro quando o computador está no modo escuro. Se você definiu
+- O seletor "Tema" no topo escolhe claro, escuro ou automático (segue o computador).
+  A escolha fica salva no navegador de cada pessoa. Se você definiu
   `TOMTOM_TILE_URL` no Render, troque `style=street-light` por `style={estilo}`.
 
 ## Como a previsão é calculada (e onde ela erra)

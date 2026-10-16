@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Torre LH</title>
+<script>
+  try {
+    const t = localStorage.getItem("torreLH.tema");
+    if (t === "claro" || t === "escuro") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
@@ -14,6 +20,9 @@
   <div class="usuario">
     <span id="atualizado"></span>
     <span id="angellira"></span>
+    <select id="tema" aria-label="Tema">
+      <option value="">Tema: automático</option><option value="claro">Tema: claro</option><option value="escuro">Tema: escuro</option>
+    </select>
     <span>{{ nome }}</span>
     <form method="post" action="{{ url_for('logout') }}">
       <input type="hidden" name="csrf" value="{{ csrf_token() }}">
