@@ -2,12 +2,19 @@
   --bg: #f3f4f1; --painel: #ffffff; --linha: #dfe1dc; --texto: #1d2125; --suave: #6a717a;
   --ok: #1f8a4c; --nok: #c8372d; --pend: #8a8f96; --alerta: #d98b00; --acento: #1c5fd4;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="claro"]) {
     --bg: #111417; --painel: #191d21; --linha: #2a3036; --texto: #e6e8ea; --suave: #8d959e;
     --ok: #3cb371; --nok: #ef5a4f; --pend: #79818a; --alerta: #f0a92e; --acento: #5b93f0;
+    color-scheme: dark;
   }
+}
+:root[data-theme="escuro"] {
+  --bg: #111417; --painel: #191d21; --linha: #2a3036; --texto: #e6e8ea; --suave: #8d959e;
+  --ok: #3cb371; --nok: #ef5a4f; --pend: #79818a; --alerta: #f0a92e; --acento: #5b93f0;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--texto);
@@ -25,6 +32,7 @@ button, input, select { font: inherit; color: inherit; }
 .kpi.nok b { color: var(--nok); } .kpi.alerta b { color: var(--alerta); }
 .usuario { display: flex; gap: 12px; align-items: center; color: var(--suave); font-size: 12px; }
 .usuario form { margin: 0; }
+.usuario select { padding: 2px 4px; border: 1px solid var(--linha); border-radius: 6px; background: var(--bg); font-size: 12px; }
 #angellira.velho { color: var(--nok); font-weight: 600; }
 .link { background: none; border: 0; color: var(--acento); cursor: pointer; padding: 0; }
 

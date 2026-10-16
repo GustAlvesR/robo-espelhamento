@@ -5,8 +5,13 @@ const corCss = (nome) => getComputedStyle(document.documentElement)
   .getPropertyValue(nome.replace(/var\((.*)\)/, "$1")).trim();
 
 const mapa = L.map("mapa", { zoomControl: true }).setView([-19.5, -45.5], 5);
-const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
-const urlTiles = () => `/tiles/{z}/{x}/{y}.png?tema=${temaEscuro.matches ? "escuro" : "claro"}`;
+const sistemaEscuro = matchMedia("(prefers-color-scheme: dark)");
+const CHAVE_TEMA = "torreLH.tema";
+const temaEscuro = () => {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "escuro" : sistemaEscuro.matches;
+};
+const urlTiles = () => `/tiles/{z}/{x}/{y}.png?tema=${temaEscuro() ? "escuro" : "claro"}`;
 const fundo = L.tileLayer(urlTiles(), {
   maxZoom: 18, attribution: "© TomTom",
 }).addTo(mapa);
@@ -480,7 +485,23 @@ mapa.on("click", () => { if (selecionada) selecionar(null); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && selecionada) selecionar(null); });
 document.getElementById("verTodos").addEventListener("click", () => selecionar(null));
 document.getElementById("exportar").addEventListener("click", exportarCsv);
-temaEscuro.addEventListener("change", () => { fundo.setUrl(urlTiles()); render(); });
+function aplicarTema() {
+  fundo.setUrl(urlTiles());
+  render();
+}
+sistemaEscuro.addEventListener("change", aplicarTema);
+const seletorTema = document.getElementById("tema");
+seletorTema.value = document.documentElement.dataset.theme || "";
+seletorTema.addEventListener("change", () => {
+  const t = seletorTema.value;
+  if (t) document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+  try {
+    if (t) localStorage.setItem(CHAVE_TEMA, t);
+    else localStorage.removeItem(CHAVE_TEMA);
+  } catch (e) { /* sem armazenamento: vale só nesta aba */ }
+  aplicarTema();
+});
 
 for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });

@@ -1160,7 +1160,7 @@ def start_http_server():
 
     app = create_app(lambda: _SNAPSHOT, get_gspread_client, RESULTS_SPREADSHEET_ID, GEO.key)
     threading.Thread(target=serve, args=(app,),
-                     kwargs={"host": "0.0.0.0", "port": HTTP_PORT, "threads": 6},
+                     kwargs={"host": "0.0.0.0", "port": HTTP_PORT, "threads": 16},
                      daemon=True).start()
     logging.info("Site ouvindo na porta %s.", HTTP_PORT)
 
