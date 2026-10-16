@@ -172,7 +172,7 @@ class GeoTomTom:
         if consulta in self.geocache:
             v = self.geocache[consulta]
             return tuple(v) if v else None
-        dados = self._chamar(f"/search/2/geocode/{urllib.parse.quote(consulta)}.json",
+        dados = self._chamar(f"/search/2/geocode/{urllib.parse.quote(consulta, safe="")}.json",
                              {"countrySet": "BR", "limit": 1, "language": "pt-BR"})
         if dados is None:
             return None  # falha de rede/cota: não cacheia, tenta de novo depois
@@ -189,7 +189,7 @@ class GeoTomTom:
         if chave in self.geocache:
             v = self.geocache[chave]
             return tuple(v) if v else None
-        dados = self._chamar(f"/search/2/search/{urllib.parse.quote(referencia)}.json", {
+        dados = self._chamar(f"/search/2/search/{urllib.parse.quote(referencia, safe="")}.json", {
             "countrySet": "BR", "limit": 1, "lat": centro[0], "lon": centro[1],
             "radius": int(RAIO_REFERENCIA_KM * 1000), "language": "pt-BR"})
         if dados is None:
