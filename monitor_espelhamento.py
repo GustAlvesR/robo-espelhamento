@@ -28,12 +28,14 @@ Autor: gerado para uso interno (Orbyte Tech / operação CEVA-Shopee)
 
 import json
 import logging
+import numbers
 import os
+import re
+import unicodedata
 import time
 import functools
 import threading
 import urllib.request
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -42,6 +44,8 @@ import gspread
 import schedule
 from google.oauth2.service_account import Credentials
 from gspread.exceptions import APIError, WorksheetNotFound
+
+import geo_tomtom
 
 
 # =============================================================================
@@ -93,6 +97,18 @@ STATE_RETENTION_DAYS = int(os.getenv("STATE_RETENTION_DAYS", "5"))
 # Arquivo de estado (memória do robô entre execuções).
 # No Render, aponte para o Persistent Disk (ex.: /data/state_espelhamento.json).
 STATE_FILE = os.getenv("STATE_FILE", "state_espelhamento.json")
+
+# Rastreamento da seguradora (Angellira): aba preenchida a partir do arquivo baixado
+# no portal. Por padrão fica na planilha de RESULTADOS (onde o robô tem permissão
+# de editor e a Telemetria não é sobrescrita pelo DBLH).
+TRACKING_SPREADSHEET_ID = os.getenv("TRACKING_SPREADSHEET_ID", "") or os.getenv(
+    "RESULTS_SPREADSHEET_ID", "1qsluTmC9w_4GggvtvJQk6D5PMKYb0v7B6kZjRwKJm9A")
+TRACKING_WORKSHEET_NAME = os.getenv("TRACKING_WORKSHEET_NAME", "Rastreamento_Angellira")
+# Acima disto (minutos entre a posição mais recente do arquivo e agora) o
+# rastreamento é marcado como "Desatualizado".
+TRACKING_MAX_AGE_MIN = int(os.getenv("TRACKING_MAX_AGE_MIN", "30"))
+# Só entra o procedimento cujo texto (normalizado) contenha TODOS estes termos.
+TRACKING_PROCEDIMENTO_TERMOS = ("SHOPEE", "LINEHAUL")
 
 # Onde guardar o estado: "file" (arquivo local/Persistent Disk) ou "sheets"
 # (aba oculta na planilha de resultados — recomendado no Web Service gratuito
@@ -416,6 +432,226 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+
+# =============================================================================
+# RASTREAMENTO DA SEGURADORA (aba Rastreamento_Angellira)
+# =============================================================================
+# Saída -> (chave interna no DataFrame, título da coluna em Resultado/Histórico)
+TRACKING_OUTPUT = [
+    ("trk_status", "Rastreamento"),
+    ("trk_defasagem", "Defasagem Rastreamento (min)"),
+    ("trk_ignicao", "Ignição"),
+    ("trk_cidade_uf", "Cidade/UF"),
+    ("trk_posicao", "Posição Atual"),
+    ("trk_data_posicao", "Data da Posição"),
+    ("trk_min_sem_posicao", "Min. Sem Posição"),
+    ("trk_velocidade", "Velocidade (km/h)"),
+    ("trk_tempo_parado", "Tempo Parado"),
+    ("trk_pct_percorrido", "% Percorrido (Seguradora)"),
+    ("trk_ultima_msg", "Última Mensagem"),
+    ("trk_encerrada", "Viagem Encerrada (Seguradora)"),
+]
+# Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
+TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", "")]
+_MSG_ENCERRADA = ("FIMDEVIAGEM", "CHEGADANOCLIENTE", "FIMDEDESCARGA")
+
+
+def _norm_chave(texto) -> str:
+    """'IGNIÇÃO' -> 'IGNICAO'; '% PERCORRIDO' -> 'PCTPERCORRIDO' (sem acento/símbolos)."""
+    t = unicodedata.normalize("NFKD", str(texto)).encode("ascii", "ignore").decode().upper()
+    return re.sub(r"[^A-Z0-9]", "", t.replace("%", "PCT"))
+
+
+def _placa(texto) -> str:
+    return re.sub(r"[^A-Z0-9]", "", str(texto or "").upper())
+
+
+def _parse_dt_flex(texto):
+    """ISO ('2026-10-12T09:23:48') ou dd/mm/aaaa hh:mm[:ss], como o Sheets exibir."""
+    texto = str(texto or "").strip()
+    if not texto:
+        return None
+    try:
+        d = datetime.fromisoformat(texto)
+        if d.tzinfo is not None:
+            d = d.astimezone(ZoneInfo(TIMEZONE)).replace(tzinfo=None)
+        return d
+    except ValueError:
+        pass
+    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(texto, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _num(texto):
+    try:
+        return float(str(texto).strip().replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _colunas_trk_vazias(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    for chave, _titulo in TRACKING_OUTPUT + TRACKING_INTERNO:
+        # dtype=object: a coluna recebe texto E números (o pandas novo recusa
+        # número em coluna criada como texto).
+        df[chave] = pd.Series([""] * len(df), index=df.index, dtype=object)
+    return df
+
+
+def carregar_rastreamento(client):
+    """Lê a aba de rastreamento. Devolve (registros_shopee, referencia) ou None
+    se a aba não existir / não tiver as colunas esperadas (recurso desligado)."""
+    sh = client.open_by_key(TRACKING_SPREADSHEET_ID)
+    try:
+        ws = sh.worksheet(TRACKING_WORKSHEET_NAME)
+    except gspread.exceptions.WorksheetNotFound:
+        logging.info("Aba '%s' não existe; rastreamento da seguradora desligado.", TRACKING_WORKSHEET_NAME)
+        return None
+    valores = ws.get_all_values()
+    if len(valores) < 2:
+        logging.info("Aba '%s' vazia; rastreamento sem dados.", TRACKING_WORKSHEET_NAME)
+        return [], None
+    cab = {}
+    for i, c in enumerate(valores[0]):
+        if c.strip():
+            cab.setdefault(_norm_chave(c), i)
+    faltam = [n for n in ("PROCEDIMENTODEEMBARQUE", "VEICULO", "DATAPOSICAO") if n not in cab]
+    if faltam:
+        logging.warning("Aba '%s' sem as colunas %s (cabeçalhos lidos: %s). Rastreamento desligado.",
+                        TRACKING_WORKSHEET_NAME, faltam, list(cab)[:12])
+        return None
+
+    def cel(linha, nome):
+        i = cab.get(nome)
+        return linha[i].strip() if i is not None and i < len(linha) else ""
+
+    registros, referencias = [], []
+    for l in valores[1:]:
+        dt_pos = _parse_dt_flex(cel(l, "DATAPOSICAO"))
+        if dt_pos:
+            referencias.append(dt_pos)  # todas as linhas (qualquer procedimento) dão a hora do arquivo
+        proc = _norm_chave(cel(l, "PROCEDIMENTODEEMBARQUE"))
+        if not all(t in proc for t in TRACKING_PROCEDIMENTO_TERMOS):
+            continue
+        veiculo = _placa(cel(l, "VEICULO"))
+        if not veiculo:
+            continue
+        registros.append({
+            "veiculo": veiculo,
+            "placas": {p for p in (veiculo, _placa(cel(l, "REBOQUE1")), _placa(cel(l, "REBOQUE2"))) if p},
+            "saida": _parse_dt_flex(cel(l, "PREVISAOSAIDAORIGEM")),
+            "dt_pos": dt_pos,
+            "ignicao": cel(l, "IGNICAO"),
+            "cidade": cel(l, "CIDADEPOSICAO"),
+            "uf": cel(l, "ESTADOPOSICAO"),
+            "posicao": cel(l, "POSICAO"),
+            "velocidade": cel(l, "VELOCIDADE"),
+            "tempo_parado": cel(l, "TEMPOPARADO"),
+            "pct": cel(l, "PCTPERCORRIDO"),
+            "ultima_msg": cel(l, "ULTIMAMENSAGEM"),
+            "origem_nome": cel(l, "ORIGEM"),
+            "destino_nome": cel(l, "CLIENTE"),
+        })
+    return registros, (max(referencias) if referencias else None)
+
+
+def casar_rastreamento(df: pd.DataFrame, registros: list, now: datetime) -> dict:
+    """{índice_no_df: registro}. Liga pela PLACA (cavalo ou reboque). Se a placa
+    aparecer em mais de uma rota, fica a de Início Previsto mais próximo da
+    previsão de saída da seguradora. Cada linha da seguradora vai para 1 rota."""
+    indice = {}
+    for i, row in df.iterrows():
+        for col in ("vehicle_number", "vehicle_number2"):
+            p = _placa(row.get(col))
+            if p:
+                indice.setdefault(p, set()).add(i)
+
+    escolhido = {}  # i_df -> (prioridade, registro)
+    for reg in registros:
+        candidatos = set()
+        for p in reg["placas"]:
+            candidatos |= indice.get(p, set())
+        if not candidatos:
+            continue
+        referencia = reg["saida"] or now
+
+        def prioridade(i):
+            vn, vn2 = _placa(df.at[i, "vehicle_number"]), _placa(df.at[i, "vehicle_number2"])
+            tipo = 0 if reg["veiculo"] == vn else 1 if reg["veiculo"] == vn2 else 2
+            ini = df.at[i, "eta_scheduled_origin_edited"]
+            dist = abs((ini.to_pydatetime() - referencia).total_seconds()) if pd.notna(ini) else float("inf")
+            return (tipo, dist)
+
+        melhor = min(candidatos, key=prioridade)
+        pr = prioridade(melhor)
+        if melhor not in escolhido or pr < escolhido[melhor][0]:
+            escolhido[melhor] = (pr, reg)
+    return {i: reg for i, (_pr, reg) in escolhido.items()}
+
+
+def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime) -> pd.DataFrame:
+    """Acrescenta ao DataFrame as colunas trk_* (ignição, posição etc.).
+    Qualquer falha aqui NÃO derruba o ciclo: as colunas saem vazias."""
+    df = _colunas_trk_vazias(df)
+    try:
+        carregado = carregar_rastreamento(client)
+        if carregado is None:
+            return df
+        registros, ref = carregado
+        defasagem = max(0, round((now - ref).total_seconds() / 60)) if ref else None
+        status_base = ("" if defasagem is None else
+                       "OK" if defasagem <= TRACKING_MAX_AGE_MIN else "Desatualizado")
+        casados = casar_rastreamento(df, registros, now)
+
+        for i in df.index:
+            reg = casados.get(i)
+            if reg is None:
+                df.at[i, "trk_status"] = "Sem correspondência"
+                continue
+            msg = reg["ultima_msg"]
+            msg_limpa = "" if msg.strip() in ("", "0") else msg
+            pct = _num(reg["pct"])
+            vel = _num(reg["velocidade"])
+            df.at[i, "trk_status"] = status_base
+            df.at[i, "trk_defasagem"] = defasagem if defasagem is not None else ""
+            df.at[i, "trk_ignicao"] = {"1": "Ligada", "2": "Desligada"}.get(reg["ignicao"].strip(), "")
+            df.at[i, "trk_cidade_uf"] = "/".join(x for x in (reg["cidade"], reg["uf"]) if x)
+            df.at[i, "trk_posicao"] = reg["posicao"]
+            df.at[i, "trk_data_posicao"] = reg["dt_pos"].strftime("%d/%m/%Y %H:%M") if reg["dt_pos"] else ""
+            # Idade da posição NA HORA DO ARQUIVO (não de agora): com o arquivo carregado à
+            # mão, "agora" faria toda posição parecer velha.
+            df.at[i, "trk_min_sem_posicao"] = (
+                max(0, round((ref - reg["dt_pos"]).total_seconds() / 60)) if ref and reg["dt_pos"] else "")
+            df.at[i, "trk_velocidade"] = int(vel) if vel is not None else ""
+            df.at[i, "trk_tempo_parado"] = reg["tempo_parado"]
+            df.at[i, "trk_pct_percorrido"] = f"{pct:.1f}%" if pct is not None else ""
+            df.at[i, "trk_ultima_msg"] = msg_limpa
+            df.at[i, "trk_origem_nome"] = reg["origem_nome"]
+            df.at[i, "trk_destino_nome"] = reg["destino_nome"]
+            df.at[i, "trk_encerrada"] = "Sim" if any(t in _norm_chave(msg) for t in _MSG_ENCERRADA) else "Não"
+
+        logging.info("Rastreamento: %s linha(s) Shopee, %s rota(s) casada(s) por placa, "
+                     "%s linha(s) sem rota, defasagem %s min.",
+                     len(registros), len(casados), len(registros) - len(casados),
+                     defasagem if defasagem is not None else "?")
+    except Exception:
+        logging.exception("Falha ao ler o rastreamento da seguradora; seguindo sem ele.")
+        return _colunas_trk_vazias(df)
+    return df
+
+
+def _valor(v):
+    """Números continuam números; o resto vira texto limpo."""
+    if isinstance(v, numbers.Number) and not isinstance(v, bool):
+        f = float(v)
+        return int(f) if f.is_integer() else f
+    return _txt(v)
+
+
 def classify_status(valor_bruto: str) -> str:
     """Normaliza o valor da coluna Espelhamento para OK / NOK / SEM_DADO."""
     if valor_bruto is None:
@@ -646,6 +882,8 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         "Atualizado Em": _fmt(now),
         # Colunas informativas, ao final para não deslocar as letras das colunas existentes.
         **{titulo: _txt(row.get(chave)) for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()},
+        # Rastreamento da seguradora (vazio se a aba Rastreamento_Angellira não existir).
+        **{titulo: _valor(row.get(chave)) for chave, titulo in TRACKING_OUTPUT},
     }
 
 
@@ -764,6 +1002,55 @@ def append_events(client: gspread.Client, eventos: list) -> None:
 
 
 # =============================================================================
+# 7b. MAPA / TOMTOM E DADOS DO SITE
+# =============================================================================
+
+GEO = geo_tomtom.GeoTomTom()
+_SNAPSHOT = {}  # lido pelo site; trocado inteiro a cada ciclo (atribuição é atômica)
+
+
+def enriquecer_geo(client, df: pd.DataFrame, resultados: list, now: datetime) -> dict:
+    """Coordenadas das estações, posição do veículo e previsão TomTom.
+    Acrescenta 3 colunas aos resultados. Nunca derruba o ciclo."""
+    if not GEO.key:
+        for r in resultados:
+            r.update({"Previsão TomTom": "", "Desvio vs Fim Previsto (min)": "", "Risco de Atraso": ""})
+        return {}
+    try:
+        planilha = client.open_by_key(RESULTS_SPREADSHEET_ID)
+        geo_tomtom.carregar_geocache(GEO, planilha)
+        nomes = {}
+        for _, row in df.iterrows():
+            for col_cod, col_nome in (("origin_station_code", "trk_origem_nome"),
+                                      ("destination_station_code", "trk_destino_nome")):
+                cod = _txt(row.get(col_cod)).upper()
+                if cod and not nomes.get(cod):
+                    nomes[cod] = _txt(row.get(col_nome))
+        coords = geo_tomtom.sincronizar_estacoes(GEO, planilha, nomes)
+        geo_por_trip = geo_tomtom.calcular_geo(GEO, resultados, coords, now)
+        geo_tomtom.salvar_geocache(GEO, planilha)
+        logging.info("TomTom: %s chamada(s) hoje, %s estação(ões) com coordenadas.",
+                     GEO.chamadas_hoje, len(coords))
+        return geo_por_trip
+    except Exception:
+        logging.exception("Falha na etapa de mapa/TomTom; seguindo sem ela.")
+        for r in resultados:
+            for c in ("Previsão TomTom", "Desvio vs Fim Previsto (min)", "Risco de Atraso"):
+                r.setdefault(c, "")
+        return {}
+
+
+def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime) -> None:
+    global _SNAPSHOT
+    _SNAPSHOT = {
+        "atualizado_em": _fmt(now),
+        "resultados": resultados,
+        "geo": geo_por_trip,
+        "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
+    }
+
+
+# =============================================================================
 # 8. CICLO PRINCIPAL
 # =============================================================================
 
@@ -777,6 +1064,8 @@ def job():
         if df.empty:
             logging.warning("Aba de origem retornou vazia nesta execução.")
             return
+
+        df = enriquecer_com_rastreamento(client, df, now)
 
         state = load_state(client)
         eventos_do_ciclo = []
@@ -795,9 +1084,13 @@ def job():
         cleanup_state(state, trip_numbers_ativos)
         save_state(state, client)
 
+        geo_por_trip = enriquecer_geo(client, df, resultados, now)
+
         client_escrita = client  # mesma sessão autenticada
         write_results(client_escrita, resultados)
         append_events(client_escrita, eventos_do_ciclo)
+
+        publicar_snapshot(resultados, geo_por_trip, now)
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s).",
@@ -811,38 +1104,26 @@ def job():
 
 
 # =============================================================================
-# 9. SERVIDOR HTTP MÍNIMO (exigido pelo Web Service do Render) + KEEP-ALIVE
+# 9. SITE (exigido também pelo Web Service do Render) + KEEP-ALIVE
 # =============================================================================
 
-class _HealthHandler(BaseHTTPRequestHandler):
-    def _ok(self, body=True):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        if body:
-            self.wfile.write(b"ok")
-
-    def do_GET(self):
-        self._ok()
-
-    def do_HEAD(self):
-        self._ok(body=False)
-
-    def log_message(self, *args):  # silencia o log de cada requisição
-        pass
-
-
 def start_http_server():
-    server = HTTPServer(("0.0.0.0", HTTP_PORT), _HealthHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    logging.info("Servidor HTTP de health-check ouvindo na porta %s.", HTTP_PORT)
+    """Site + /health no mesmo processo (Web Service do Render)."""
+    from waitress import serve
+    from site_web import create_app
+
+    app = create_app(lambda: _SNAPSHOT, get_gspread_client, RESULTS_SPREADSHEET_ID, GEO.key)
+    threading.Thread(target=serve, args=(app,),
+                     kwargs={"host": "0.0.0.0", "port": HTTP_PORT, "threads": 6},
+                     daemon=True).start()
+    logging.info("Site ouvindo na porta %s.", HTTP_PORT)
 
 
 def self_ping():
     if not SELF_PING_URL:
         return
     try:
-        urllib.request.urlopen(SELF_PING_URL, timeout=15).read()
+        urllib.request.urlopen(SELF_PING_URL.rstrip("/") + "/health", timeout=15).read()
     except Exception as e:
         logging.warning("Auto-ping falhou (%s).", e)
 

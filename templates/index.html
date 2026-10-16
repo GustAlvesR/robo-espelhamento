@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torre LH</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+<header class="topo">
+  <div class="marca">Torre LH <span>espelhamento · rotas</span></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="usuario">
+    <span id="atualizado"></span>
+    <span>{{ nome }}</span>
+    <form method="post" action="{{ url_for('logout') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <button type="submit" class="link">Sair</button>
+    </form>
+  </div>
+</header>
+<main class="painel">
+  <aside class="lateral">
+    <div class="filtros">
+      <input id="busca" type="search" placeholder="Buscar LH, placa, estação…">
+      <select id="fStatus">
+        <option value="">Status: todos</option>
+        <option>NOK</option><option>OK</option><option>Pendente</option>
+      </select>
+      <select id="fRisco">
+        <option value="">Risco: todos</option>
+        <option>Atraso provável</option><option>No prazo</option>
+        <option>Posição antiga</option><option>Sem posição</option>
+        <option>Sem coord. da estação</option><option>No destino</option><option>Encerrada</option>
+      </select>
+    </div>
+    <ul id="lista" class="lista"></ul>
+  </aside>
+  <section class="mapa-area">
+    <div id="mapa"></div>
+    <div id="detalhe" class="detalhe" hidden></div>
+    <div class="legenda">
+      <span><i class="pt ok"></i>OK</span><span><i class="pt nok"></i>NOK</span>
+      <span><i class="pt pend"></i>Pendente</span><span><i class="pt anel"></i>Atraso provável</span>
+      <span><i class="pt cidade"></i>Posição só por cidade</span>
+    </div>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

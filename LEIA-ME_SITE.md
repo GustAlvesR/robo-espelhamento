@@ -1,0 +1,93 @@
+# Site Torre LH (mapa + TomTom)
+
+O site roda dentro do próprio robô (mesmo Web Service no Render, mesmo comando
+`python monitor_espelhamento.py`). Sem `TOMTOM_API_KEY` o robô continua
+funcionando como antes, só sem mapa e sem previsão.
+
+## Arquivos novos no repositório
+
+- `geo_tomtom.py`: estações, posição do veículo, rotas e previsão.
+- `site_web.py`, `templates/`, `static/`: o site.
+- `criar_usuario.py`: gera a linha de cada usuário.
+- `testar_tomtom.py`: confere se a chave funciona em cada API.
+- `monitor_espelhamento.py` e `requirements.txt`: atualizados.
+
+## 1. Chave TomTom
+
+1. A chave colada no chat deve ser trocada: gere outra no portal da TomTom e apague a antiga.
+2. No seu PC, dentro da pasta do projeto:
+   ```powershell
+   pip install -r requirements.txt
+   $env:TOMTOM_API_KEY="NOVA_CHAVE"; python testar_tomtom.py
+   ```
+   As quatro linhas precisam sair `OK`. Se alguma sair `FALHA`, me mande a saída.
+
+A chave nunca vai para o navegador: os tiles do mapa passam pelo servidor, e só
+para quem está logado.
+
+## 2. Variáveis no Render (Environment)
+
+| Variável | Valor |
+|---|---|
+| `TOMTOM_API_KEY` | a chave nova |
+| `SECRET_KEY` | gere com `python -c "import secrets; print(secrets.token_hex(32))"` |
+
+Opcionais: `TOMTOM_MAX_CHAMADAS_DIA` (padrão 2000), `TOLERANCIA_ATRASO_MIN` (30),
+`ETA_MAX_IDADE_POSICAO_MIN` (180), `ETA_RECALCULO_MIN` (30).
+
+## 3. Usuários
+
+Na planilha Acompanhamento Telemetria, crie a aba `Usuarios_Site` com o cabeçalho:
+
+`Email | Nome | Senha_Hash | Ativo`
+
+Para cada pessoa, rode no PC e cole a linha gerada:
+
+```powershell
+python criar_usuario.py fulano@ceva.com "Fulano de Tal"
+```
+
+Para bloquear alguém, troque `Ativo` para `Não` (vale em até 5 minutos).
+Cinco senhas erradas seguidas bloqueiam o IP por 15 minutos.
+
+## 4. Aba Estacoes (revise uma vez)
+
+O robô cria a aba `Estacoes` sozinho e preenche as coordenadas pelo nome que a
+Angellira dá à estação (SOC_MG_BETIM vira "BETIM, MG"). Isso é coordenada do
+centro da cidade, não do galpão. Para cada estação:
+
+- Linha com `preencher`: o robô não achou. Digite latitude e longitude (no
+  Google Maps, botão direito no galpão copia as coordenadas) e troque a Fonte
+  para `manual`.
+- Linha `auto (cidade)`: está aproximada. Corrigir para o galpão melhora a
+  rota e a regra de "No destino" (5 km).
+
+O robô nunca sobrescreve uma linha com latitude e longitude preenchidas.
+
+## 5. Monitor anti-hibernação
+
+Aponte o UptimeRobot (ou cron-job.org) para `https://SEU-APP.onrender.com/health`
+a cada 5 minutos. A página inicial agora exige login, então o monitor precisa
+usar `/health`.
+
+## O que o robô acrescenta nas planilhas
+
+Três colunas no fim de `Resultado_Espelhamento` e do histórico:
+
+- `Previsão TomTom`: chegada estimada.
+- `Desvio vs Fim Previsto (min)`: positivo é atraso.
+- `Risco de Atraso`: `Atraso provável` (desvio acima da tolerância), `No prazo`,
+  `No destino`, `Encerrada`, `Posição antiga`, `Sem posição`,
+  `Sem coord. da estação`.
+
+## Como a previsão é calculada (e onde ela erra)
+
+- Com posição da Angellira: rota de caminhão com trânsito atual da posição até
+  o destino. Em movimento, o tempo conta a partir da hora da posição; parado
+  (velocidade 0), conta a partir de agora, ou do início previsto se ainda não saiu.
+- Sem posição e antes da saída: início previsto + tempo da rota TomTom.
+- A posição vem do texto da Angellira, não de GPS. O mapa mostra a cidade
+  (contorno tracejado) ou o ponto de referência quando ele cai a menos de 30 km
+  da cidade. A previsão é tão atual quanto a última importação do relatório.
+- A TomTom não conhece as paradas obrigatórias do motorista (descanso da Lei
+  do Motorista). Em viagens longas, isso deixa a previsão otimista.

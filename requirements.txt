@@ -3,3 +3,5 @@ google-auth>=2.25.0
 pandas>=2.0.0
 schedule>=1.2.0
 tzdata
+flask>=3.0,<4.0
+waitress>=3.0

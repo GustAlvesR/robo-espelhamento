@@ -1,0 +1,80 @@
+:root {
+  --bg: #f3f4f1; --painel: #ffffff; --linha: #dfe1dc; --texto: #1d2125; --suave: #6a717a;
+  --ok: #1f8a4c; --nok: #c8372d; --pend: #8a8f96; --alerta: #d98b00; --acento: #1c5fd4;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111417; --painel: #191d21; --linha: #2a3036; --texto: #e6e8ea; --suave: #8d959e;
+    --ok: #3cb371; --nok: #ef5a4f; --pend: #79818a; --alerta: #f0a92e; --acento: #5b93f0;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--texto);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+
+.marca { font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+.marca span { font-weight: 400; color: var(--suave); margin-left: 6px; font-size: 12px; }
+
+.topo { display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+  background: var(--painel); border-bottom: 1px solid var(--linha); flex-wrap: wrap; }
+.kpis { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+.kpi { padding: 4px 10px; border: 1px solid var(--linha); border-radius: 6px; cursor: pointer; background: none; }
+.kpi b { font-family: var(--mono); font-size: 16px; margin-right: 6px; }
+.kpi.nok b { color: var(--nok); } .kpi.alerta b { color: var(--alerta); }
+.usuario { display: flex; gap: 12px; align-items: center; color: var(--suave); font-size: 12px; }
+.usuario form { margin: 0; }
+.link { background: none; border: 0; color: var(--acento); cursor: pointer; padding: 0; }
+
+.painel { display: grid; grid-template-columns: 380px 1fr; height: calc(100% - 56px); }
+.lateral { border-right: 1px solid var(--linha); background: var(--painel); display: flex; flex-direction: column; min-height: 0; }
+.filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; border-bottom: 1px solid var(--linha); }
+.filtros input { grid-column: 1 / -1; }
+.filtros input, .filtros select { padding: 6px 8px; border: 1px solid var(--linha); border-radius: 6px; background: var(--bg); width: 100%; }
+.lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.lista li { padding: 9px 12px; border-bottom: 1px solid var(--linha); cursor: pointer; border-left: 4px solid var(--pend); }
+.lista li.ok { border-left-color: var(--ok); } .lista li.nok { border-left-color: var(--nok); }
+.lista li.sel { background: color-mix(in srgb, var(--acento) 10%, transparent); }
+.lista .l1 { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 13px; }
+.lista .l2 { color: var(--suave); font-size: 12px; margin-top: 2px; }
+.tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--linha); white-space: nowrap; font-family: system-ui, sans-serif; }
+.tag.atraso { border-color: var(--alerta); color: var(--alerta); }
+.tag.prazo { border-color: var(--ok); color: var(--ok); }
+.vazio { padding: 24px; color: var(--suave); text-align: center; }
+
+.mapa-area { position: relative; min-height: 0; }
+#mapa { position: absolute; inset: 0; }
+.legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: var(--painel);
+  border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+.pt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.pt.ok { background: var(--ok); } .pt.nok { background: var(--nok); } .pt.pend { background: var(--pend); }
+.pt.anel { border: 2px solid var(--alerta); } .pt.cidade { border: 1px dashed var(--suave); }
+
+.detalhe { position: absolute; top: 10px; right: 10px; z-index: 600; width: 340px; max-height: calc(100% - 20px);
+  overflow-y: auto; background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; }
+.detalhe h3 { margin: 0 0 8px; font-family: var(--mono); font-size: 15px; display: flex; justify-content: space-between; }
+.detalhe dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
+.detalhe dt { color: var(--suave); } .detalhe dd { margin: 0; text-align: right; }
+.detalhe .sec { margin: 10px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); }
+.fechar { background: none; border: 0; cursor: pointer; color: var(--suave); font-size: 18px; line-height: 1; }
+
+.tela-login { display: grid; place-items: center; padding: 16px; }
+.cartao-login { width: 100%; max-width: 340px; background: var(--painel); border: 1px solid var(--linha);
+  border-radius: 10px; padding: 24px; display: grid; gap: 14px; }
+.cartao-login label { display: grid; gap: 4px; color: var(--suave); font-size: 13px; }
+.cartao-login input { padding: 9px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--bg); }
+.cartao-login button { padding: 10px; border: 0; border-radius: 6px; background: var(--acento); color: #fff; cursor: pointer; }
+.erro { color: var(--nok); margin: 0; font-size: 13px; }
+
+@media (max-width: 800px) {
+  .painel { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: auto; min-height: calc(100% - 56px); }
+  .mapa-area { order: -1; height: 45vh; }
+  .lateral { border-right: 0; }
+  .topo { gap: 8px 12px; }
+  .marca { flex: 1; }
+  .kpis { order: 3; flex-basis: 100%; }
+  .kpi { padding: 3px 8px; font-size: 13px; }
+  .legenda { display: none; }
+  .detalhe { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 65%; }
+}
