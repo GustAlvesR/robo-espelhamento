@@ -18,6 +18,56 @@ let selecionada = null;
 let semSinal = false;
 let ajustouVisao = false;
 
+const escHtml = (t) => String(t ?? "").replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Rumo (graus a partir do norte, sentido horário) de a para b.
+function rumo(a, b) {
+  const rad = Math.PI / 180;
+  const [la1, lo1, la2, lo2] = [a[0] * rad, a[1] * rad, b[0] * rad, b[1] * rad];
+  const y = Math.sin(lo2 - lo1) * Math.cos(la2);
+  const x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(lo2 - lo1);
+  return (Math.atan2(y, x) / rad + 360) % 360;
+}
+
+// Não há rumo real no relatório da Angellira: aproxima pela direção do trajeto
+// previsto no ponto mais próximo do caminhão; sem trajeto, aponta para o destino.
+function rumoEstimado(g) {
+  const v = g.veiculo;
+  const pts = g.pontos || [];
+  if (pts.length >= 2) {
+    let melhor = 0, dMin = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const d = (pts[i][0] - v[0]) ** 2 + (pts[i][1] - v[1]) ** 2;
+      if (d < dMin) { dMin = d; melhor = i; }
+    }
+    const i = Math.min(melhor, pts.length - 2);
+    return rumo(pts[i], pts[i + 1]);
+  }
+  return g.destino ? rumo(v, g.destino) : null;
+}
+
+function tamanhoIcone() {
+  const z = mapa.getZoom();
+  return z <= 5 ? 22 : z <= 8 ? 26 : z <= 11 ? 32 : 38;
+}
+
+// Caminhão visto de cima, apontando para o norte (cabine em cima).
+function iconeCaminhao(cor, { atraso, cidade, graus }) {
+  const t = tamanhoIcone();
+  const detalhe = t >= 24
+    ? '<rect x="8" y="4.5" width="8" height="3" rx="1" fill="#fff" opacity=".85"/>'
+    : "";
+  const svg = `<svg viewBox="0 0 24 40" width="${t * 0.6}" height="${t}"
+      style="transform: rotate(${graus ?? 0}deg)" aria-hidden="true">
+    <rect x="4.5" y="13" width="15" height="25" rx="2" fill="${cor}" stroke="#fff" stroke-width="1.6"/>
+    <rect x="6" y="2" width="12" height="10" rx="3.5" fill="${cor}" stroke="#fff" stroke-width="1.6"/>
+    ${detalhe}</svg>`;
+  const classes = ["caminhao", atraso ? "atraso" : "", cidade ? "cidade" : ""].join(" ");
+  return L.divIcon({ className: "", html: `<div class="${classes}" style="width:${t + 8}px;height:${t + 8}px">${svg}</div>`,
+    iconSize: [t + 8, t + 8], iconAnchor: [(t + 8) / 2, (t + 8) / 2] });
+}
+
 function el(tag, attrs = {}, ...filhos) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -108,14 +158,22 @@ function desenharMapa(lista) {
     if (!ponto) continue;
     limites.push(ponto);
     const atraso = r["Risco de Atraso"] === "Atraso provável";
-    L.circleMarker(ponto, {
-      radius: g.veiculo ? 8 : 5,
-      color: atraso ? corCss("var(--alerta)") : cor,
-      weight: atraso ? 4 : 2,
-      dashArray: g.precisao === "cidade" ? "3 3" : null,
-      fillColor: cor, fillOpacity: g.veiculo ? 0.85 : 0.25,
-    }).addTo(camadaVeiculos)
-      .bindTooltip(`${r["Trip Number"]} · ${r["Placa"] || ""}`)
+    const dica = `${escHtml(r["Trip Number"])} · ${escHtml(r["Placa"])}`;
+    let marcador;
+    if (g.veiculo) {
+      marcador = L.marker(ponto, {
+        icon: iconeCaminhao(cor, { atraso, cidade: g.precisao === "cidade", graus: rumoEstimado(g) }),
+        riseOnHover: true, keyboard: false,
+      });
+    } else {
+      // Sem posição da Angellira: marca a origem, sem fingir que é o caminhão.
+      marcador = L.circleMarker(ponto, {
+        radius: 5, color: atraso ? corCss("var(--alerta)") : cor, weight: atraso ? 3 : 2,
+        fillColor: cor, fillOpacity: 0.15,
+      });
+    }
+    marcador.addTo(camadaVeiculos)
+      .bindTooltip(g.veiculo ? dica : `${dica} · sem posição (na origem)`)
       .on("click", () => selecionar(r["Trip Number"], false));
   }
   if (!ajustouVisao && limites.length) {
@@ -273,6 +331,8 @@ async function atualizar() {
     setTimeout(atualizar, 15000);
   }
 }
+
+mapa.on("zoomend", () => desenharMapa(filtrar()));
 
 for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });

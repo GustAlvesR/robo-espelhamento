@@ -50,6 +50,15 @@ button, input, select { font: inherit; color: inherit; }
 .pt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 .pt.ok { background: var(--ok); } .pt.nok { background: var(--nok); } .pt.pend { background: var(--pend); }
 .pt.anel { border: 2px solid var(--alerta); } .pt.cidade { border: 1px dashed var(--suave); }
+.pt.origem { background: transparent; border: 2px solid var(--pend); width: 8px; height: 8px; }
+.mini { width: 9px; height: 14px; display: inline-block; margin-right: 4px; vertical-align: -2px; }
+
+.caminhao { display: grid; place-items: center; border-radius: 50%; border: 2px solid transparent;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .45)); }
+.caminhao svg { transition: transform .2s; }
+.caminhao.atraso { border-color: var(--alerta); background: color-mix(in srgb, var(--alerta) 18%, transparent); }
+.caminhao.cidade { border-style: dashed; border-color: var(--suave); }
+.caminhao.atraso.cidade { border-color: var(--alerta); }
 
 .detalhe { position: absolute; top: 10px; right: 10px; z-index: 600; width: 340px; max-height: calc(100% - 20px);
   overflow-y: auto; background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; }
