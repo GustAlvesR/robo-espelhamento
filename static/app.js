@@ -200,6 +200,7 @@ function render() {
 }
 
 let falhasSeguidas = 0;
+const CHAVE_VISAO = "torreLH.visao";
 
 function idadeCicloMin(texto) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(texto || "");
@@ -208,45 +209,78 @@ function idadeCicloMin(texto) {
   return Math.round((Date.now() - d.getTime()) / 60000);
 }
 
-async function atualizar() {
+function aplicarDados(j) {
   const aviso = document.getElementById("atualizado");
-  let proxima = 60000;
+  dados = j.rotas || [];
+  const tt = j.tomtom || {};
+  const idade = idadeCicloMin(j.atualizado_em);
+  // Ciclo normal é a cada 5 min; acima de 15 o robô ficou parado (hibernação ou erro).
+  const parado = idade !== null && idade > 15 ? ` · ATENÇÃO: sem ciclo há ${idade} min` : "";
+  aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
+    + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
+  aviso.style.color = parado ? "var(--nok)" : "";
+  try {
+    render();
+  } catch (e) {
+    console.error(e);
+    aviso.textContent += ` · Erro ao desenhar: ${e.message}`;
+    aviso.style.color = "var(--nok)";
+  }
+}
+
+// Guarda zoom, posição, rota aberta e filtros para sobreviver a um recarregamento.
+function salvarVisao() {
+  try {
+    const c = mapa.getCenter();
+    sessionStorage.setItem(CHAVE_VISAO, JSON.stringify({
+      lat: c.lat, lng: c.lng, zoom: mapa.getZoom(), sel: selecionada,
+      busca: document.getElementById("busca").value,
+      fStatus: document.getElementById("fStatus").value,
+      fRisco: document.getElementById("fRisco").value,
+    }));
+  } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
+}
+
+function restaurarVisao() {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(CHAVE_VISAO) || "null");
+    if (!v) return;
+    mapa.setView([v.lat, v.lng], v.zoom);
+    ajustouVisao = true;
+    selecionada = v.sel || null;
+    for (const id of ["busca", "fStatus", "fRisco"]) document.getElementById(id).value = v[id] || "";
+  } catch (e) { /* ignora estado inválido */ }
+}
+
+async function atualizar() {
   try {
     const resp = await fetch("/api/rotas", { credentials: "same-origin", cache: "no-store" });
     if (resp.status === 401) { location.href = "/login"; return; }
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const j = await resp.json();
     falhasSeguidas = 0;
-    dados = j.rotas || [];
-    const tt = j.tomtom || {};
-    const idade = idadeCicloMin(j.atualizado_em);
-    // Ciclo normal é a cada 5 min; acima de 15 o robô ficou parado (hibernação ou erro).
-    const parado = idade !== null && idade > 15 ? ` · ATENÇÃO: sem ciclo há ${idade} min` : "";
-    aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
-      + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
-    aviso.style.color = parado ? "var(--nok)" : "";
-    try {
-      render();
-    } catch (e) {
-      // Erro ao desenhar não é falha de conexão: mostra a causa para diagnóstico.
-      console.error(e);
-      aviso.textContent += ` · Erro ao desenhar: ${e.message}`;
-      aviso.style.color = "var(--nok)";
-    }
+    aplicarDados(await resp.json());
+    setTimeout(atualizar, 60000);
   } catch (e) {
     console.error(e);
-    // Servidor acordando (Render gratuito) ou queda momentânea: tenta de novo logo.
     falhasSeguidas += 1;
-    proxima = 15000;
-    aviso.textContent = falhasSeguidas < 8
-      ? `Servidor acordando, tentando de novo… (${e.message})`
-      : `Sem conexão com o servidor (${e.message}). Recarregue a página.`;
-    aviso.style.color = "var(--alerta)";
+    if (falhasSeguidas >= 2) {
+      // Rede que bloqueia chamadas em segundo plano: atualiza recarregando a página,
+      // que já traz os dados embutidos.
+      salvarVisao();
+      setTimeout(() => location.reload(), 60000);
+      return;
+    }
+    setTimeout(atualizar, 15000);
   }
-  setTimeout(atualizar, proxima);
 }
 
 for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });
 }
-atualizar();
+restaurarVisao();
+try {
+  aplicarDados(JSON.parse(document.getElementById("dados-iniciais").textContent));
+} catch (e) {
+  console.error(e);
+}
+setTimeout(atualizar, 60000);

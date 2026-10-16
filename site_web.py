@@ -144,11 +144,17 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     @app.get("/")
     @exige_login
     def index():
-        return render_template("index.html", nome=session.get("nome", ""))
+        # Os dados já vão dentro da página: em redes que bloqueiam as chamadas em
+        # segundo plano (fetch), o site funciona recarregando a página inteira.
+        dados = dados_json().replace("<", "\\u003c")
+        return render_template("index.html", nome=session.get("nome", ""), dados_iniciais=dados)
 
     @app.get("/api/rotas")
     @exige_login
     def api_rotas():
+        return Response(dados_json(), mimetype="application/json")
+
+    def dados_json() -> str:
         snap = get_snapshot() or {}
         geo = snap.get("geo", {})
         rotas = [{**r, "_geo": geo.get(r["Trip Number"], {})} for r in snap.get("resultados", [])]
@@ -156,8 +162,7 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
                  "tomtom": snap.get("tomtom", {}), "rotas": rotas}
         # allow_nan=False + _limpar: um NaN vindo da planilha geraria JSON inválido
         # e quebraria a página inteira.
-        return Response(json.dumps(_limpar(corpo), ensure_ascii=False, allow_nan=False, default=str),
-                        mimetype="application/json")
+        return json.dumps(_limpar(corpo), ensure_ascii=False, allow_nan=False, default=str)
 
     @app.get("/tiles/<int:z>/<int:x>/<int:y>.png")
     @exige_login
