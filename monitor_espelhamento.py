@@ -755,13 +755,15 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             **info_veiculo,
         })
 
-    if status_atual == "NOK" and status_anterior != "NOK":
+    # Guiado pela queda em aberto, não pelo status anterior: com uma leitura vazia
+    # (SEM_DADO) no meio, NOK -> SEM_DADO -> OK precisa fechar a queda.
+    if status_atual == "NOK" and not dados.get("current_loss_start"):
         # Início de uma nova queda (ou rota já "nasceu" caída na 1ª leitura).
         dados["current_loss_start"] = t_mudanca.isoformat()
         dados["loss_logged"] = False
         logging.info("[%s] Perda de sinal confirmada (desde %s).", trip_number, t_mudanca)
 
-    elif status_atual == "OK" and status_anterior == "NOK":
+    elif status_atual == "OK" and dados.get("current_loss_start"):
         # Fim de uma queda em aberto.
         inicio_queda = _parse_iso(dados.get("current_loss_start")) or t_mudanca
         duracao = (t_mudanca - inicio_queda).total_seconds()
