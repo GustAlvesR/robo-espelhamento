@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body { font-family: sans-serif; margin: 0; }
+  #lista { height: 420px; overflow: auto; border: 1px solid #ccc; }
+  .card { border: 1px solid #999; margin: 6px; padding: 6px; height: 150px; }
+  .hdr { font-weight: bold; padding: 4px; }
+  [role="button"] { display: inline-block; padding: 2px 6px; cursor: pointer; }
+  #dlg { position: fixed; top: 40%; left: 40%; background: #fff; border: 2px solid #000; padding: 10px; }
+</style></head><body>
+<nav><div role="button">MENU</div> &gt; <div role="button" aria-current="page">ROTA EXTRA</div></nav>
+<div id="lista"></div>
+<script>
+const CARDS = [
+  {grupo: 'FULLS SP', veic: '1 - TOCO', tipo: 'CAPTAÇÃO', nome: 'BRSP21-BRSP11-SSP34.SOW.VEN', limite: '00:18:00', eta: '16/10/2026 20:00', cpt: '16/10/2026 22:00'},
+  {grupo: 'FULLS SP', veic: '1 - TRUCK', tipo: 'CAPTAÇÃO', nome: 'BRSP21-BRSP11-SSP34.SOW.VEN', limite: null, eta: '16/10/2026 23:00', cpt: '17/10/2026 01:00'},
+  {grupo: 'FULLS SP', veic: '1 - TOCO', tipo: 'CAPTAÇÃO', nome: 'BRSP10-BRSP11-SSP34.SOW.VEN', limite: null, eta: '16/10/2026 21:00', cpt: '16/10/2026 23:00'},
+  {grupo: 'FULLS MG', veic: '1 - TRUCK', tipo: 'CAPTAÇÃO', nome: 'BRMG03-BRMG01-XMG1.SOW.VEN', limite: '00:30:00', eta: '17/10/2026 08:00', cpt: '17/10/2026 10:00', confirmar: true},
+  {grupo: 'FULLS MG', veic: '1 - TOCO', tipo: 'CAPTAÇÃO', nome: 'ROTA SEM PADRAO', limite: null, eta: '17/10/2026 09:00', cpt: '17/10/2026 11:00'},
+];
+let renderizados = 3;  // simula carregamento lazy: mais cards ao rolar até o fim
+const lista = document.getElementById('lista');
+function sufixo(i) { return 'GRUPO_ROTA_EXTRAWisDm' + i + 'Hag'; }
+function render() {
+  lista.innerHTML = '';
+  let grupoAtual = null, cont = null;
+  CARDS.slice(0, renderizados).forEach((c, i) => {
+    if (c.removido) return;
+    if (c.grupo !== grupoAtual) {
+      grupoAtual = c.grupo;
+      cont = document.createElement('div');
+      cont.innerHTML = `<div class="hdr">${c.grupo}</div>`;
+      lista.appendChild(cont);
+    }
+    const card = document.createElement('div');
+    card.className = 'card cd-jss123';
+    card.innerHTML = `
+      <div><div>${c.veic}</div><div>${c.tipo}</div></div>
+      <div data-testid="div-with-input-handling" id="label${sufixo(i)}"><i class="fal fa-chevron-double-right"></i>${c.nome}</div>
+      ${c.limite ? `<div>TEMPO LIMITE DE RETORNO: ${c.limite}</div>` : ''}
+      <div data-testid="div-with-input-handling" id="description${sufixo(i)}">DATA E HORA ETA ${c.eta}  |  DATA E HORA CPT ${c.cpt}</div>
+      <div class="b-jss9">
+        <div role="button" aria-label="ABRIR ENDEREÇO" data-testid="div-with-input-handling" id="Action 4${sufixo(i)}"><i class="fas fa-map-marker" data-testid="icon"></i></div>
+        <div role="button" data-testid="div-with-input-handling"><i class="fas fa-times-circle"></i></div>
+        <div role="button" aria-label="ACEITAR" data-testid="div-with-input-handling" id="Action 2${sufixo(i)}"><i class="fas fa-check"></i>ACEITAR</div>
+      </div>`;
+    card.querySelector('[aria-label="ACEITAR"]').addEventListener('click', () => {
+      window.cliques = (window.cliques || 0) + 1;
+      if (c.confirmar) {
+        const d = document.createElement('div');
+        d.id = 'dlg'; d.setAttribute('role', 'dialog');
+        d.innerHTML = 'Confirma? <div role="button" id="cancelar">CANCELAR</div> <div role="button" id="ok">OK</div>';
+        d.querySelector('#ok').onclick = () => { d.remove(); setTimeout(() => { c.removido = true; render(); }, 200); };
+        document.body.appendChild(d);
+      } else {
+        setTimeout(() => { c.removido = true; render(); }, 300);
+      }
+    });
+    cont.appendChild(card);
+  });
+}
+lista.addEventListener('scroll', () => {
+  if (lista.scrollTop + lista.clientHeight >= lista.scrollHeight - 5 && renderizados < CARDS.length) {
+    renderizados = Math.min(CARDS.length, renderizados + 2);
+    setTimeout(render, 50);
+  }
+});
+render();
+</script></body></html>

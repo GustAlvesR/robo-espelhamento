@@ -1,0 +1,7 @@
+config.yaml
+.env
+perfil_edge/
+dados/
+logs/
+dumps/
+.venv/

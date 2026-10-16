@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body { font-family: sans-serif; margin: 0; }
+  #scroller { position: relative; width: 700px; height: 300px; overflow: auto; border: 1px solid #ccc; }
+  #conteudo { position: relative; }
+  .c, .h { position: absolute; width: 96px; height: 26px; overflow: hidden; white-space: nowrap; font-size: 11px; }
+  .h { background: #eee; font-weight: bold; z-index: 2; }
+  #filtros { display: none; }
+</style></head><body>
+<nav><div role="button">MENU</div> &gt; <div role="button">ROTA EXTRA</div> &gt;
+     <div role="button" aria-current="page">TABELA DE ENDERECO</div></nav>
+<div>Buscar em TABELA DE ENDEREÇO</div>
+<div data-testid="filter-drawer" id="filtros"><nav class="filtering-index"><div role="button">Endereço</div><div role="button">Operação</div></nav></div>
+<div id="scroller"><div id="conteudo"></div></div>
+<script>
+const COLS = ["Operação","ID","MACRO REGIÃO","MICRO REGIÃO","Endereço","Localização Fixa","CNPJ","POSSUI RESTRIÇÃO",
+  "PERFIL RESTRIÇÃO","MOTIVO RESTRIÇÃO","Possuí Aplicativo ou Forms de Acesso?","Qual?","LINK",
+  "Local de Bipagem do YMS","DEMANDA","Restrição APP Sheet"];
+const W = 100, H = 30, N = 60;
+const LINHAS = [];
+for (let i = 0; i < N; i++) {
+  LINHAS.push([`MELI`, String(1000 + i), 'SUDESTE', `SP${i}`, i === 7 ? 'Av. Vitória, 7' : `Rua ${i}, ${i * 10}`,
+    `BRSP${i}`, '', i % 3 === 0 ? 'Sim' : 'Não', i % 3 === 0 ? 'CARRETA' : '', i === 9 ? 'SEM OPERAÇÃO MELI' : '',
+    'Não', 'Não Aplicável', `http://link/${i}`, 'Doca 1', i % 2 ? 'ALTA' : '', i === 5 ? 'Bloqueado' : '']);
+}
+const sc = document.getElementById('scroller'), ct = document.getElementById('conteudo');
+ct.style.width = (COLS.length * W) + 'px';
+ct.style.height = (H + N * H) + 'px';
+function render() {
+  const top = sc.scrollTop, left = sc.scrollLeft;
+  const c0 = Math.max(0, Math.floor(left / W) - 1), c1 = Math.min(COLS.length, Math.ceil((left + sc.clientWidth) / W) + 1);
+  const r0 = Math.max(0, Math.floor(top / H) - 1), r1 = Math.min(N, Math.ceil((top + sc.clientHeight) / H) + 1);
+  let html = '';
+  for (let c = c0; c < c1; c++) html += `<div class="h" style="left:${c * W}px;top:${top}px"><span>${COLS[c]}</span></div>`;
+  for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) {
+    const v = LINHAS[r][c];
+    if (!v) continue;
+    html += `<div class="c" style="left:${c * W}px;top:${H + r * H}px"><span class="TextTypeDisplay__text" data-testid="text-type-display-span">${v}</span></div>`;
+  }
+  ct.innerHTML = html;
+}
+sc.addEventListener('scroll', render);
+render();
+</script></body></html>

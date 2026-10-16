@@ -1,0 +1,7 @@
+# Não rode "playwright install": o robô usa o Microsoft Edge já instalado (channel=msedge).
+playwright>=1.44,<2
+PyYAML>=6.0
+# Windows não traz a base de fusos horários; sem isto ZoneInfo("America/Sao_Paulo") falha.
+tzdata>=2024.1
+# E-mail via Outlook desktop (opcional; só Windows).
+pywin32>=306; sys_platform == "win32"

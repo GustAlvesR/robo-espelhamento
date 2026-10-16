@@ -1,0 +1,103 @@
+# Copie para config.yaml e ajuste. Caminhos relativos são relativos a esta pasta.
+# Segredos (URL do webhook, e-mails) podem ficar no .env (veja .env.example) em vez daqui.
+
+app:
+  # Abra a tela MENU > ROTA EXTRA no Edge e copie a URL inteira da barra (ela contém "#...view=ROTA%20EXTRA").
+  url_rotas: "https://www.appsheet.com/start/COLE_O_APP_ID_AQUI#view=ROTA%20EXTRA"
+  # Opcional, mas recomendado: URL da tela TABELA DE ENDEREÇO (mesmo procedimento).
+  # Vazio = o robô tenta abrir pelo menu ou pelo pin do 1º card (pode vir filtrada).
+  url_tabela_endereco: ""
+
+navegador:
+  canal: "msedge"            # Edge instalado. Use "chrome" se o Edge bloquear automação.
+  perfil_dir: "perfil_edge"  # perfil exclusivo do robô (guarda o login). Não use o perfil normal do Edge.
+  headless: false            # true depois de validar; deixe false se o SSO exigir janela visível
+  largura: 1600
+  altura: 1000
+  proxy: ""                  # vazio = proxy do sistema. Ex.: "http://proxy.empresa:8080"
+  timeout_navegacao_s: 60
+  timeout_carregamento_s: 30
+  espera_cards_s: 5          # quanto esperar por um ACEITAR depois da tela carregar (lista vazia é normal)
+  espera_lazy_ms: 1500       # no fim da lista, quanto esperar por cards carregados sob demanda
+  espera_rede_s: 10          # limite para esperar a rede ficar ociosa após recarregar
+  max_rolagens: 60
+
+monitor:
+  intervalo_s: 45
+  fuso: "America/Sao_Paulo"
+  janela_oferta_min: 30      # a rota some X min após ser publicada; usado no "tempo restante"
+  esquecer_apos_min: 10      # rota que sumiu da tela há mais que isso é esquecida (se voltar, avisa de novo)
+  ciclos_vazios_alerta: 80   # 0 cards por N ciclos seguidos gera 1 alerta (80 x 45s = 1h)
+  falhas_seguidas_alerta: 3
+  heartbeat_hora: "08:00"    # entre aspas; um resumo por dia a partir desse horário
+  indicadores_login_url: ["accounts.google.com", "login.microsoftonline.com", "/account/login", "signin", "oauth"]
+  indicadores_login_texto: ["Sign in with Google", "Fazer login com o Google", "Sign in with Microsoft",
+                            "Entrar com a Microsoft", "Faça login para continuar", "Sign in to continue"]
+
+validacao:
+  # Nome fora do padrão NÃO é ignorado: sai aviso marcado como "nomenclatura fora do padrão".
+  regex_nome: '^BR[A-Z]{2}\d+(-[A-Z0-9]+)+(\.[A-Z]+)+$'
+
+filtros:
+  veiculos: []               # vazio = todos. Ex.: ["TOCO", "TRUCK"]
+  origens: []                # prefixos; vazio = todas. Ex.: ["BRSP21", "BRSP1"]
+  eta_minima_min: 0          # ignora rotas com ETA em menos de X minutos (0 = desligado)
+
+hub:
+  cache_arquivo: "dados/tabela_endereco.json"
+  atualizar_cada_h: 12
+  # Colunas onde a ORIGEM (ex.: BRSP21) é procurada como palavra inteira, nesta ordem.
+  colunas_busca: ["Localização Fixa", "MICRO REGIÃO", "Operação"]
+  # Origem -> valor da coluna ID, para origens que não casam sozinhas (veja logs/origens_sem_match.log).
+  mapeamento_manual: {}
+  #   BRSP21: "123"
+  termos_alerta: ["SEM OPERAÇÃO MELI", "EM VALIDAÇÃO"]
+  veiculos_conhecidos: ["VUC", "VAN", "FIORINO", "3/4", "TOCO", "TRUCK", "CARRETA", "BITREM", "RODOTREM"]
+  # "proibidos": PERFIL RESTRIÇÃO lista veículos que NÃO entram (CARRETA no perfil = TOCO/TRUCK ok).
+  # "permitidos": PERFIL RESTRIÇÃO lista os únicos veículos aceitos.
+  perfil_indica: "proibidos"
+  arquivo_sem_match: "logs/origens_sem_match.log"
+  tabela:
+    colunas: ["Operação", "ID", "MACRO REGIÃO", "MICRO REGIÃO", "Endereço", "Localização Fixa", "CNPJ",
+              "POSSUI RESTRIÇÃO", "PERFIL RESTRIÇÃO", "MOTIVO RESTRIÇÃO", "Possuí Aplicativo ou Forms de Acesso?",
+              "Qual?", "LINK", "Local de Bipagem do YMS", "DEMANDA", "Restrição APP Sheet"]
+    # auto: usa o elemento de linha (seletor_linha) se existir; senão agrupa por coordenada Y.
+    # Outras: coordenadas | ancestral | blocos (blocos só funciona se célula vazia também tiver span).
+    estrategia_linhas: "auto"
+    seletor_linha: '[role="row"], tr'
+    tolerancia_y_px: 10
+    min_celulas_linha: 3
+    valores_nulos: ["", "Não Aplicável", "N/A", "-"]
+    max_rolagens: 300
+
+notificacao:
+  teams:
+    ativo: true
+    webhook_url: ""          # prefira ROTAS_TEAMS_WEBHOOK_URL no .env
+    timeout_s: 15
+  email:
+    ativo: true              # fallback via Outlook desktop (só se o Teams falhar)
+    destinatarios: []        # prefira ROTAS_EMAIL_DESTINATARIOS no .env
+    assunto_prefixo: "[Rotas Extras]"
+  tentativas: 3              # por canal
+  backoff_inicial_s: 2       # 2s, 4s, 8s...
+  cooldown_alertas_min: 30   # alertas de sistema (sessão, falhas) no máximo 1x por esse período
+  proxy: ""                  # vazio = proxy do sistema (variáveis HTTPS_PROXY ou configuração do Windows)
+
+auto_aceite:
+  ativo: false               # DESLIGADO por padrão. Exige filtros.veiculos e filtros.origens preenchidos.
+  max_por_hora: 2
+  exigir_hub_ok: true        # só aceita se o hub casou sem ambiguidade e está compatível
+  confirmar_dialogo: false   # se o AppSheet pedir confirmação, clicar em OK/CONFIRMAR/SIM?
+  textos_confirmacao: ["OK", "CONFIRMAR", "SIM"]
+  timeout_confirmacao_s: 10
+  arquivo_auditoria: "logs/auto_aceite_auditoria.jsonl"
+
+log:
+  nivel: "INFO"              # DEBUG para investigar
+  arquivo: "logs/monitor.log"
+  max_mb: 5
+  backups: 5
+
+estado_arquivo: "dados/estado.json"
+dumps_dir: "dumps"
