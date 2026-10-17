@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Monitor de Rotas Extras</title>
+<style>
+  :root { --borda: #d0d7de; --fraco: #57606a; --ok: #1a7f37; --erro: #cf222e; }
+  body { font-family: "Segoe UI", Arial, sans-serif; max-width: 760px; margin: 24px auto; padding: 0 16px; color: #1f2328; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.sub { color: var(--fraco); margin-top: 0; }
+  fieldset { border: 1px solid var(--borda); border-radius: 8px; margin: 16px 0; padding: 12px 16px; }
+  legend { font-weight: 600; padding: 0 6px; }
+  label { display: block; margin: 10px 0 4px; font-size: 13px; }
+  small { color: var(--fraco); }
+  input[type=text], input[type=number], input[type=url] { width: 100%; box-sizing: border-box; padding: 6px 8px;
+    border: 1px solid var(--borda); border-radius: 6px; font-size: 13px; }
+  .linha { display: flex; gap: 12px; } .linha > div { flex: 1; }
+  button { padding: 7px 14px; border-radius: 6px; border: 1px solid var(--borda); background: #f6f8fa; cursor: pointer; margin-right: 8px; }
+  button.principal { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+  #msg { margin-left: 8px; font-size: 13px; }
+  .ok { color: var(--ok); } .erro { color: var(--erro); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  td { padding: 3px 8px 3px 0; vertical-align: top; } td:first-child { color: var(--fraco); white-space: nowrap; }
+  #eventos { font-size: 12px; max-height: 260px; overflow: auto; }
+</style>
+</head>
+<body>
+<h1>Monitor de Rotas Extras</h1>
+<p class="sub">Lê a tela ROTA EXTRA do AppSheet e avisa o time no Teams. Não aceita nem recusa rotas.</p>
+
+<fieldset>
+  <legend>Status</legend>
+  <table id="status"></table>
+  <p><button id="cicloAgora">Ler a tela agora</button></p>
+</fieldset>
+
+<fieldset>
+  <legend>Configuração</legend>
+  <label for="webhookUrl">URL do webhook do Teams (Power Automate / Workflows)</label>
+  <input type="url" id="webhookUrl" placeholder="https://...logic.azure.com/... ou https://...powerplatform.com/...">
+  <label for="urlRotas">URL da tela ROTA EXTRA <small>(opcional: copie da barra de endereço; se vazio, a extensão usa a aba que você deixar aberta nessa tela)</small></label>
+  <input type="url" id="urlRotas" placeholder="https://www.appsheet.com/start/...#...view=ROTA%20EXTRA">
+  <div class="linha">
+    <div><label for="intervaloS">Intervalo entre leituras (s, mínimo 30)</label><input type="number" id="intervaloS" min="30"></div>
+    <div><label for="janelaOfertaMin">Janela da oferta (min)</label><input type="number" id="janelaOfertaMin" min="1"></div>
+    <div><label for="heartbeatHora">Resumo diário às</label><input type="text" id="heartbeatHora" placeholder="08:00"></div>
+  </div>
+  <div class="linha">
+    <div><label for="veiculos">Veículos permitidos <small>(vazio = todos; ex.: TOCO, TRUCK)</small></label><input type="text" id="veiculos"></div>
+    <div><label for="origens">Origens permitidas <small>(prefixos; vazio = todas)</small></label><input type="text" id="origens"></div>
+    <div><label for="etaMinimaMin">Ignorar ETA em menos de (min)</label><input type="number" id="etaMinimaMin" min="0"></div>
+  </div>
+  <label for="regexNome">Padrão da nomenclatura (regex)</label>
+  <input type="text" id="regexNome">
+  <label><input type="checkbox" id="notificacaoLocal"> Mostrar também notificação do Windows neste PC</label>
+  <p>
+    <button class="principal" id="salvar">Salvar</button>
+    <button id="teste">Enviar teste ao Teams</button>
+    <span id="msg"></span>
+  </p>
+</fieldset>
+
+<fieldset>
+  <legend>Últimos eventos</legend>
+  <div id="eventos"></div>
+</fieldset>
+<script type="module" src="opcoes.js"></script>
+</body>
+</html>

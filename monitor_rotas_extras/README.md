@@ -7,6 +7,15 @@ continua sendo feito por uma pessoa do time, no app.
 
 Este projeto é independente do robô de espelhamento que está na raiz do repositório.
 
+Há duas formas de rodar:
+
+- Extensão do Chrome (`extensao_chrome/`, recomendada): roda no Chrome em que você já está logado, sem
+  Python e sem login automatizado. Instalação em `extensao_chrome/README.md`. Ainda não cruza com a
+  tabela de endereço.
+- Robô Python (o resto desta pasta): abre um navegador próprio e faz tudo, inclusive o cruzamento com a
+  tabela de endereço, mas precisa de um login que o Google aceite nesse navegador. Em alguns PCs/contas
+  o Google bloqueia ("Esse navegador ou app pode não ser seguro"); nesse caso use a extensão.
+
 ## Estrutura
 
 ```
@@ -21,6 +30,7 @@ monitor_rotas_extras/
     notifier.py        Adaptive Card no Teams (Power Automate) e e-mail via Outlook, com retry
     state.py           estado em JSON (deduplicação, cooldown de alertas)
     main.py            loop, resiliência, heartbeat e modos de diagnóstico
+  extensao_chrome/     extensão do Chrome (alternativa sem Python, ver o README dela)
   tests/               pytest (unitários + integração com páginas que imitam o AppSheet)
   config.example.yaml  configuração comentada
   .env.example         segredos (webhook, e-mails)

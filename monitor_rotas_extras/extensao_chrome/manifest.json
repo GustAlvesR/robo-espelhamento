@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Monitor de Rotas Extras",
+  "version": "1.0.0",
+  "description": "Lê a tela ROTA EXTRA do AppSheet e avisa o time no Teams quando uma rota é ofertada. Não aceita nem recusa rotas.",
+  "icons": {"128": "icone128.png"},
+  "action": {"default_title": "Monitor de Rotas Extras", "default_icon": {"128": "icone128.png"}},
+  "options_page": "opcoes.html",
+  "background": {"service_worker": "background.js", "type": "module"},
+  "permissions": ["storage", "alarms", "tabs", "notifications"],
+  "host_permissions": [
+    "https://*.appsheet.com/*",
+    "https://*.logic.azure.com/*",
+    "https://*.powerplatform.com/*"
+  ],
+  "content_scripts": [{
+    "matches": ["https://*.appsheet.com/*"],
+    "js": ["extrator.js"],
+    "run_at": "document_idle"
+  }]
+}
