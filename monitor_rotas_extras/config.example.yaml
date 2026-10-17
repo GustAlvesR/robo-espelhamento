@@ -10,6 +10,7 @@ app:
 
 navegador:
   canal: "msedge"            # Edge instalado. Use "chrome" se o Edge bloquear automação.
+  executavel: ""             # vazio = acha o msedge.exe sozinho (usado só no --login)
   perfil_dir: "perfil_edge"  # perfil exclusivo do robô (guarda o login). Não use o perfil normal do Edge.
   headless: false            # true depois de validar; deixe false se o SSO exigir janela visível
   largura: 1600

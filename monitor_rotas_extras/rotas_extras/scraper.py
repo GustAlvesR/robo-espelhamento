@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import shutil
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -142,6 +145,50 @@ def abrir_contexto(pw: Playwright, cfg: "Config", forcar_visivel: bool = False) 
     ctx.set_default_timeout(nav.timeout_carregamento_s * 1000)
     ctx.set_default_navigation_timeout(nav.timeout_navegacao_s * 1000)
     return ctx
+
+
+CAMINHOS_NAVEGADOR = {
+    "msedge": [r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe",
+               r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe",
+               r"%LocalAppData%\Microsoft\Edge\Application\msedge.exe"],
+    "chrome": [r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
+               r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe",
+               r"%LocalAppData%\Google\Chrome\Application\chrome.exe"],
+}
+
+
+def localizar_navegador(cfg: "Config") -> str | None:
+    """Caminho do msedge.exe/chrome.exe instalado (ou o configurado em navegador.executavel)."""
+    nav = cfg.navegador
+    if nav.executavel:
+        p = Path(os.path.expandvars(nav.executavel))
+        return str(p) if p.is_file() else None
+    for c in CAMINHOS_NAVEGADOR.get(nav.canal, []):
+        p = Path(os.path.expandvars(c))
+        if p.is_file():
+            return str(p)
+    return shutil.which(nav.canal)
+
+
+def comando_login_manual(executavel: str, perfil: Path, url: str) -> list[str]:
+    return [executavel, f"--user-data-dir={perfil}", "--no-first-run", "--new-window", url]
+
+
+def abrir_navegador_manual(cfg: "Config") -> subprocess.Popen:
+    """Abre o Edge NORMAL (sem automação) no perfil do robô, para o login do Google.
+
+    O Google recusa login em navegador controlado por automação ("Esse navegador ou app pode não ser
+    seguro"). Logando num Edge comum com o mesmo perfil, os cookies ficam salvos e o robô os reaproveita.
+    """
+    exe = localizar_navegador(cfg)
+    if not exe:
+        raise FileNotFoundError(f"Não encontrei o executável do navegador '{cfg.navegador.canal}'. "
+                                "Informe o caminho em navegador.executavel no config.yaml.")
+    perfil = cfg.caminho(cfg.navegador.perfil_dir)
+    perfil.mkdir(parents=True, exist_ok=True)
+    cmd = comando_login_manual(exe, perfil, cfg.app.url_rotas)
+    log.info("Abrindo navegador comum para login: %s", exe)
+    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def pagina_principal(ctx: BrowserContext) -> Page:

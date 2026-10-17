@@ -32,6 +32,7 @@ class AppCfg:
 @dataclass
 class NavegadorCfg:
     canal: str = "msedge"
+    executavel: str = ""
     perfil_dir: str = "perfil_edge"
     headless: bool = False
     largura: int = 1600

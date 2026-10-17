@@ -89,12 +89,22 @@ Chave desconhecida no YAML gera erro de propósito (um erro de digitação não 
 ## 3. Primeiro login (SSO)
 
 ```bat
-python -m rotas_extras --login
+iniciar_monitor.bat --login
 ```
 
-Abre o Edge com um perfil exclusivo do robô (`perfil_edge/`). Faça o login normalmente (Google/Microsoft/SSO),
-deixe a tela ROTA EXTRA visível e pressione ENTER no prompt. O login fica salvo nesse perfil.
-Não aponte `perfil_dir` para o perfil normal do Edge: ele fica travado enquanto o Edge estiver aberto.
+O Google bloqueia login em navegador controlado por automação ("Esse navegador ou app pode não ser
+seguro"). Por isso o `--login` abre um Edge NORMAL, sem automação, usando a pasta de perfil do robô
+(`perfil_edge/`):
+
+1. Faça o login do AppSheet/Google nessa janela, como no dia a dia (inclusive verificação em 2 etapas).
+2. Confira que a tela ROTA EXTRA abriu.
+3. Feche essa janela do Edge e pressione ENTER no prompt.
+
+Em seguida o robô abre o perfil sozinho e confirma se enxerga a tela de rotas. O login fica salvo no
+perfil; nenhuma senha é guardada pelo robô. Se a sessão expirar, chega um alerta e basta repetir o `--login`
+(com o robô parado). Não aponte `perfil_dir` para o perfil normal do Edge: ele fica travado enquanto o
+Edge estiver aberto. Se o Edge não for encontrado, informe o caminho do `msedge.exe` em
+`navegador.executavel`.
 
 ## 4. Webhook do Teams (Power Automate / Workflows)
 
@@ -227,8 +237,9 @@ o Edge continua rodando, mas se o computador suspender o robô para.
   não conseguir: defina `notificacao.proxy` com o endereço do proxy ou peça ao TI a liberação do host do
   webhook. Erro `CERTIFICATE_VERIFY_FAILED`: o Python no Windows usa os certificados do sistema; se ainda
   assim falhar, a inspeção TLS da empresa está usando um certificado fora do repositório do Windows.
-- SSO / sessão expirada: chega um alerta "sessão expirada". Com `headless: false`, faça login na própria
-  janela do robô; com `headless: true`, pare o robô e rode `--login`.
+- "Esse navegador ou app pode não ser seguro" no login do Google: acontece se você tentar logar na janela
+  controlada pelo robô. Pare o robô e use `iniciar_monitor.bat --login`, que abre um Edge comum.
+- Sessão expirada: chega um alerta "sessão expirada". Pare o robô e rode `--login` de novo.
 - Edge não abre / "Browser closed": feche janelas do Edge que estejam usando `perfil_edge`. Veja
   `edge://policy`: se `RemoteDebuggingAllowed` estiver desativada, o Playwright não consegue controlar o
   Edge; peça liberação ao TI ou use `canal: chrome` (se o Chrome estiver instalado).

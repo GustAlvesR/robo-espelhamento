@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -107,7 +108,8 @@ class Monitor:
         except scraper.ErroSessao as e:
             self._registrar_falha(e, alertar=False)
             self._alertar("sessao", "sessão expirada no AppSheet",
-                          f"{e}. Faça login na janela do Edge aberta pelo robô (ou pare o robô e rode --login).")
+                          f"{e}. Pare o robô e rode iniciar_monitor.bat --login (o Google bloqueia login na janela "
+                          "controlada pelo robô).")
         except scraper.ErroCarregamento as e:
             self._registrar_falha(e)
         except PWError as e:
@@ -306,16 +308,49 @@ class Monitor:
 # ---------------- modos auxiliares ----------------
 
 def _modo_login(pw: Playwright, cfg: Config) -> int:
-    ctx = scraper.abrir_contexto(pw, cfg, forcar_visivel=True)
+    """Login num navegador comum (o Google bloqueia login em navegador automatizado) e verificação."""
+    try:
+        proc = scraper.abrir_navegador_manual(cfg)
+    except FileNotFoundError as e:
+        print(e)
+        return 1
+    print("\nAbri um Edge NORMAL usando o perfil do robô.\n"
+          "1. Faça o login do AppSheet/Google nessa janela, como faria no dia a dia.\n"
+          "2. Confira que a tela ROTA EXTRA abriu.\n"
+          "3. FECHE essa janela do Edge e volte aqui.")
+    input("\nPressione ENTER depois de fechar a janela... ")
+    if proc.poll() is None:
+        print("A janela do Edge ainda está aberta; aguardando você fechá-la (até 2 min)...")
+        try:
+            proc.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            print("Ela continua aberta. Feche todas as janelas desse Edge e rode --login de novo.")
+            return 1
+    print("Verificando se o robô enxerga a sessão...")
+    return _verificar_sessao(pw, cfg)
+
+
+def _verificar_sessao(pw: Playwright, cfg: Config) -> int:
+    try:
+        ctx = scraper.abrir_contexto(pw, cfg)
+    except PWError as e:
+        print(f"Não consegui abrir o navegador do robô (alguma janela com o perfil ainda aberta?): {e}")
+        return 1
     try:
         page = scraper.pagina_principal(ctx)
-        page.goto(cfg.app.url_rotas, wait_until="domcontentloaded")
-        input("\nFaça o login no Edge que abriu, deixe a tela ROTA EXTRA visível e pressione ENTER aqui... ")
-        if scraper.detectar_login(page, cfg):
-            print("Ainda parece a tela de login. Tente de novo.")
-            return 1
-        print("Sessão salva no perfil. Agora rode: python -m rotas_extras --once --dry-run")
+        scraper.carregar_tela_rotas(page, cfg)
+        ext = scraper.extrair_cards(page, cfg)
+        print(f"Login OK: a tela de rotas carregou ({len(ext.cards)} card(s) no momento).\n"
+              "Próximo passo: iniciar_monitor.bat --once --dry-run")
         return 0
+    except scraper.ErroSessao:
+        print("O robô ainda cai na tela de login. Rode --login de novo e confirme que entrou no app antes "
+              "de fechar a janela.")
+        return 1
+    except (scraper.ErroCarregamento, PWError) as e:
+        print(f"Login parece feito, mas a tela de rotas não carregou: {e}\n"
+              "Confira app.url_rotas no config.yaml e rode --once --dry-run --dump-html.")
+        return 1
     finally:
         ctx.close()
 
@@ -360,7 +395,7 @@ def _args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--discover-table", action="store_true", help="diagnóstico da estrutura da tabela de endereço")
     p.add_argument("--discover-text", nargs="+", default=["Vitória", "MACRO REGIÃO"],
                    help="textos-alvo do --discover-table")
-    p.add_argument("--login", action="store_true", help="abre o Edge para login manual e salva a sessão")
+    p.add_argument("--login", action="store_true", help="abre um Edge comum no perfil do robô para o login e verifica a sessão")
     p.add_argument("--refresh-table", action="store_true", help="relê a tabela de endereço e sai")
     p.add_argument("--test-notify", action="store_true", help="envia uma notificação de teste e sai")
     p.add_argument("--verbose", action="store_true", help="log em nível DEBUG")
