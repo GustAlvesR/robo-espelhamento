@@ -41,8 +41,8 @@ def bruto():
     return _bruto
 
 
-# Testes de integração precisam de um Chromium/Edge acessível ao Playwright; sem isso, são pulados.
-# No Windows usa o Edge por padrão; outros: PW_CANAL=chrome ou PW_EXECUTAVEL=<caminho do executável>.
+# Testes de integração precisam de um Chromium/Chrome/Edge acessível ao Playwright; sem isso, são pulados.
+# No Windows usa o Chrome por padrão; outros: PW_CANAL=msedge ou PW_EXECUTAVEL=<caminho do executável>.
 @pytest.fixture(scope="module")
 def navegador():
     sync_api = pytest.importorskip("playwright.sync_api")
@@ -52,7 +52,7 @@ def navegador():
     elif os.getenv("PW_EXECUTAVEL"):
         kwargs["executable_path"] = os.getenv("PW_EXECUTAVEL")
     elif sys.platform == "win32":
-        kwargs["channel"] = "msedge"
+        kwargs["channel"] = "chrome"
     with sync_api.sync_playwright() as pw:
         try:
             browser = pw.chromium.launch(**kwargs)

@@ -1,6 +1,6 @@
 # Monitor de Rotas Extras (AppSheet TORRE DE CONTROLE)
 
-Robô que abre a tela MENU > ROTA EXTRA do app AppSheet no Microsoft Edge, lê os cards a cada 45 s,
+Robô que abre a tela MENU > ROTA EXTRA do app AppSheet no Google Chrome (ou no Edge), lê os cards a cada 45 s,
 cruza a origem da rota com a TABELA DE ENDEREÇO e avisa no Teams (com e-mail via Outlook como reserva)
 cada rota nova uma única vez. O robô só LÊ a tela: nunca clica em ACEITAR nem em recusar. O aceite
 continua sendo feito por uma pessoa do time, no app.
@@ -17,7 +17,7 @@ monitor_rotas_extras/
     parser.py          parsing do card (veículo, origem, ETA, CPT, tempo limite) e validações
     regras.py          filtros e alertas agregados
     address_lookup.py  leitura da tabela de endereço, agrupamento de linhas, cache e cruzamento com o hub
-    scraper.py         Edge/Playwright: recarregar tela, extrair cards (somente leitura), dumps
+    scraper.py         Chrome/Edge via Playwright: recarregar tela, extrair cards (somente leitura), dumps
     notifier.py        Adaptive Card no Teams (Power Automate) e e-mail via Outlook, com retry
     state.py           estado em JSON (deduplicação, cooldown de alertas)
     main.py            loop, resiliência, heartbeat e modos de diagnóstico
@@ -28,7 +28,7 @@ monitor_rotas_extras/
   iniciar_monitor.bat  inicia o robô (também usado pelo Agendador de Tarefas)
 ```
 
-Gerados em tempo de execução (fora do Git): `config.yaml`, `.env`, `perfil_edge/` (login), `dados/`
+Gerados em tempo de execução (fora do Git): `config.yaml`, `.env`, `perfil_navegador/` (login), `dados/`
 (estado e cache da tabela), `logs/`, `dumps/`.
 
 ## 1. Instalação no Windows corporativo (sem administrador)
@@ -63,7 +63,8 @@ Passo a passo manual:
    Atrás de proxy: `pip install --proxy http://usuario@proxy.empresa:porta -r requirements.txt`
    (ou `set HTTPS_PROXY=http://proxy.empresa:porta` antes do pip).
 
-3. NÃO rode `playwright install`. O robô usa o Edge já instalado (`canal: msedge`).
+3. NÃO rode `playwright install`. O robô usa o Google Chrome já instalado (`canal: chrome`). Para usar o
+   Edge, troque para `canal: msedge`.
 
 Dependências: `playwright`, `PyYAML`, `tzdata` e `pywin32` (só para o e-mail). O que pode ser bloqueado:
 
@@ -78,7 +79,7 @@ copy config.example.yaml config.yaml
 copy .env.example .env
 ```
 
-- `config.yaml` > `app.url_rotas`: abra MENU > ROTA EXTRA no Edge e copie a URL inteira da barra de
+- `config.yaml` > `app.url_rotas`: abra MENU > ROTA EXTRA no Chrome e copie a URL inteira da barra de
   endereço (ela termina com algo como `#...view=ROTA%20EXTRA`).
 - `app.url_tabela_endereco`: faça o mesmo na TABELA DE ENDEREÇO. Recomendado: sem isso o robô tenta
   abrir pelo menu ou pelo pin do primeiro card, e a tela aberta pelo pin pode vir filtrada.
@@ -93,18 +94,22 @@ iniciar_monitor.bat --login
 ```
 
 O Google bloqueia login em navegador controlado por automação ("Esse navegador ou app pode não ser
-seguro"). Por isso o `--login` abre um Edge NORMAL, sem automação, usando a pasta de perfil do robô
-(`perfil_edge/`):
+seguro"). Por isso o `--login` abre um Chrome NORMAL, sem automação, usando a pasta de perfil do robô
+(`perfil_navegador/`). É uma janela separada do seu Chrome do dia a dia, com outra pasta de dados, então
+você precisa logar nela uma vez:
 
 1. Faça o login do AppSheet/Google nessa janela, como no dia a dia (inclusive verificação em 2 etapas).
 2. Confira que a tela ROTA EXTRA abriu.
-3. Feche essa janela do Edge e pressione ENTER no prompt.
+3. Feche essa janela do Chrome e pressione ENTER no prompt.
 
 Em seguida o robô abre o perfil sozinho e confirma se enxerga a tela de rotas. O login fica salvo no
 perfil; nenhuma senha é guardada pelo robô. Se a sessão expirar, chega um alerta e basta repetir o `--login`
-(com o robô parado). Não aponte `perfil_dir` para o perfil normal do Edge: ele fica travado enquanto o
-Edge estiver aberto. Se o Edge não for encontrado, informe o caminho do `msedge.exe` em
-`navegador.executavel`.
+(com o robô parado).
+
+Por que não usar direto o Chrome onde você já está logado: o perfil fica travado enquanto o Chrome estiver
+aberto, e as versões recentes do Chrome não permitem automação no perfil padrão. Por isso o robô tem o
+próprio perfil. Se o Chrome não for encontrado, informe o caminho do `chrome.exe` em
+`navegador.executavel` (normalmente `C:\Program Files\Google\Chrome\Application\chrome.exe`).
 
 ## 4. Webhook do Teams (Power Automate / Workflows)
 
@@ -191,7 +196,7 @@ Para outros textos-alvo: `--discover-text "Vitória" "MACRO REGIÃO" "PERFIL RES
 
 1. Abra "Agendador de Tarefas" > "Criar Tarefa..." (não a básica).
 2. Geral: nome "Monitor Rotas Extras"; "Executar somente quando o usuário estiver conectado"
-   (necessário para a janela do Edge, o SSO e o Outlook).
+   (necessário para a janela do navegador, o login e o Outlook).
 3. Disparadores: Novo > "Ao fazer logon" > Usuário específico (você) > "Atrasar a tarefa por: 1 minuto".
 4. Ações: Novo > Iniciar um programa:
    - Programa: `C:\caminho\monitor_rotas_extras\iniciar_monitor.bat`
@@ -199,13 +204,13 @@ Para outros textos-alvo: `--discover-text "Vitória" "MACRO REGIÃO" "PERFIL RES
 5. Condições: desmarque "Iniciar a tarefa somente se o computador estiver ligado à rede elétrica".
 6. Configurações: desmarque "Interromper a tarefa se ela for executada por mais de"; marque "Se a tarefa
    falhar, reiniciar a cada 5 minutos, até 3 vezes"; "Se a tarefa já estiver em execução: Não iniciar uma
-   nova instância" (duas instâncias brigariam pelo mesmo perfil do Edge).
+   nova instância" (duas instâncias brigariam pelo mesmo perfil do navegador).
 
 Se o Agendador estiver bloqueado por política, coloque um atalho para o `iniciar_monitor.bat` em
 `shell:startup` (Win+R > `shell:startup`).
 
 Deixe o PC sem suspender (Configurações > Sistema > Energia > Suspender: Nunca). A tela pode bloquear:
-o Edge continua rodando, mas se o computador suspender o robô para.
+o navegador continua rodando, mas se o computador suspender o robô para.
 
 ## 8. Como funciona
 
@@ -232,18 +237,19 @@ o Edge continua rodando, mas se o computador suspender o robô para.
 
 ## 9. Solução de problemas
 
-- Proxy: o Edge usa o proxy do Windows sozinho. O envio ao Teams usa o proxy do sistema (variáveis
+- Proxy: o Chrome/Edge usa o proxy do Windows sozinho. O envio ao Teams usa o proxy do sistema (variáveis
   `HTTPS_PROXY` ou configuração do Windows). Se o proxy usa arquivo PAC ou autenticação NTLM, o Python pode
   não conseguir: defina `notificacao.proxy` com o endereço do proxy ou peça ao TI a liberação do host do
   webhook. Erro `CERTIFICATE_VERIFY_FAILED`: o Python no Windows usa os certificados do sistema; se ainda
   assim falhar, a inspeção TLS da empresa está usando um certificado fora do repositório do Windows.
 - "Esse navegador ou app pode não ser seguro" no login do Google: acontece se você tentar logar na janela
-  controlada pelo robô. Pare o robô e use `iniciar_monitor.bat --login`, que abre um Edge comum.
+  controlada pelo robô. Pare o robô e use `iniciar_monitor.bat --login`, que abre um Chrome comum.
 - Sessão expirada: chega um alerta "sessão expirada". Pare o robô e rode `--login` de novo.
-- Edge não abre / "Browser closed": feche janelas do Edge que estejam usando `perfil_edge`. Veja
-  `edge://policy`: se `RemoteDebuggingAllowed` estiver desativada, o Playwright não consegue controlar o
-  Edge; peça liberação ao TI ou use `canal: chrome` (se o Chrome estiver instalado).
-- Antivírus: pode bloquear o `node.exe` do Playwright ou o próprio Edge em modo automação. Peça exceção
+- Navegador não abre / "Browser closed": feche as janelas que estejam usando `perfil_navegador`. Veja
+  `chrome://policy` (ou `edge://policy`): se `RemoteDebuggingAllowed` estiver desativada, o Playwright não
+  consegue controlar o navegador; peça liberação ao TI ou teste o outro navegador (`canal: msedge`).
+  Se aparecer "chrome executable not found", preencha `navegador.executavel` com o caminho do `chrome.exe`.
+- Antivírus: pode bloquear o `node.exe` do Playwright ou o próprio navegador em modo automação. Peça exceção
   para a pasta do projeto e do ambiente virtual.
 - E-mail não sai: o "Novo Outlook" não tem COM; precisa do Outlook clássico. Com o Outlook fechado, o
   e-mail pode ficar na Caixa de Saída até ele abrir.
@@ -278,5 +284,5 @@ python -m pytest
 ```
 
 Os testes de integração (`test_dom_integracao.py`, `test_monitor_e2e.py`) abrem páginas em
-`tests/fixtures` que imitam o HTML do AppSheet. No Windows, rode com `set PW_CANAL=msedge` antes do
-pytest; sem navegador disponível eles são pulados.
+`tests/fixtures` que imitam o HTML do AppSheet. No Windows usam o Chrome (ou `set PW_CANAL=msedge` antes do
+pytest); sem navegador disponível eles são pulados.

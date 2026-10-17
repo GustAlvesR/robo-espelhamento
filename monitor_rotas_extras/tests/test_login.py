@@ -29,4 +29,11 @@ def test_abrir_navegador_manual_inicia_processo(tmp_path):
     cfg.navegador.executavel = sys.executable  # qualquer executável serve para testar o disparo
     proc = scraper.abrir_navegador_manual(cfg)
     proc.wait(timeout=30)
-    assert (tmp_path / "perfil_edge").is_dir()
+    assert (tmp_path / "perfil_navegador").is_dir()
+
+
+def test_chrome_e_o_padrao(tmp_path):
+    cfg = Config()
+    assert cfg.navegador.canal == "chrome" and scraper.nome_navegador(cfg) == "Chrome"
+    cfg.navegador.canal = "msedge"
+    assert scraper.nome_navegador(cfg) == "Edge"

@@ -1,4 +1,4 @@
-"""Navegador (Edge via Playwright) e tela ROTA EXTRA: carregar, extrair cards e salvar dumps.
+"""Navegador (Chrome ou Edge via Playwright) e tela ROTA EXTRA: carregar, extrair cards e salvar dumps.
 
 Somente leitura: o robô nunca clica em ACEITAR nem em recusar.
 """
@@ -129,15 +129,19 @@ JS_LISTA_CRESCEU = "([sel, altura, botoes]) => {" + JS_CARDS + r"""
 # --------------------------------------------------------------------------------------------
 
 def abrir_contexto(pw: Playwright, cfg: "Config", forcar_visivel: bool = False) -> BrowserContext:
-    """Abre o Edge instalado com perfil persistente (mantém o login SSO entre execuções)."""
+    """Abre o Chrome/Edge instalado com perfil persistente (mantém o login entre execuções)."""
     nav = cfg.navegador
     perfil = cfg.caminho(nav.perfil_dir)
     perfil.mkdir(parents=True, exist_ok=True)
     kwargs: dict = dict(
-        channel=nav.canal or None, headless=False if forcar_visivel else nav.headless, args=ARGS_EDGE,
+        headless=False if forcar_visivel else nav.headless, args=ARGS_EDGE,
         viewport={"width": nav.largura, "height": nav.altura}, locale="pt-BR", timezone_id=cfg.monitor.fuso,
         accept_downloads=False,
     )
+    if nav.executavel:
+        kwargs["executable_path"] = os.path.expandvars(nav.executavel)
+    else:
+        kwargs["channel"] = nav.canal or None
     if nav.proxy:
         kwargs["proxy"] = {"server": nav.proxy}
     log.info("Abrindo navegador (canal=%s, headless=%s, perfil=%s)", nav.canal, kwargs["headless"], perfil)
@@ -155,6 +159,10 @@ CAMINHOS_NAVEGADOR = {
                r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe",
                r"%LocalAppData%\Google\Chrome\Application\chrome.exe"],
 }
+
+
+def nome_navegador(cfg: "Config") -> str:
+    return {"chrome": "Chrome", "msedge": "Edge"}.get(cfg.navegador.canal, cfg.navegador.canal)
 
 
 def localizar_navegador(cfg: "Config") -> str | None:
@@ -175,10 +183,10 @@ def comando_login_manual(executavel: str, perfil: Path, url: str) -> list[str]:
 
 
 def abrir_navegador_manual(cfg: "Config") -> subprocess.Popen:
-    """Abre o Edge NORMAL (sem automação) no perfil do robô, para o login do Google.
+    """Abre o Chrome/Edge NORMAL (sem automação) no perfil do robô, para o login do Google.
 
     O Google recusa login em navegador controlado por automação ("Esse navegador ou app pode não ser
-    seguro"). Logando num Edge comum com o mesmo perfil, os cookies ficam salvos e o robô os reaproveita.
+    seguro"). Logando num navegador comum com o mesmo perfil, os cookies ficam salvos e o robô os reaproveita.
     """
     exe = localizar_navegador(cfg)
     if not exe:

@@ -1,5 +1,6 @@
 config.yaml
 .env
+perfil_navegador/
 perfil_edge/
 dados/
 logs/

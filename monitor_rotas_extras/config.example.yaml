@@ -2,16 +2,16 @@
 # Segredos (URL do webhook, e-mails) podem ficar no .env (veja .env.example) em vez daqui.
 
 app:
-  # Abra a tela MENU > ROTA EXTRA no Edge e copie a URL inteira da barra (ela contém "#...view=ROTA%20EXTRA").
+  # Abra a tela MENU > ROTA EXTRA no navegador e copie a URL inteira da barra (ela contém "#...view=ROTA%20EXTRA").
   url_rotas: "https://www.appsheet.com/start/COLE_O_APP_ID_AQUI#view=ROTA%20EXTRA"
   # Opcional, mas recomendado: URL da tela TABELA DE ENDEREÇO (mesmo procedimento).
   # Vazio = o robô tenta abrir pelo menu ou pelo pin do 1º card (pode vir filtrada).
   url_tabela_endereco: ""
 
 navegador:
-  canal: "msedge"            # Edge instalado. Use "chrome" se o Edge bloquear automação.
-  executavel: ""             # vazio = acha o msedge.exe sozinho (usado só no --login)
-  perfil_dir: "perfil_edge"  # perfil exclusivo do robô (guarda o login). Não use o perfil normal do Edge.
+  canal: "chrome"            # Google Chrome instalado. Use "msedge" para o Microsoft Edge.
+  executavel: ""             # vazio = acha o chrome.exe/msedge.exe sozinho. Se não achar, cole o caminho aqui.
+  perfil_dir: "perfil_navegador"  # perfil exclusivo do robô (guarda o login). Nunca o perfil do seu dia a dia.
   headless: false            # true depois de validar; deixe false se o SSO exigir janela visível
   largura: 1600
   altura: 1000

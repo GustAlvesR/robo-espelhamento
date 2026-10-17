@@ -314,17 +314,18 @@ def _modo_login(pw: Playwright, cfg: Config) -> int:
     except FileNotFoundError as e:
         print(e)
         return 1
-    print("\nAbri um Edge NORMAL usando o perfil do robô.\n"
+    nome = scraper.nome_navegador(cfg)
+    print(f"\nAbri um {nome} NORMAL usando o perfil do robô (separado do seu {nome} do dia a dia).\n"
           "1. Faça o login do AppSheet/Google nessa janela, como faria no dia a dia.\n"
           "2. Confira que a tela ROTA EXTRA abriu.\n"
-          "3. FECHE essa janela do Edge e volte aqui.")
+          f"3. FECHE essa janela do {nome} e volte aqui.")
     input("\nPressione ENTER depois de fechar a janela... ")
     if proc.poll() is None:
-        print("A janela do Edge ainda está aberta; aguardando você fechá-la (até 2 min)...")
+        print(f"A janela do {nome} ainda está aberta; aguardando você fechá-la (até 2 min)...")
         try:
             proc.wait(timeout=120)
         except subprocess.TimeoutExpired:
-            print("Ela continua aberta. Feche todas as janelas desse Edge e rode --login de novo.")
+            print(f"Ela continua aberta. Feche todas as janelas desse {nome} e rode --login de novo.")
             return 1
     print("Verificando se o robô enxerga a sessão...")
     return _verificar_sessao(pw, cfg)
@@ -395,7 +396,7 @@ def _args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--discover-table", action="store_true", help="diagnóstico da estrutura da tabela de endereço")
     p.add_argument("--discover-text", nargs="+", default=["Vitória", "MACRO REGIÃO"],
                    help="textos-alvo do --discover-table")
-    p.add_argument("--login", action="store_true", help="abre um Edge comum no perfil do robô para o login e verifica a sessão")
+    p.add_argument("--login", action="store_true", help="abre o navegador comum no perfil do robô para o login e verifica a sessão")
     p.add_argument("--refresh-table", action="store_true", help="relê a tabela de endereço e sai")
     p.add_argument("--test-notify", action="store_true", help="envia uma notificação de teste e sai")
     p.add_argument("--verbose", action="store_true", help="log em nível DEBUG")
