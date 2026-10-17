@@ -1,0 +1,325 @@
+// Monitor de rotas extras como FAVORITO (bookmarklet): roda na aba do AppSheet em que você já está logado.
+// O app é carregado num quadro interno (iframe do mesmo endereço) que é recarregado a cada ciclo; o script
+// fica na página de fora e sobrevive aos recarregamentos. Só LÊ a tela: nunca clica em ACEITAR nem recusar.
+// Depende de criarLeitor (leitor.js) e das funções de nucleo.js, concatenados pelo gerar.py.
+
+const CHAVE_LS = 'monitorRotasExtras.v1';
+
+if (window.__monitorRotasFavorito) {
+  window.__monitorRotasFavorito.mostrar();
+  return;
+}
+
+const armazenado = (() => { try { return JSON.parse(localStorage.getItem(CHAVE_LS)) || {}; } catch (e) { return {}; } })();
+const cfg = {...CONFIG_PADRAO, ...(armazenado.config || {})};
+const est = armazenado.estado || estadoInicial();
+let modo = 'quadro';
+let timer = null;
+let ocupado = false;
+let lidoNoQuadro = false;
+
+const salvar = () => localStorage.setItem(CHAVE_LS, JSON.stringify({config: cfg, estado: est}));
+
+// ---------------- interface ----------------
+
+const raiz = document.createElement('div');
+raiz.id = 'monitor-rotas-extras';
+raiz.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;background:#fff;font:13px "Segoe UI",Arial,sans-serif;color:#1f2328';
+raiz.innerHTML = `
+  <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b3d91;color:#fff;flex-wrap:wrap">
+    <b style="font-size:14px">Monitor de Rotas Extras</b>
+    <span data-id="status" style="flex:1;min-width:200px">iniciando...</span>
+    <button data-acao="ler">Ler agora</button>
+    <button data-acao="config">Configurar</button>
+    <button data-acao="teste">Testar Teams</button>
+    <button data-acao="alerta">Ativar alerta no PC</button>
+    <button data-acao="ocultar">Esconder eventos</button>
+    <button data-acao="parar">Parar</button>
+  </div>
+  <div data-id="config" style="display:none;padding:10px 12px;border-bottom:1px solid #ccc;background:#f6f8fa">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+      <label>URL do webhook do Teams<br><input data-campo="webhookUrl" style="width:100%"></label>
+      <label>Intervalo (s, mín. 30)<br><input data-campo="intervaloS" type="number" min="30" style="width:100%"></label>
+      <label>Veículos permitidos (vazio = todos)<br><input data-campo="veiculos" style="width:100%"></label>
+      <label>Origens permitidas (prefixos)<br><input data-campo="origens" style="width:100%"></label>
+      <label>Ignorar ETA em menos de (min)<br><input data-campo="etaMinimaMin" type="number" min="0" style="width:100%"></label>
+      <label>Resumo diário às (HH:MM)<br><input data-campo="heartbeatHora" style="width:100%"></label>
+    </div>
+    <p style="margin:8px 0 0"><button data-acao="salvar">Salvar</button> <span data-id="msgcfg"></span></p>
+  </div>
+  <div data-id="eventos" style="max-height:110px;overflow:auto;padding:4px 12px;font-size:12px;border-bottom:1px solid #ddd;background:#fbfbfb"></div>
+  <iframe data-id="quadro" style="flex:1;border:0;width:100%"></iframe>`;
+document.body.appendChild(raiz);
+
+const $ = s => raiz.querySelector(`[data-id="${s}"]`);
+const quadro = $('quadro');
+const status = texto => { $('status').textContent = texto; };
+
+function desenharEventos() {
+  $('eventos').innerHTML = '';
+  for (const ev of est.eventos.slice(0, 15)) {
+    const d = document.createElement('div');
+    d.textContent = `${fmtData(ev.em)}  ${ev.texto}`;
+    $('eventos').appendChild(d);
+  }
+}
+
+function evento(texto) {
+  registrarEvento(est, Date.now(), texto);
+  desenharEventos();
+}
+
+function abrirConfig(mostrar = true) {
+  $('config').style.display = mostrar ? 'block' : 'none';
+  for (const el of raiz.querySelectorAll('[data-campo]')) el.value = cfg[el.dataset.campo];
+}
+
+function salvarConfig() {
+  const novo = {};
+  for (const el of raiz.querySelectorAll('[data-campo]')) novo[el.dataset.campo] = el.value.trim();
+  for (const c of ['intervaloS', 'etaMinimaMin']) novo[c] = Number(novo[c]);
+  if (novo.webhookUrl && !/^https:\/\//.test(novo.webhookUrl)) return $('msgcfg').textContent = 'A URL do webhook deve começar com https://';
+  if (!(novo.intervaloS >= 30)) return $('msgcfg').textContent = 'Intervalo mínimo: 30 s';
+  if (!/^\d{2}:\d{2}$/.test(novo.heartbeatHora)) return $('msgcfg').textContent = 'Horário no formato HH:MM';
+  Object.assign(cfg, novo);
+  salvar();
+  $('msgcfg').textContent = 'Salvo.';
+  agendar();
+}
+
+// ---------------- envio ----------------
+
+async function enviar(msg) {
+  if (!cfg.webhookUrl) return {ok: false, detalhe: 'webhook não configurado'};
+  const corpo = JSON.stringify(montarPayloadTeams(msg));
+  let ultimo = '';
+  for (let t = 1; t <= 3; t++) {
+    try {
+      const r = await fetch(cfg.webhookUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: corpo});
+      if (r.ok) return {ok: true, detalhe: `HTTP ${r.status}`};
+      ultimo = `HTTP ${r.status} em ${new URL(cfg.webhookUrl).host}: ${(await r.text()).slice(0, 200)}`;
+      if (r.status < 500 && r.status !== 408 && r.status !== 429) break;
+    } catch (e) {
+      ultimo = `bloqueado ou sem conexão (${e})`;
+    }
+    if (t < 3) await new Promise(res => setTimeout(res, 2000 * 2 ** (t - 1)));
+  }
+  return {ok: false, detalhe: ultimo};
+}
+
+function notificarPC(msg) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(msg.titulo.slice(0, 120), {body: msg.resumo.slice(0, 250), requireInteraction: msg.nivel !== 'info'}); }
+  catch (e) { console.warn('[Monitor rotas extras] notificação local falhou:', e); }
+}
+
+async function alertar(tipo, titulo, texto, cooldownMin = undefined, nivel = 'erro') {
+  const agora = Date.now();
+  const cd = cooldownMin === undefined ? Number(cfg.cooldownAlertasMin) : cooldownMin;
+  if (!podeAlertar(est, tipo, agora, cd)) return;
+  const msg = {titulo: `⚙ Monitor de rotas extras: ${titulo}`, resumo: texto, nivel, secoes: [], alertas: [], link: urlApp};
+  evento(`ALERTA ${titulo}: ${texto}`);
+  notificarPC(msg);
+  if ((await enviar(msg)).ok || !cfg.webhookUrl) est.alertas[tipo] = agora;
+}
+
+async function testarTeams() {
+  status('enviando teste...');
+  const r = await enviar({titulo: '🧪 Teste do monitor de rotas extras (favorito)', nivel: 'info', link: urlApp,
+    resumo: 'Se você está lendo isto, o aviso no Teams está funcionando.', alertas: [],
+    secoes: [[null, [['Enviado em', fmtData(Date.now())]]]]});
+  const texto = r.ok ? `Teste enviado (${r.detalhe}). Confira o Teams.` : `Falhou: ${r.detalhe}`;
+  evento(texto);
+  status(texto);
+  alert(texto);
+}
+
+// ---------------- ciclo ----------------
+
+const urlApp = location.href;
+
+function documentoAlvo() {
+  if (modo === 'direto') return document;
+  try {
+    const d = quadro.contentDocument;
+    return d && d.location.host === location.host ? d : null;
+  } catch (e) {
+    return null;  // quadro foi para outro domínio (ex.: tela de login do Google)
+  }
+}
+
+function carregarQuadro() {
+  return new Promise(resolve => {
+    const fim = setTimeout(() => resolve(false), 60000);
+    quadro.onload = () => { clearTimeout(fim); resolve(true); };
+    if (quadro.src) quadro.contentWindow.location.reload(); else quadro.src = urlApp;
+  });
+}
+
+async function ciclo() {
+  if (ocupado) return;
+  ocupado = true;
+  try {
+    if (modo === 'quadro') {
+      status('recarregando o app...');
+      await carregarQuadro();
+      if (documentoAlvo()) {
+        lidoNoQuadro = true;
+      } else {
+        if (!lidoNoQuadro) {
+          // O app não abriu dentro do quadro (bloqueio de iframe): lê a própria página, sem recarregar.
+          modo = 'direto';
+          quadro.style.display = 'none';
+          raiz.style.bottom = 'auto';
+          evento('O app não abriu no quadro interno; lendo a página direto (sem recarregar). '
+            + 'Ative a atualização automática do app ou recarregue a aba e clique no favorito de vez em quando.');
+        } else {
+          await alertar('sessao', 'sessão do AppSheet expirada',
+            'O app saiu do AppSheet (provável tela de login). Faça login em outra aba e clique em "Ler agora".');
+          status('aguardando login no AppSheet');
+          return;
+        }
+      }
+    }
+    status('lendo a tela...');
+    const leitura = await criarLeitor(documentoAlvo()).ler();
+    await processar(leitura);
+  } catch (e) {
+    console.error('[Monitor rotas extras]', e);
+    evento(`Erro na leitura: ${e}`);
+  } finally {
+    ocupado = false;
+    salvar();
+  }
+}
+
+async function processar(dados) {
+  const agora = Date.now();
+  if (dados.login) {
+    await alertar('sessao', 'sessão do AppSheet expirada', 'O app está na tela de login. Faça login e clique em "Ler agora".');
+    return status('aguardando login no AppSheet');
+  }
+  if (!dados.rotaExtra) {
+    await alertar('fora_tela', 'fora da tela ROTA EXTRA', 'Abra MENU > ROTA EXTRA nesta aba e clique no favorito de novo.');
+    return status('a página não está em MENU > ROTA EXTRA');
+  }
+  delete est.alertas.sessao;
+  delete est.alertas.fora_tela;
+  est.ultimaLeitura = agora;
+  est.stats.leituras += 1;
+
+  const unicas = new Map();
+  for (const bruto of dados.cards) { const r = parseCard(bruto); const k = chave(r); if (!unicas.has(k)) unicas.set(k, r); }
+  await checarLayout(dados, [...unicas.values()]);
+  const novas = registrarPresentes(est, unicas.values(), agora);
+
+  let falhou = false;
+  for (const [k, rota] of unicas) {
+    const reg = est.rotas[k];
+    if (reg.status !== 'pendente') continue;
+    const av = avaliar(rota, Date.now(), cfg);
+    if (av.filtro) {
+      reg.status = 'filtrada'; reg.motivo = av.filtro; est.stats.filtradas += 1;
+      evento(`Filtrada (${av.filtro}): ${rota.nome}`);
+      continue;
+    }
+    if (falhou) continue;
+    const msg = mensagemRota(rota, av, reg.primeiraVez, Date.now(), {...cfg, urlRotas: urlApp});
+    if (reg.tentativas === 0) notificarPC(msg);
+    const r = await enviar(msg);
+    if (r.ok) {
+      reg.status = 'notificada'; reg.notificadaEm = Date.now(); est.stats.notificadas += 1;
+      evento(`Avisada no Teams: ${rota.nome} (ETA ${fmtData(rota.eta)})`);
+    } else {
+      reg.tentativas += 1; est.stats.falhasEnvio += 1; falhou = true;
+      evento(`Falha ao avisar ${rota.nome} (${r.detalhe}); nova tentativa no próximo ciclo`);
+    }
+  }
+  esquecerAusentes(est, new Set(unicas.keys()), agora, Number(cfg.esquecerAposMin));
+  est.ultimoCiclo = {em: agora, cards: dados.cards.length, unicas: unicas.size, novas: novas.length};
+  await heartbeat(agora);
+  status(`última leitura ${fmtHora(agora)}: ${dados.cards.length} card(s), ${novas.length} nova(s)` +
+    (modo === 'direto' ? ' (modo sem recarregar)' : '') + `. Próxima em ${cfg.intervaloS}s.`);
+}
+
+async function checarLayout(dados, rotas) {
+  if (!dados.cards.length) {
+    est.ciclosVazios += 1;
+    if (dados.labelsTotal > 0 && dados.totalBotoes === 0) {
+      await alertar('layout_aceitar', 'possível mudança de layout',
+        `Há ${dados.labelsTotal} elemento(s) de rota mas nenhum botão ACEITAR reconhecido.`, null);
+    } else if (est.ciclosVazios === Number(cfg.ciclosVaziosAlerta)) {
+      await alertar('vazio', 'nenhum card há muito tempo',
+        `0 cards em ${est.ciclosVazios} leituras seguidas. Pode ser só falta de oferta.`, null, 'alerta');
+    }
+    return;
+  }
+  est.ciclosVazios = 0;
+  delete est.alertas.vazio;
+  delete est.alertas.layout_aceitar;
+  const semNome = rotas.filter(r => !r.nome).length;
+  if (semNome || dados.semCard) {
+    await alertar('layout_parse', 'cards com leitura incompleta',
+      `${semNome} card(s) sem nome de rota e ${dados.semCard} botão(ões) ACEITAR sem card. O layout pode ter mudado.`);
+  }
+}
+
+async function heartbeat(agora) {
+  const [h, m] = String(cfg.heartbeatHora || '08:00').split(':').map(Number);
+  const d = new Date(agora);
+  const hoje = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  if (d.getHours() * 60 + d.getMinutes() < h * 60 + m || est.heartbeatData === hoje) return;
+  const s = est.stats;
+  const msg = {titulo: '💓 Monitor de rotas extras ativo', resumo: 'Resumo desde o último heartbeat (favorito).',
+    nivel: 'info', alertas: [], link: urlApp, secoes: [[null, [
+      ['Leituras da tela', String(s.leituras)], ['Rotas novas', String(s.rotasNovas)],
+      ['Avisadas', String(s.notificadas)], ['Filtradas', String(s.filtradas)],
+      ['Falhas de envio', String(s.falhasEnvio)], ['Última rota nova', s.ultimaRotaEm ? fmtData(s.ultimaRotaEm) : '-'],
+    ]]]};
+  if ((await enviar(msg)).ok) {
+    est.heartbeatData = hoje;
+    est.stats = {...statsZerados(), ultimaRotaEm: s.ultimaRotaEm};
+  }
+}
+
+function agendar() {
+  clearInterval(timer);
+  timer = setInterval(ciclo, Math.max(30, Number(cfg.intervaloS)) * 1000);
+}
+
+function parar() {
+  clearInterval(timer);
+  window.removeEventListener('beforeunload', avisarSaida);
+  raiz.remove();
+  delete window.__monitorRotasFavorito;
+}
+
+function avisarSaida(e) { e.preventDefault(); e.returnValue = ''; }
+
+raiz.addEventListener('click', async e => {
+  const acao = e.target.dataset && e.target.dataset.acao;
+  if (acao === 'ler') ciclo();
+  else if (acao === 'config') abrirConfig($('config').style.display === 'none');
+  else if (acao === 'salvar') salvarConfig();
+  else if (acao === 'teste') testarTeams();
+  else if (acao === 'alerta' && 'Notification' in window) {
+    const p = await Notification.requestPermission();
+    evento(p === 'granted' ? 'Alerta no PC ativado' : 'Alerta no PC não permitido pelo navegador');
+  } else if (acao === 'ocultar') {
+    const ev = $('eventos');
+    const escondido = ev.style.display === 'none';
+    ev.style.display = escondido ? 'block' : 'none';
+    e.target.textContent = escondido ? 'Esconder eventos' : 'Mostrar eventos';
+  } else if (acao === 'parar' && confirm('Parar o monitor de rotas extras nesta aba?')) parar();
+});
+
+window.addEventListener('beforeunload', avisarSaida);
+window.__monitorRotasFavorito = {mostrar: () => { raiz.style.display = 'flex'; }, ciclo, estado: est, config: cfg};
+desenharEventos();
+evento('Monitor iniciado nesta aba');
+if (!cfg.webhookUrl) {
+  abrirConfig(true);
+  status('cole a URL do webhook do Teams e clique em Salvar');
+}
+agendar();
+ciclo();

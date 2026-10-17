@@ -7,14 +7,19 @@ continua sendo feito por uma pessoa do time, no app.
 
 Este projeto é independente do robô de espelhamento que está na raiz do repositório.
 
-Há duas formas de rodar:
+Há três formas de rodar, da mais simples para o PC da empresa à mais completa:
 
-- Extensão do Chrome (`extensao_chrome/`, recomendada): roda no Chrome em que você já está logado, sem
-  Python e sem login automatizado. Instalação em `extensao_chrome/README.md`. Ainda não cruza com a
-  tabela de endereço.
-- Robô Python (o resto desta pasta): abre um navegador próprio e faz tudo, inclusive o cruzamento com a
-  tabela de endereço, mas precisa de um login que o Google aceite nesse navegador. Em alguns PCs/contas
-  o Google bloqueia ("Esse navegador ou app pode não ser seguro"); nesse caso use a extensão.
+- Favorito do Chrome (`favorito/`, recomendada no PC corporativo): abra `favorito/instalar_favorito.html`,
+  arraste o botão para a barra de favoritos e clique nele com a tela ROTA EXTRA aberta. Roda na aba em que
+  você já está logado; não precisa de Python, extensão, modo desenvolvedor nem login novo. Para se a aba
+  for recarregada ou fechada (é só clicar de novo).
+- Extensão do Chrome (`extensao_chrome/`): mais robusta que o favorito, mas exige "Modo do desenvolvedor",
+  que muitas empresas bloqueiam.
+- Robô Python (o resto desta pasta): faz tudo, inclusive o cruzamento com a tabela de endereço, mas precisa
+  de um login que o Google aceite no navegador do robô. Em alguns PCs/contas o Google bloqueia
+  ("Esse navegador ou app pode não ser seguro").
+
+O favorito e a extensão ainda não cruzam a rota com a TABELA DE ENDEREÇO.
 
 ## Estrutura
 
@@ -30,7 +35,8 @@ monitor_rotas_extras/
     notifier.py        Adaptive Card no Teams (Power Automate) e e-mail via Outlook, com retry
     state.py           estado em JSON (deduplicação, cooldown de alertas)
     main.py            loop, resiliência, heartbeat e modos de diagnóstico
-  extensao_chrome/     extensão do Chrome (alternativa sem Python, ver o README dela)
+  favorito/            favorito do Chrome (bookmarklet): favorito.js + gerar.py -> instalar_favorito.html
+  extensao_chrome/     extensão do Chrome; leitor.js e nucleo.js também são usados pelo favorito
   tests/               pytest (unitários + integração com páginas que imitam o AppSheet)
   config.example.yaml  configuração comentada
   .env.example         segredos (webhook, e-mails)

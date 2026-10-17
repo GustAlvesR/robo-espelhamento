@@ -15,7 +15,7 @@
   ],
   "content_scripts": [{
     "matches": ["https://*.appsheet.com/*"],
-    "js": ["extrator.js"],
+    "js": ["leitor.js", "extrator.js"],
     "run_at": "document_idle"
   }]
 }
