@@ -41,7 +41,21 @@ def pagina(navegador):
         route.fulfill(status=202, headers=cors, body="")
 
     ctx.route("https://prod-00.westus.logic.azure.com/**", webhook)
+    outros = []
+
+    def whatsapp(route):
+        outros.append(("whatsapp", route.request.url))
+        route.fulfill(status=200, body="Message queued")
+
+    def telegram(route):
+        outros.append(("telegram", route.request.post_data))
+        route.fulfill(status=200, headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json",
+                      body='{"ok": true}')
+
+    ctx.route("https://api.callmebot.com/**", whatsapp)
+    ctx.route("https://api.telegram.org/**", telegram)
     page = ctx.new_page()
+    page.outros = outros
     page.on("dialog", lambda d: d.accept())
     page.goto(URL_APP)
     yield page, recebidos
@@ -93,7 +107,7 @@ def test_favorito_le_no_quadro_avisa_e_nao_repete(pagina):
     assert "card(s)" in page.inner_text('[data-id="status"]')
 
 
-def test_favorito_sem_webhook_abre_configuracao(pagina):
+def test_favorito_sem_canal_abre_configuracao(pagina):
     page, recebidos = pagina
     page.evaluate(_codigo_do_html())
     assert page.locator('[data-id="config"]').is_visible()
@@ -103,3 +117,27 @@ def test_favorito_sem_webhook_abre_configuracao(pagina):
     assert cfg["webhookUrl"] == WEBHOOK
     page.click('[data-acao="teste"]')
     assert _esperar(page, lambda: any("Teste do monitor" in json.dumps(p, ensure_ascii=False) for p in recebidos), 20)
+
+
+def test_favorito_envia_para_whatsapp_e_telegram_sem_teams(pagina):
+    from urllib.parse import parse_qs, urlsplit
+    page, recebidos = pagina
+    page.evaluate("cfg => localStorage.setItem('monitorRotasExtras.v1', JSON.stringify({config: cfg}))", {
+        "webhookUrl": "", "intervaloS": 300, "veiculos": "TOCO", "origens": "BRSP21", "heartbeatHora": "23:59",
+        "whatsappDestinos": "+55 (11) 99999-8888, 123456\n5511888887777;654321",
+        "telegramToken": "123:ABC", "telegramChatIds": "-1001"})
+    page.evaluate(_codigo_do_html())
+    # BRSP21 TOCO + nome fora do padrão (TOCO) = 2 rotas, cada uma em 2 WhatsApp + 1 Telegram
+    assert _esperar(page, lambda: len(page.outros) >= 6), page.outros
+    zaps = [parse_qs(urlsplit(u).query) for canal, u in page.outros if canal == "whatsapp"]
+    assert {z["phone"][0] for z in zaps} == {"+5511999998888", "5511888887777"}
+    # datas da página de teste já passaram, então o título vem "(com alertas)"
+    assert any(z["text"][0].startswith("*🚚 Rota extra ofertada") and "BRSP21-BRSP11-SSP34.SOW.VEN*" in z["text"][0]
+               for z in zaps)
+    assert any("⚠ ETA" in z["text"][0] for z in zaps)
+    assert all("Veículo: 1 - TOCO" in z["text"][0] for z in zaps)
+    tele = [parse_qs(c) for canal, c in page.outros if canal == "telegram"]
+    assert tele[0]["chat_id"] == ["-1001"] and "BRSP" in tele[0]["text"][0] + tele[-1]["text"][0]
+    assert not recebidos
+    estado = page.evaluate("() => JSON.parse(localStorage.getItem('monitorRotasExtras.v1')).estado")
+    assert [r["status"] for r in estado["rotas"].values()].count("notificada") == 2

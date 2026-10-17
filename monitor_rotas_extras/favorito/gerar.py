@@ -46,9 +46,23 @@ Só lê a tela: nunca clica em ACEITAR nem em recusar.</p>
 <ol>
 <li>Abra o app e vá em MENU &gt; ROTA EXTRA. Use essa aba só para o monitor (trabalhe em outras abas).</li>
 <li>Clique no favorito <b>Monitor Rotas Extras</b>. Aparece uma barra azul por cima do app.</li>
-<li>Na primeira vez, cole a URL do webhook do Teams em "Configurar" e clique em Salvar. Depois clique em "Testar Teams".</li>
-<li>Pronto: a cada 60 s o app é recarregado dentro da barra e as rotas novas são avisadas no Teams.</li>
+<li>Na primeira vez, clique em "Configurar", preencha pelo menos um canal (abaixo), clique em Salvar e depois em "Testar envio".</li>
+<li>Pronto: a cada 60 s o app é recarregado dentro da barra e as rotas novas são avisadas em todos os canais configurados.</li>
 </ol>
+
+<h2>Canais de aviso (use um ou mais)</h2>
+<ul>
+<li><b>WhatsApp (CallMeBot)</b>: cada pessoa que vai receber ativa o próprio número uma vez. Siga as instruções
+em <code>callmebot.com</code> (seção WhatsApp): adicionar o número do CallMeBot nos contatos e mandar a mensagem de
+autorização que o site indica. O bot responde com uma <code>apikey</code>. Em "Configurar", coloque uma linha por
+pessoa: <code>+5511999998888,123456</code> (telefone com DDI e DDD, vírgula, apikey). É um serviço gratuito de
+terceiros, sem garantia de entrega; não manda para grupos.</li>
+<li><b>Telegram</b>: no Telegram, fale com <code>@BotFather</code>, envie <code>/newbot</code> e guarde o token.
+Adicione o bot ao grupo do time e mande qualquer mensagem no grupo. Para descobrir o chat id do grupo, abra
+<code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> e procure <code>"chat":{{"id":-100...}}</code>.
+Funciona com grupos.</li>
+<li><b>Teams</b>: URL de webhook do Workflows (se a política da empresa permitir).</li>
+</ul>
 
 <h2>3. Cuidados</h2>
 <ul>
@@ -58,6 +72,9 @@ Só lê a tela: nunca clica em ACEITAR nem em recusar.</p>
 <code>appsheet.com</code> em "Sempre manter estes sites ativos". Deixe a aba numa janela própria, sem minimizar.</li>
 <li>O PC e o Chrome precisam ficar ligados. Se o computador suspender, o monitor para.</li>
 <li>"Ativar alerta no PC" mostra também uma notificação do Windows (se o Chrome permitir).</li>
+<li>As configurações (inclusive apikeys e token) ficam salvas só neste navegador, no armazenamento do site do
+AppSheet. Use um bot do Telegram exclusivo para isso.</li>
+<li>Os textos das rotas saem da rede da empresa para o WhatsApp/Telegram. Confirme com o gestor que isso é permitido.</li>
 </ul>
 </body></html>
 """

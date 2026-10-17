@@ -31,14 +31,18 @@ raiz.innerHTML = `
     <span data-id="status" style="flex:1;min-width:200px">iniciando...</span>
     <button data-acao="ler">Ler agora</button>
     <button data-acao="config">Configurar</button>
-    <button data-acao="teste">Testar Teams</button>
+    <button data-acao="teste">Testar envio</button>
     <button data-acao="alerta">Ativar alerta no PC</button>
     <button data-acao="ocultar">Esconder eventos</button>
     <button data-acao="parar">Parar</button>
   </div>
   <div data-id="config" style="display:none;padding:10px 12px;border-bottom:1px solid #ccc;background:#f6f8fa">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
-      <label>URL do webhook do Teams<br><input data-campo="webhookUrl" style="width:100%"></label>
+      <label>URL do webhook do Teams (vazio = não usa)<br><input data-campo="webhookUrl" style="width:100%"></label>
+      <label>WhatsApp via CallMeBot: um por linha, telefone,apikey<br>
+        <textarea data-campo="whatsappDestinos" rows="3" style="width:100%" placeholder="+5511999998888,123456"></textarea></label>
+      <label>Telegram: token do bot<br><input data-campo="telegramToken" style="width:100%"></label>
+      <label>Telegram: chat id(s), separados por vírgula<br><input data-campo="telegramChatIds" style="width:100%"></label>
       <label>Intervalo (s, mín. 30)<br><input data-campo="intervaloS" type="number" min="30" style="width:100%"></label>
       <label>Veículos permitidos (vazio = todos)<br><input data-campo="veiculos" style="width:100%"></label>
       <label>Origens permitidas (prefixos)<br><input data-campo="origens" style="width:100%"></label>
@@ -81,6 +85,11 @@ function salvarConfig() {
   if (novo.webhookUrl && !/^https:\/\//.test(novo.webhookUrl)) return $('msgcfg').textContent = 'A URL do webhook deve começar com https://';
   if (!(novo.intervaloS >= 30)) return $('msgcfg').textContent = 'Intervalo mínimo: 30 s';
   if (!/^\d{2}:\d{2}$/.test(novo.heartbeatHora)) return $('msgcfg').textContent = 'Horário no formato HH:MM';
+  const linhasWa = novo.whatsappDestinos.split('\n').filter(l => l.trim()).length;
+  if (linhasWa !== destinosWhatsApp(novo.whatsappDestinos).length)
+    return $('msgcfg').textContent = 'WhatsApp: cada linha deve ter telefone,apikey (ex.: +5511999998888,123456)';
+  if (novo.telegramToken && !lista(novo.telegramChatIds).length)
+    return $('msgcfg').textContent = 'Telegram: informe o chat id';
   Object.assign(cfg, novo);
   salvar();
   $('msgcfg').textContent = 'Salvo.';
@@ -89,8 +98,12 @@ function salvarConfig() {
 
 // ---------------- envio ----------------
 
-async function enviar(msg) {
-  if (!cfg.webhookUrl) return {ok: false, detalhe: 'webhook não configurado'};
+const temCanal = () => Boolean(cfg.webhookUrl || destinosWhatsApp(cfg.whatsappDestinos).length
+  || (cfg.telegramToken && lista(cfg.telegramChatIds).length));
+const esperarMs = ms => new Promise(res => setTimeout(res, ms));
+const mascarar = tel => tel.slice(0, -4).replace(/\d/g, '•') + tel.slice(-4);
+
+async function enviarTeams(msg) {
   const corpo = JSON.stringify(montarPayloadTeams(msg));
   let ultimo = '';
   for (let t = 1; t <= 3; t++) {
@@ -102,9 +115,63 @@ async function enviar(msg) {
     } catch (e) {
       ultimo = `bloqueado ou sem conexão (${e})`;
     }
-    if (t < 3) await new Promise(res => setTimeout(res, 2000 * 2 ** (t - 1)));
+    if (t < 3) await esperarMs(2000 * 2 ** (t - 1));
   }
   return {ok: false, detalhe: ultimo};
+}
+
+// CallMeBot não devolve CORS: o pedido sai (modo no-cors), mas a resposta não pode ser lida.
+async function enviarSemResposta(url) {
+  let ultimo = '';
+  for (let t = 1; t <= 3; t++) {
+    try {
+      await fetch(url, {mode: 'no-cors'});
+      return {ok: true, detalhe: 'enviado (sem confirmação de entrega)'};
+    } catch (e) {
+      ultimo = `bloqueado ou sem conexão (${e})`;
+    }
+    if (t < 3) await esperarMs(2000 * 2 ** (t - 1));
+  }
+  return {ok: false, detalhe: ultimo};
+}
+
+async function enviarTelegram(chatId, texto) {
+  const url = `https://api.telegram.org/bot${cfg.telegramToken}/sendMessage`;
+  const corpo = new URLSearchParams({chat_id: chatId, text: texto, disable_web_page_preview: 'true'});
+  try {
+    const r = await fetch(url, {method: 'POST', body: corpo});
+    const j = await r.json().catch(() => ({}));
+    return j.ok ? {ok: true, detalhe: 'ok'} : {ok: false, detalhe: `HTTP ${r.status}: ${j.description || ''}`};
+  } catch (e) {
+    // Sem leitura da resposta (CORS): uma única tentativa sem confirmação, para não duplicar a mensagem.
+    try {
+      await fetch(url, {method: 'POST', body: corpo, mode: 'no-cors'});
+      return {ok: true, detalhe: 'enviado (sem confirmação de entrega)'};
+    } catch (e2) {
+      return {ok: false, detalhe: `bloqueado ou sem conexão (${e2})`};
+    }
+  }
+}
+
+// Envia para todos os canais configurados; ok se pelo menos um aceitou.
+async function enviar(msg) {
+  const canais = [];
+  if (cfg.webhookUrl) canais.push(['Teams', () => enviarTeams(msg)]);
+  for (const d of destinosWhatsApp(cfg.whatsappDestinos)) {
+    canais.push([`WhatsApp ${mascarar(d.telefone)}`, () => enviarSemResposta(urlCallMeBot(d.telefone, d.apikey, montarTexto(msg, true)))]);
+  }
+  if (cfg.telegramToken) {
+    for (const chat of lista(cfg.telegramChatIds)) canais.push([`Telegram ${chat}`, () => enviarTelegram(chat, montarTexto(msg, false))]);
+  }
+  if (!canais.length) return {ok: false, detalhe: 'nenhum canal configurado'};
+  let algum = false;
+  const partes = [];
+  for (const [nome, fn] of canais) {
+    const r = await fn();
+    algum = algum || r.ok;
+    partes.push(`${nome}: ${r.ok ? 'ok' : 'falhou'} (${r.detalhe})`);
+  }
+  return {ok: algum, detalhe: partes.join('; ')};
 }
 
 function notificarPC(msg) {
@@ -120,15 +187,15 @@ async function alertar(tipo, titulo, texto, cooldownMin = undefined, nivel = 'er
   const msg = {titulo: `⚙ Monitor de rotas extras: ${titulo}`, resumo: texto, nivel, secoes: [], alertas: [], link: urlApp};
   evento(`ALERTA ${titulo}: ${texto}`);
   notificarPC(msg);
-  if ((await enviar(msg)).ok || !cfg.webhookUrl) est.alertas[tipo] = agora;
+  if ((await enviar(msg)).ok || !temCanal()) est.alertas[tipo] = agora;
 }
 
-async function testarTeams() {
+async function testarEnvio() {
   status('enviando teste...');
-  const r = await enviar({titulo: '🧪 Teste do monitor de rotas extras (favorito)', nivel: 'info', link: urlApp,
-    resumo: 'Se você está lendo isto, o aviso no Teams está funcionando.', alertas: [],
+  const r = await enviar({titulo: '🧪 Teste do monitor de rotas extras', nivel: 'info', link: urlApp,
+    resumo: 'Se você está lendo isto, o aviso está funcionando.', alertas: [],
     secoes: [[null, [['Enviado em', fmtData(Date.now())]]]]});
-  const texto = r.ok ? `Teste enviado (${r.detalhe}). Confira o Teams.` : `Falhou: ${r.detalhe}`;
+  const texto = r.ok ? `Teste enviado. ${r.detalhe}. Confira se chegou.` : `Falhou: ${r.detalhe}`;
   evento(texto);
   status(texto);
   alert(texto);
@@ -301,7 +368,7 @@ raiz.addEventListener('click', async e => {
   if (acao === 'ler') ciclo();
   else if (acao === 'config') abrirConfig($('config').style.display === 'none');
   else if (acao === 'salvar') salvarConfig();
-  else if (acao === 'teste') testarTeams();
+  else if (acao === 'teste') testarEnvio();
   else if (acao === 'alerta' && 'Notification' in window) {
     const p = await Notification.requestPermission();
     evento(p === 'granted' ? 'Alerta no PC ativado' : 'Alerta no PC não permitido pelo navegador');
@@ -317,9 +384,9 @@ window.addEventListener('beforeunload', avisarSaida);
 window.__monitorRotasFavorito = {mostrar: () => { raiz.style.display = 'flex'; }, ciclo, estado: est, config: cfg};
 desenharEventos();
 evento('Monitor iniciado nesta aba');
-if (!cfg.webhookUrl) {
+if (!temCanal()) {
   abrirConfig(true);
-  status('cole a URL do webhook do Teams e clique em Salvar');
+  status('configure pelo menos um canal (Teams, WhatsApp ou Telegram) e clique em Salvar');
 }
 agendar();
 ciclo();

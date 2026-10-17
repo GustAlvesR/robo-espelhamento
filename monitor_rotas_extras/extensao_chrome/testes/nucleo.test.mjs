@@ -101,3 +101,16 @@ test('estado: deduplicação, esquecimento e cooldown', () => {
   assert.ok(N.podeAlertar(est, 'x', AGORA + 31 * 60000, 30));
   assert.ok(!N.podeAlertar(est, 'x', AGORA + 99 * 60000, null));
 });
+
+test('texto para WhatsApp/Telegram e destinos do CallMeBot', () => {
+  const r = N.parseCard(bruto());
+  const msg = N.mensagemRota(r, N.avaliar(r, AGORA, CFG), AGORA, AGORA, CFG);
+  const wa = N.montarTexto(msg, true);
+  assert.ok(wa.startsWith(`*🚚 Rota extra ofertada: ${NOME}*`));
+  assert.ok(wa.includes('Veículo: 1 - TOCO'));
+  assert.ok(!N.montarTexto(msg, false).includes('*'));
+  assert.deepEqual(N.destinosWhatsApp('+55 (11) 99999-8888, 123456\n\n5511888887777;654321\nlinha sem chave\nabc 999'),
+    [{telefone: '+5511999998888', apikey: '123456'}, {telefone: '5511888887777', apikey: '654321'}]);
+  const url = N.urlCallMeBot('+5511999998888', '123456', 'Olá & tchau');
+  assert.equal(url, 'https://api.callmebot.com/whatsapp.php?phone=%2B5511999998888&text=Ol%C3%A1%20%26%20tchau&apikey=123456');
+});

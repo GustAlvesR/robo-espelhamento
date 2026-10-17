@@ -14,6 +14,10 @@ export const CONFIG_PADRAO = {
   ciclosVaziosAlerta: 60,
   cooldownAlertasMin: 30,
   notificacaoLocal: true,
+  // Um destino por linha: telefone,apikey (chave do CallMeBot de cada pessoa).
+  whatsappDestinos: '',
+  telegramToken: '',
+  telegramChatIds: '',
 };
 
 export function normalizar(s) {
@@ -219,6 +223,32 @@ export function montarCard(msg) {
 export function montarPayloadTeams(msg) {
   return {type: 'message', summary: msg.titulo, attachments: [{
     contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null, content: montarCard(msg)}]};
+}
+
+// Texto simples para WhatsApp/Telegram. negrito=true usa a marcação *texto* do WhatsApp.
+export function montarTexto(msg, negrito = true) {
+  const b = t => (negrito ? `*${t}*` : t);
+  const linhas = [b(msg.titulo), msg.resumo];
+  for (const a of msg.alertas || []) linhas.push(`⚠ ${a}`);
+  for (const [titulo, fatos] of msg.secoes || []) {
+    linhas.push('');
+    if (titulo) linhas.push(b(titulo));
+    for (const [k, v] of fatos) linhas.push(`${k}: ${v || '-'}`);
+  }
+  return linhas.join('\n').trim();
+}
+
+export function destinosWhatsApp(texto) {
+  // Telefone pode ter espaços e pontuação; a chave é o que vem depois da última vírgula/ponto e vírgula.
+  return (texto || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(.+)[,;]\s*(\S+)$/) || l.match(/^(\S+)\s+(\S+)$/);
+    return m ? {telefone: m[1].replace(/[^\d+]/g, ''), apikey: m[2]} : null;
+  }).filter(d => d && /\d{8,}/.test(d.telefone));
+}
+
+export function urlCallMeBot(telefone, apikey, texto) {
+  return 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(telefone)
+    + '&text=' + encodeURIComponent(texto) + '&apikey=' + encodeURIComponent(apikey);
 }
 
 // ---------------- estado ----------------
