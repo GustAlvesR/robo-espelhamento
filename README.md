@@ -102,6 +102,20 @@ Como uma rota pode cair e voltar várias vezes, esta aba guarda um
 duração), para auditoria — sem depender só do "último evento" que aparece
 na aba de resultados.
 
+### Aba de fechamento (`Fechamento_Rotas`)
+Uma linha por rota, gravada uma única vez quando ela termina, com o retrato
+final de `Resultado_Espelhamento` (SLA, % espelhado, quedas, Status Geral...).
+Na frente vêm `Fechada Em`, `Motivo` e `% Final` (número, para média e filtro).
+
+- `Fim previsto`: gravada 2 ciclos depois do fim previsto. A janela de contagem
+  termina no fim previsto, então o % já não muda; os 2 ciclos dão tempo de uma
+  queda pendente de confirmação entrar na conta.
+- `Saiu da Telemetria`: a rota sumiu da origem antes do fim previsto e ficou
+  `FECHAMENTO_SUMIDA_MIN` minutos (padrão 30) sem voltar; vale o último retrato.
+
+Cada rota fecha uma vez só. Se ela voltar à Telemetria depois de fechada, não
+ganha uma segunda linha.
+
 ## 7. Como funciona a memória do robô (`state_espelhamento.json`)
 
 Esse arquivo é o que permite ao robô saber, a cada novo ciclo, "o que já
