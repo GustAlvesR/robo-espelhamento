@@ -47,6 +47,8 @@ button, input, select { font: inherit; color: inherit; }
 .lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .lista li { padding: 9px 12px; border-bottom: 1px solid var(--linha); cursor: pointer; border-left: 4px solid var(--pend); }
 .lista li.ok { border-left-color: var(--ok); } .lista li.nok { border-left-color: var(--nok); }
+.lista li.canc { opacity: .55; border-left-style: dashed; }
+.kpi.canc b { color: var(--suave); }
 .lista li.sel { background: color-mix(in srgb, var(--acento) 10%, transparent); }
 .lista .l1 { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 13px; }
 .lista .l2 { color: var(--suave); font-size: 12px; margin-top: 2px; }

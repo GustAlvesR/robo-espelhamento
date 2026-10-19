@@ -74,6 +74,18 @@ SOURCE_WORKSHEET_NAME = "Telemetria"
 RESULTS_SPREADSHEET_ID = os.getenv("RESULTS_SPREADSHEET_ID", "1qsluTmC9w_4GggvtvJQk6D5PMKYb0v7B6kZjRwKJm9A")
 RESULTS_WORKSHEET_NAME = "Resultado_Espelhamento"
 EVENTS_WORKSHEET_NAME = "Historico_Quedas_Sinal"  # aba de auditoria (extra)
+# Rotas canceladas: abas da planilha de ORIGEM consultadas a cada ciclo.
+# (aba, cabeçalhos aceitos para o trip, cabeçalhos aceitos para o status)
+CANCELAMENTO_FONTES = [
+    ("DBLH", ("trip_number",), ("status_agrupado",)),
+    ("LH SEMANA ATUAL", ("LH TRIP",), ("STATUS REAL",)),
+]
+# Comparados sem acento/espaço (ver _norm_chave). DELETADA fica de fora de propósito.
+STATUS_CANCELAMENTO = {"CANCELADO", "CANCELADA", "NOSHOW", "INFRUTIFERA", "NAOCONSUMIDA"}
+# Uma linha por rota, gravada uma vez quando ela termina (retrato final).
+FECHAMENTO_WORKSHEET_NAME = os.getenv("FECHAMENTO_WORKSHEET_NAME", "Fechamento_Rotas")
+# Rota que some da Telemetria só é fechada depois disto (evita fechar numa piscada do DBLH).
+FECHAMENTO_SUMIDA_MIN = int(os.getenv("FECHAMENTO_SUMIDA_MIN", "30"))
 
 # Intervalo de execução do robô.
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "5"))
@@ -1019,7 +1031,7 @@ def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) 
     FINALIZADAS_HORAS: resultado com a janela fechada na chegada realizada."""
     saida = []
     for trip_number, dados in state.items():
-        if trip_number in ativos or not dados.get("base"):
+        if trip_number in ativos or not dados.get("base") or dados.get("cancelada"):
             continue
         atualizar_realizado(dados, (realizados or {}).get(trip_number.upper()))
         chegada = _parse_iso(dados.get("chegada_realizada"))
@@ -1091,6 +1103,29 @@ def write_results(client: gspread.Client, resultados: list) -> None:
     ws.update(values=linhas, range_name="A1")
 
 
+def _preparar_cabecalho(ws, cabecalho: list) -> None:
+    garantir_colunas(ws, len(cabecalho))
+    atual = ws.row_values(1)
+    if not atual:
+        ws.append_row(cabecalho, value_input_option="USER_ENTERED")
+    elif atual != cabecalho:
+        if cabecalho[:len(atual)] == atual:
+            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
+            # com as colunas novas em branco.
+            ws.update(values=[cabecalho], range_name="A1")
+        else:
+            logging.warning("Cabeçalho da aba '%s' diferente do esperado; não foi alterado. "
+                            "Esperado: %s", ws.title, cabecalho)
+
+
+def _texto(v):
+    # Apóstrofo força texto no USER_ENTERED: a linha fica idêntica ao que está
+    # em Resultado_Espelhamento (sem converter datas, % ou IDs).
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return v  # números (ex.: Qtd. Quedas) continuam numéricos
+    return ("'" + str(v)) if v not in ("", None) else ""
+
+
 @gspread_retry()
 def append_events(client: gspread.Client, eventos: list) -> None:
     """Acrescenta ao final da aba de histórico os eventos de perda/retorno
@@ -1110,26 +1145,7 @@ def append_events(client: gspread.Client, eventos: list) -> None:
                          if c != "Trip Number" and c not in titulos_extra]
     cabecalho = (["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"]
                  + titulos_extra + colunas_resultado)
-    garantir_colunas(ws, len(cabecalho))
-
-    atual = ws.row_values(1)
-    if not atual:
-        ws.append_row(cabecalho, value_input_option="USER_ENTERED")
-    elif atual != cabecalho:
-        if cabecalho[:len(atual)] == atual:
-            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
-            # com as colunas novas em branco.
-            ws.update(values=[cabecalho], range_name="A1")
-        else:
-            logging.warning("Cabeçalho do histórico diferente do esperado; não foi alterado. "
-                            "Esperado: %s", cabecalho)
-
-    def _texto(v) -> str:
-        # Apóstrofo força texto no USER_ENTERED: o histórico fica idêntico ao
-        # que está em Resultado_Espelhamento (sem converter datas, % ou IDs).
-        if isinstance(v, (int, float)) and not isinstance(v, bool):
-            return v  # números (ex.: Qtd. Quedas) continuam numéricos
-        return ("'" + str(v)) if v not in ("", None) else ""
+    _preparar_cabecalho(ws, cabecalho)
 
     linhas = []
     for ev in eventos:
@@ -1145,6 +1161,116 @@ def append_events(client: gspread.Client, eventos: list) -> None:
             *[_texto(snap.get(c, "")) for c in colunas_resultado],
         ])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
+
+
+def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str):
+    """Marca a rota como fechada. Cancelada fecha sem linha (não pontua)."""
+    dados["fechada_em"] = now.isoformat()
+    dados.pop("ultimo_resultado", None)
+    if resultado.get("Cancelamento"):
+        dados["cancelada"] = resultado["Cancelamento"]
+        return None
+    pct = _num(str(resultado.get("% Espelhamento", "")).replace("%", ""))
+    return {"Fechada Em": _fmt(now), "Motivo": motivo,
+            "% Final": round(pct, 1) if pct is not None else "", **resultado}
+
+
+def fechar_rotas(state: dict, resultados: list, finalizados: list, now: datetime) -> list:
+    """Retrato final de cada rota, uma única vez: depois da chegada realizada
+    (quando a janela da Shopee fecha e o % para de mudar) ou, se ela sumir da
+    Telemetria antes, com o último retrato (fechado na chegada, se já houver)."""
+    # Espera as leituras de confirmação: uma queda ainda pendente na chegada
+    # é datada na 1ª leitura e mudaria o % depois de gravado.
+    espera = timedelta(minutes=CHECK_INTERVAL_MINUTES * CONFIRMACAO_LEITURAS)
+    fechadas, ativos = [], set()
+    for r in resultados:
+        trip = r["Trip Number"]
+        ativos.add(trip)
+        dados = state.get(trip)
+        if dados is None or dados.get("fechada_em"):
+            continue
+        chegada = _parse_iso(dados.get("chegada_realizada"))
+        if chegada and now >= chegada + espera:
+            fechadas.append(_fechar(dados, r, now, "Chegada realizada"))
+        else:
+            dados["ultimo_resultado"] = r
+    finais = {r["Trip Number"]: r for r in finalizados}
+    limite = now - timedelta(minutes=FECHAMENTO_SUMIDA_MIN)
+    for trip, dados in state.items():
+        visto = _parse_iso(dados.get("last_seen"))
+        if (trip not in ativos and not dados.get("fechada_em") and dados.get("ultimo_resultado")
+                and visto and visto < limite):
+            fechadas.append(_fechar(dados, finais.get(trip) or dados["ultimo_resultado"], now, "Saiu da Telemetria"))
+    return [f for f in fechadas if f]
+
+
+@gspread_retry()
+def append_fechamentos(client: gspread.Client, fechadas: list) -> None:
+    if not fechadas:
+        return
+    ws = get_or_create_worksheet(client.open_by_key(RESULTS_SPREADSHEET_ID), FECHAMENTO_WORKSHEET_NAME)
+    cabecalho = list(fechadas[0].keys())
+    for f in fechadas[1:]:
+        cabecalho += [c for c in f if c not in cabecalho]
+    _preparar_cabecalho(ws, cabecalho)
+    ws.append_rows([[_texto(f.get(c, "")) for c in cabecalho] for f in fechadas],
+                   value_input_option="USER_ENTERED")
+
+
+def _letra_coluna(indice: int) -> str:
+    letra, n = "", indice + 1
+    while n:
+        n, r = divmod(n - 1, 26)
+        letra = chr(65 + r) + letra
+    return letra
+
+
+def carregar_cancelamentos(client) -> dict:
+    """{trip: 'ABA: STATUS'} das rotas canceladas segundo CANCELAMENTO_FONTES.
+    Rota repetida numa aba só conta como cancelada se todas as linhas com status
+    forem de cancelamento. Falha aqui nunca derruba o ciclo: segue sem cancelamentos."""
+    try:
+        planilha = client.open_by_key(SOURCE_SPREADSHEET_ID)
+        abas = {ws.title for ws in planilha.worksheets()}
+        fontes = [f for f in CANCELAMENTO_FONTES if f[0] in abas]
+        for aba in {f[0] for f in CANCELAMENTO_FONTES} - abas:
+            logging.warning("Aba de cancelamento '%s' não encontrada; ignorada.", aba)
+        if not fontes:
+            return {}
+        cabs = planilha.values_batch_get([f"'{aba}'!1:1" for aba, _t, _s in fontes])["valueRanges"]
+        colunas = []
+        for (aba, nomes_trip, nomes_status), vr in zip(fontes, cabs):
+            cab = {_norm_cab(c): i for i, c in enumerate((vr.get("values") or [[]])[0])}
+            it = next((cab[_norm_cab(n)] for n in nomes_trip if _norm_cab(n) in cab), None)
+            ist = next((cab[_norm_cab(n)] for n in nomes_status if _norm_cab(n) in cab), None)
+            if it is None or ist is None:
+                logging.warning("Aba '%s' sem as colunas de trip/status; cancelamentos dela ignorados.", aba)
+                continue
+            colunas.append((aba, it, ist))
+        if not colunas:
+            return {}
+        ranges = []
+        for aba, it, ist in colunas:
+            ranges += [f"'{aba}'!{_letra_coluna(it)}2:{_letra_coluna(it)}",
+                       f"'{aba}'!{_letra_coluna(ist)}2:{_letra_coluna(ist)}"]
+        dados = planilha.values_batch_get(ranges)["valueRanges"]
+        canceladas = {}
+        for n, (aba, _it, _ist) in enumerate(colunas):
+            trips = dados[2 * n].get("values", [])
+            status = dados[2 * n + 1].get("values", [])
+            por_trip = {}
+            for i, linha in enumerate(trips):
+                trip = (linha[0] if linha else "").strip()
+                st = (status[i][0] if i < len(status) and status[i] else "").strip()
+                if trip and st:
+                    por_trip.setdefault(trip, []).append(st)
+            for trip, sts in por_trip.items():
+                if all(_norm_chave(st) in STATUS_CANCELAMENTO for st in sts):
+                    canceladas.setdefault(trip, f"{aba}: {sts[-1].upper()}")
+        return canceladas
+    except Exception:
+        logging.exception("Falha ao ler os cancelamentos; seguindo sem eles.")
+        return {}
 
 
 # =============================================================================
@@ -1236,11 +1362,6 @@ def job():
             for ev in eventos_do_ciclo[n_antes:]:
                 ev["resultado"] = resultado_linha
 
-        trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
-        finalizados = resultados_finalizados(state, trip_numbers_ativos, realizados, now)
-        cleanup_state(state, trip_numbers_ativos)
-        save_state(state, client)
-
         if not _SNAPSHOT:
             # Logo após reiniciar, o site já mostra as rotas enquanto a TomTom
             # recalcula (a primeira passada pode levar mais de um minuto).
@@ -1252,17 +1373,34 @@ def job():
             r["Status Viagem"] = _txt(status_viagem)
             colunas_realizadas(r, state.get(r["Trip Number"], {}))
 
+        cancelamentos = carregar_cancelamentos(client)
+        for r in resultados:
+            r["Cancelamento"] = cancelamentos.get(r["Trip Number"], "")
+            if r["Cancelamento"]:
+                r["Status Geral"] = "Cancelada"
+        eventos_do_ciclo = [ev for ev in eventos_do_ciclo if not cancelamentos.get(ev["trip_number"])]
+
+        # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
+        trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
+        finalizados = resultados_finalizados(state, trip_numbers_ativos, realizados, now)
+        fechadas = fechar_rotas(state, resultados, finalizados, now)
+        cleanup_state(state, trip_numbers_ativos)
+        save_state(state, client)
+
         client_escrita = client  # mesma sessão autenticada
         # Finalizadas só vão para a planilha (o BSC lê de lá); o site e a TomTom
         # ficam com as rotas ativas.
         write_results(client_escrita, resultados + finalizados)
         append_events(client_escrita, eventos_do_ciclo)
+        append_fechamentos(client_escrita, fechadas)
 
         publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento)
 
         logging.info(
-            "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s).",
-            len(resultados), len(finalizados), len(eventos_do_ciclo),
+            "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s), "
+            "%s rota(s) fechada(s), %s cancelada(s).",
+            len(resultados), len(finalizados), len(eventos_do_ciclo), len(fechadas),
+            sum(1 for r in resultados if r["Cancelamento"]),
         )
 
     except Exception:

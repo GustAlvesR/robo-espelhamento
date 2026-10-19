@@ -127,6 +127,36 @@ Como uma rota pode cair e voltar várias vezes, esta aba guarda um
 duração), para auditoria — sem depender só do "último evento" que aparece
 na aba de resultados.
 
+### Aba de fechamento (`Fechamento_Rotas`)
+Uma linha por rota, gravada uma única vez quando ela termina, com o retrato
+final de `Resultado_Espelhamento` (SLA, % espelhado, quedas, Status Geral...).
+Na frente vêm `Fechada Em`, `Motivo` e `% Final` (número, para média e filtro).
+
+- `Chegada realizada`: gravada 2 ciclos depois do ETA Destino realizado (aba
+  DBLH). A janela da Shopee termina na chegada, então o % já não muda; os 2
+  ciclos dão tempo de uma queda pendente de confirmação entrar na conta.
+- `Saiu da Telemetria`: a rota sumiu da origem antes disso e ficou
+  `FECHAMENTO_SUMIDA_MIN` minutos (padrão 30) sem voltar. Se a chegada
+  realizada já estiver na DBLH, o retrato é fechado nela; senão, vale o último.
+
+Rota cancelada (abaixo) fecha sem linha: não pontua.
+
+Cada rota fecha uma vez só. Se ela voltar à Telemetria depois de fechada, não
+ganha uma segunda linha.
+
+### Rotas canceladas
+A cada ciclo o robô consulta, na planilha de origem, `DBLH` (`status_agrupado`)
+e `LH SEMANA ATUAL` (`STATUS REAL`). Se qualquer uma marcar a rota como
+CANCELADO, NO SHOW, INFRUTÍFERA ou NÃO CONSUMIDA (DELETADA não conta), a linha
+do Resultado sai com `Status Geral` = `Cancelada` e a coluna `Cancelamento`
+diz a origem (ex.: `DBLH: CANCELADO`). Ela não gera eventos novos no histórico
+de quedas, não entra no `Fechamento_Rotas` e fica fora dos indicadores do site.
+O % e as quedas continuam calculados na linha, para conferência: quem soma
+indicadores pela aba de Resultado deve filtrar `Status Geral` ≠ `Cancelada`.
+
+A decisão vale no fechamento: se o cancelamento for desfeito antes do fim
+previsto, a rota volta a contar normalmente.
+
 ## 7. Como funciona a memória do robô (`state_espelhamento.json`)
 
 Esse arquivo é o que permite ao robô saber, a cada novo ciclo, "o que já
