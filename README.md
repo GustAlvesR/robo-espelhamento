@@ -113,8 +113,23 @@ Na frente vêm `Fechada Em`, `Motivo` e `% Final` (número, para média e filtro
 - `Saiu da Telemetria`: a rota sumiu da origem antes do fim previsto e ficou
   `FECHAMENTO_SUMIDA_MIN` minutos (padrão 30) sem voltar; vale o último retrato.
 
+Rota cancelada (abaixo) fecha sem linha: não pontua.
+
 Cada rota fecha uma vez só. Se ela voltar à Telemetria depois de fechada, não
 ganha uma segunda linha.
+
+### Rotas canceladas
+A cada ciclo o robô consulta, na planilha de origem, `DBLH` (`status_agrupado`)
+e `LH SEMANA ATUAL` (`STATUS REAL`). Se qualquer uma marcar a rota como
+CANCELADO, NO SHOW, INFRUTÍFERA ou NÃO CONSUMIDA (DELETADA não conta), a linha
+do Resultado sai com `Status Geral` = `Cancelada` e a coluna `Cancelamento`
+diz a origem (ex.: `DBLH: CANCELADO`). Ela não gera eventos novos no histórico
+de quedas, não entra no `Fechamento_Rotas` e fica fora dos indicadores do site.
+O % e as quedas continuam calculados na linha, para conferência: quem soma
+indicadores pela aba de Resultado deve filtrar `Status Geral` ≠ `Cancelada`.
+
+A decisão vale no fechamento: se o cancelamento for desfeito antes do fim
+previsto, a rota volta a contar normalmente.
 
 ## 7. Como funciona a memória do robô (`state_espelhamento.json`)
 

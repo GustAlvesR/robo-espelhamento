@@ -110,7 +110,8 @@ function el(tag, attrs = {}, ...filhos) {
 }
 
 const statusDe = (r) => r["Status Geral"] || "Pendente";
-const classeStatus = (r) => ({ OK: "ok", NOK: "nok" }[statusDe(r)] || "pend");
+const classeStatus = (r) => ({ OK: "ok", NOK: "nok", Cancelada: "canc" }[statusDe(r)] || "pend");
+const cancelada = (r) => statusDe(r) === "Cancelada";
 
 function parseBr(texto) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/.exec(texto || "");
@@ -131,6 +132,7 @@ function aguardandoInicio(r) {
 }
 
 function gravidade(r) {
+  if (cancelada(r)) return 4;
   if (r["Espelhamento Atual"] === "NOK") return 0;
   if (statusDe(r) === "NOK") return 1;
   if (r["Risco de Atraso"] === "Atraso provável") return 2;
@@ -149,7 +151,7 @@ function filtrar() {
   const fs = document.getElementById("fStatus").value;
   const fr = document.getElementById("fRisco").value;
   return dados.filter((r) => {
-    if (semSinal && r["Espelhamento Atual"] !== "NOK") return false;
+    if (semSinal && (r["Espelhamento Atual"] !== "NOK" || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (!q) return true;
@@ -158,16 +160,20 @@ function filtrar() {
   }).sort((a, b) => gravidade(a) - gravidade(b));
 }
 
+// Canceladas não pontuam: ficam fora dos KPIs e ganham um contador próprio.
 function desenharKpis() {
-  const cont = (f) => dados.filter(f).length;
+  const validas = dados.filter((r) => !cancelada(r));
+  const cont = (f) => validas.filter(f).length;
   const kpis = [
-    ["Rotas", dados.length, "", () => aplicarFiltro()],
+    ["Rotas", validas.length, "", () => aplicarFiltro()],
     ["NOK", cont((r) => statusDe(r) === "NOK"), "nok", () => aplicarFiltro("fStatus", "NOK")],
     ["Atraso provável", cont((r) => r["Risco de Atraso"] === "Atraso provável"), "alerta",
       () => aplicarFiltro("fRisco", "Atraso provável")],
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
       () => aplicarFiltro(null, null, true)],
   ];
+  const nCanc = dados.length - validas.length;
+  if (nCanc) kpis.push(["Canceladas", nCanc, "canc", () => aplicarFiltro("fStatus", "Cancelada")]);
   const alvo = document.getElementById("kpis");
   alvo.replaceChildren(...kpis.map(([rot, n, cls, fn]) =>
     el("button", { class: `kpi ${cls}`, onclick: fn }, el("b", {}, String(n)), rot)));
@@ -190,11 +196,13 @@ function desenharLista(lista) {
   ul.replaceChildren(...lista.map((r) => {
     const risco = r["Risco de Atraso"] || "";
     const tagCls = risco === "Atraso provável" ? "atraso" : risco === "No prazo" ? "prazo" : "";
+    const tag = cancelada(r) ? el("span", { class: "tag", title: r["Cancelamento"] || "" }, "Cancelada")
+      : risco ? el("span", { class: `tag ${tagCls}` }, risco) : null;
     return el("li", {
       class: `${classeStatus(r)} ${selecionada === r["Trip Number"] ? "sel" : ""}`,
       onclick: () => selecionar(r["Trip Number"]),
     },
-      el("div", { class: "l1" }, el("span", {}, r["Trip Number"]), risco ? el("span", { class: `tag ${tagCls}` }, risco) : null),
+      el("div", { class: "l1" }, el("span", {}, r["Trip Number"]), tag),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -207,7 +215,8 @@ function desenharMapa(lista) {
   camadaRotas.clearLayers();
   camadaVeiculos.clearLayers();
   document.getElementById("verTodos").hidden = !selecionada;
-  const visiveis = selecionada ? dados.filter((r) => r["Trip Number"] === selecionada) : lista;
+  const visiveis = selecionada ? dados.filter((r) => r["Trip Number"] === selecionada)
+    : lista.filter((r) => !cancelada(r));
   const limites = [];
   for (const r of visiveis) {
     const g = r._geo || {};
@@ -267,6 +276,7 @@ function desenharDetalhe() {
     el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
     el("dl", {},
       ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
+      ...linha("Cancelamento", r["Cancelamento"]),
       ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
       ...linha("Trecho", `${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`),
       ...linha("Início previsto", r["Início Previsto"]),

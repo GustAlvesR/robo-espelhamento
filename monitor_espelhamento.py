@@ -74,6 +74,14 @@ SOURCE_WORKSHEET_NAME = "Telemetria"
 RESULTS_SPREADSHEET_ID = os.getenv("RESULTS_SPREADSHEET_ID", "1qsluTmC9w_4GggvtvJQk6D5PMKYb0v7B6kZjRwKJm9A")
 RESULTS_WORKSHEET_NAME = "Resultado_Espelhamento"
 EVENTS_WORKSHEET_NAME = "Historico_Quedas_Sinal"  # aba de auditoria (extra)
+# Rotas canceladas: abas da planilha de ORIGEM consultadas a cada ciclo.
+# (aba, cabeçalhos aceitos para o trip, cabeçalhos aceitos para o status)
+CANCELAMENTO_FONTES = [
+    ("DBLH", ("trip_number",), ("status_agrupado",)),
+    ("LH SEMANA ATUAL", ("LH TRIP",), ("STATUS REAL",)),
+]
+# Comparados sem acento/espaço (ver _norm_chave). DELETADA fica de fora de propósito.
+STATUS_CANCELAMENTO = {"CANCELADO", "CANCELADA", "NOSHOW", "INFRUTIFERA", "NAOCONSUMIDA"}
 # Uma linha por rota, gravada uma vez quando ela termina (retrato final).
 FECHAMENTO_WORKSHEET_NAME = os.getenv("FECHAMENTO_WORKSHEET_NAME", "Fechamento_Rotas")
 # Rota que some da Telemetria só é fechada depois disto (evita fechar numa piscada do DBLH).
@@ -1045,9 +1053,13 @@ def append_events(client: gspread.Client, eventos: list) -> None:
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
 
 
-def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str) -> dict:
+def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str):
+    """Marca a rota como fechada. Cancelada fecha sem linha (não pontua)."""
     dados["fechada_em"] = now.isoformat()
     dados.pop("ultimo_resultado", None)
+    if resultado.get("Cancelamento"):
+        dados["cancelada"] = resultado["Cancelamento"]
+        return None
     pct = _num(str(resultado.get("% Espelhamento", "")).replace("%", ""))
     return {"Fechada Em": _fmt(now), "Motivo": motivo,
             "% Final": round(pct, 1) if pct is not None else "", **resultado}
@@ -1076,7 +1088,7 @@ def fechar_rotas(state: dict, df: pd.DataFrame, resultados: list, now: datetime)
         if (trip not in ativos and not dados.get("fechada_em") and dados.get("ultimo_resultado")
                 and visto and visto < limite):
             fechadas.append(_fechar(dados, dados["ultimo_resultado"], now, "Saiu da Telemetria"))
-    return fechadas
+    return [f for f in fechadas if f]
 
 
 @gspread_retry()
@@ -1090,6 +1102,62 @@ def append_fechamentos(client: gspread.Client, fechadas: list) -> None:
     _preparar_cabecalho(ws, cabecalho)
     ws.append_rows([[_texto(f.get(c, "")) for c in cabecalho] for f in fechadas],
                    value_input_option="USER_ENTERED")
+
+
+def _letra_coluna(indice: int) -> str:
+    letra, n = "", indice + 1
+    while n:
+        n, r = divmod(n - 1, 26)
+        letra = chr(65 + r) + letra
+    return letra
+
+
+def carregar_cancelamentos(client) -> dict:
+    """{trip: 'ABA: STATUS'} das rotas canceladas segundo CANCELAMENTO_FONTES.
+    Rota repetida numa aba só conta como cancelada se todas as linhas com status
+    forem de cancelamento. Falha aqui nunca derruba o ciclo: segue sem cancelamentos."""
+    try:
+        planilha = client.open_by_key(SOURCE_SPREADSHEET_ID)
+        abas = {ws.title for ws in planilha.worksheets()}
+        fontes = [f for f in CANCELAMENTO_FONTES if f[0] in abas]
+        for aba in {f[0] for f in CANCELAMENTO_FONTES} - abas:
+            logging.warning("Aba de cancelamento '%s' não encontrada; ignorada.", aba)
+        if not fontes:
+            return {}
+        cabs = planilha.values_batch_get([f"'{aba}'!1:1" for aba, _t, _s in fontes])["valueRanges"]
+        colunas = []
+        for (aba, nomes_trip, nomes_status), vr in zip(fontes, cabs):
+            cab = {_norm_cab(c): i for i, c in enumerate((vr.get("values") or [[]])[0])}
+            it = next((cab[_norm_cab(n)] for n in nomes_trip if _norm_cab(n) in cab), None)
+            ist = next((cab[_norm_cab(n)] for n in nomes_status if _norm_cab(n) in cab), None)
+            if it is None or ist is None:
+                logging.warning("Aba '%s' sem as colunas de trip/status; cancelamentos dela ignorados.", aba)
+                continue
+            colunas.append((aba, it, ist))
+        if not colunas:
+            return {}
+        ranges = []
+        for aba, it, ist in colunas:
+            ranges += [f"'{aba}'!{_letra_coluna(it)}2:{_letra_coluna(it)}",
+                       f"'{aba}'!{_letra_coluna(ist)}2:{_letra_coluna(ist)}"]
+        dados = planilha.values_batch_get(ranges)["valueRanges"]
+        canceladas = {}
+        for n, (aba, _it, _ist) in enumerate(colunas):
+            trips = dados[2 * n].get("values", [])
+            status = dados[2 * n + 1].get("values", [])
+            por_trip = {}
+            for i, linha in enumerate(trips):
+                trip = (linha[0] if linha else "").strip()
+                st = (status[i][0] if i < len(status) and status[i] else "").strip()
+                if trip and st:
+                    por_trip.setdefault(trip, []).append(st)
+            for trip, sts in por_trip.items():
+                if all(_norm_chave(st) in STATUS_CANCELAMENTO for st in sts):
+                    canceladas.setdefault(trip, f"{aba}: {sts[-1].upper()}")
+        return canceladas
+    except Exception:
+        logging.exception("Falha ao ler os cancelamentos; seguindo sem eles.")
+        return {}
 
 
 # =============================================================================
@@ -1183,6 +1251,13 @@ def job():
         for r, status_viagem in zip(resultados, df["status_viagem"]):
             r["Status Viagem"] = _txt(status_viagem)
 
+        cancelamentos = carregar_cancelamentos(client)
+        for r in resultados:
+            r["Cancelamento"] = cancelamentos.get(r["Trip Number"], "")
+            if r["Cancelamento"]:
+                r["Status Geral"] = "Cancelada"
+        eventos_do_ciclo = [ev for ev in eventos_do_ciclo if not cancelamentos.get(ev["trip_number"])]
+
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         fechadas = fechar_rotas(state, df, resultados, now)
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
@@ -1198,8 +1273,9 @@ def job():
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s), "
-            "%s rota(s) fechada(s).",
+            "%s rota(s) fechada(s), %s cancelada(s).",
             len(resultados), len(eventos_do_ciclo), len(fechadas),
+            sum(1 for r in resultados if r["Cancelamento"]),
         )
 
     except Exception:
