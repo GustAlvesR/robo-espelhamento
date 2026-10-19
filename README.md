@@ -66,7 +66,9 @@ O ID é o trecho da URL entre `/d/` e `/edit`:
 
 Outros parâmetros ajustáveis: `CHECK_INTERVAL_MINUTES`,
 `SLA_MINUTES_BEFORE_START`, `META_PERCENTUAL_ESPELHAMENTO`,
-`STATE_RETENTION_DAYS`.
+`STATE_RETENTION_DAYS`, `DBLH_WORKSHEET_NAME` (aba com os horários
+realizados, padrão `DBLH`, na mesma planilha da Telemetria) e
+`FINALIZADAS_HORAS` (padrão 24).
 
 ## 5. Rodando o robô
 
@@ -96,6 +98,29 @@ sem sinal, % de espelhamento, quantidade de quedas e um `Status Geral`
 (OK/NOK/Pendente) que já combina as duas regras de reprovação usadas hoje
 no acompanhamento de GR.
 
+Regra da Shopee (documento "Rastreamento de Veículo de LH - Telemetria"):
+a viagem é OK só se cumprir as duas etapas.
+
+1. Espelhada pelo menos 1h30 antes do ETA Origem programado. O robô guarda
+   o status lido quando chega esse horário (`SLA 1h30 Cumprido`).
+2. Espelhada em pelo menos 95% do tempo da viagem. O tempo vai do que
+   acontecer primeiro entre o ETA Origem programado e o CPT realizado até o
+   ETA Destino realizado. Os dois realizados vêm da aba `DBLH`
+   (`cpt_realizado` e `eta_destino_realizado`; em viagem com várias pernas,
+   o CPT da primeira e a chegada da última). Quedas fora desse intervalo não
+   contam.
+
+Enquanto a chegada não acontece, o fim da janela é provisório (o fim
+previsto, ou agora se a viagem já passou dele) e o % também. A coluna
+`Janela Final` diz se o resultado já é o definitivo. Quando a rota sai da
+aba Telemetria, ela continua na aba de resultados com `Status Viagem` =
+FINALIZADA por `FINALIZADAS_HORAS` depois da chegada, com o % fechado na
+chegada realizada, para o BSC copiar o resultado final. Essas linhas não
+aparecem no site nem consomem a TomTom.
+
+Ainda não considerado: zonas de sombra aprovadas pela Tecnorisk (perda de
+sinal nelas não deveria contar).
+
 ### Aba de histórico (`Historico_Quedas_Sinal`) — extra
 Como uma rota pode cair e voltar várias vezes, esta aba guarda um
 **registro append-only** de cada evento de PERDA e RETORNO (com timestamp e
@@ -107,11 +132,12 @@ Uma linha por rota, gravada uma única vez quando ela termina, com o retrato
 final de `Resultado_Espelhamento` (SLA, % espelhado, quedas, Status Geral...).
 Na frente vêm `Fechada Em`, `Motivo` e `% Final` (número, para média e filtro).
 
-- `Fim previsto`: gravada 2 ciclos depois do fim previsto. A janela de contagem
-  termina no fim previsto, então o % já não muda; os 2 ciclos dão tempo de uma
-  queda pendente de confirmação entrar na conta.
-- `Saiu da Telemetria`: a rota sumiu da origem antes do fim previsto e ficou
-  `FECHAMENTO_SUMIDA_MIN` minutos (padrão 30) sem voltar; vale o último retrato.
+- `Chegada realizada`: gravada 2 ciclos depois do ETA Destino realizado (aba
+  DBLH). A janela da Shopee termina na chegada, então o % já não muda; os 2
+  ciclos dão tempo de uma queda pendente de confirmação entrar na conta.
+- `Saiu da Telemetria`: a rota sumiu da origem antes disso e ficou
+  `FECHAMENTO_SUMIDA_MIN` minutos (padrão 30) sem voltar. Se a chegada
+  realizada já estiver na DBLH, o retrato é fechado nela; senão, vale o último.
 
 Rota cancelada (abaixo) fecha sem linha: não pontua.
 

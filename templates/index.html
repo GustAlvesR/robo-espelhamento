@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Torre LH</title>
+<title>Torre LH · CEVA Logistics</title>
 <script>
   try {
     const t = localStorage.getItem("torreLH.tema");
@@ -15,7 +15,10 @@
 </head>
 <body>
 <header class="topo">
-  <div class="marca">Torre LH <span>espelhamento · rotas</span></div>
+  <a class="marca" href="{{ url_for('index') }}">
+    <img class="marca-logo" src="{{ url_for('static', filename='img/logo-ceva-escuro.svg') }}" alt="CEVA Logistics">
+    <span class="marca-produto">Torre LH<small>espelhamento · rotas</small></span>
+  </a>
   <div class="kpis" id="kpis"></div>
   <div class="usuario">
     <span id="atualizado"></span>

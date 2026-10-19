@@ -18,8 +18,8 @@ A cada N minutos, o robô:
        - se o espelhamento já estava "OK" com pelo menos 1h30 de
          antecedência do horário previsto de início (SLA de início).
   3. Calcula o percentual de tempo em que a rota ficou efetivamente
-     espelhada, com base na duração prevista da rota (fim - início) e no
-     tempo total acumulado em "Não espelhado".
+     espelhada, na janela da Shopee: do que vier primeiro entre ETA Origem
+     programado e CPT realizado até o ETA Destino realizado (aba DBLH).
   4. Escreve o resultado consolidado em uma aba de resultados e registra
      cada evento de perda/retorno em uma aba de histórico (auditoria).
 
@@ -94,9 +94,15 @@ CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "5"))
 # o espelhamento já deveria estar "OK".
 SLA_MINUTES_BEFORE_START = int(os.getenv("SLA_MINUTES_BEFORE_START", "90"))  # 1h30
 
-# Janela de contagem do % de espelhamento: começa X minutos ANTES do início
-# previsto e termina no fim previsto. 95 min = 1h35.
-JANELA_MINUTES_BEFORE_START = int(os.getenv("JANELA_MINUTES_BEFORE_START", "95"))
+# Janela do % de espelhamento (regra da Shopee): começa no que vier primeiro
+# entre o ETA Origem programado e o CPT realizado e termina no ETA Destino
+# realizado. Os realizados vêm desta aba (mesma planilha da Telemetria).
+DBLH_WORKSHEET_NAME = os.getenv("DBLH_WORKSHEET_NAME", "DBLH")
+
+# Rota que saiu da aba Telemetria continua em Resultado_Espelhamento, com o
+# resultado final e "Status Viagem" = FINALIZADA, por estas horas após a chegada
+# (tempo para o BSC copiar o resultado definitivo).
+FINALIZADAS_HORAS = int(os.getenv("FINALIZADAS_HORAS", "24"))
 
 # Meta de % de espelhamento durante a rota (usada apenas para compor a coluna
 # extra "status_geral" — Sim/Não do SLA continua sendo a regra 2 pedida).
@@ -458,6 +464,45 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
 
 
 
+DBLH_COLUNAS = ("trip_number", "status_agrupado", "eta_scheduled_origin_edited",
+                "cpt_realizado", "eta_destino_realizado")
+
+
+def _dt_dblh(texto):
+    texto = str(texto or "").strip()
+    return None if texto in ("", "-") else _parse_dt_flex(texto)
+
+
+@gspread_retry()
+def read_realizados(client) -> dict:
+    """{TRIP: {"cpt": datetime|None, "chegada": datetime|None}} a partir da aba DBLH.
+    Viagem com várias pernas: CPT da primeira perna e chegada da última."""
+    ws = client.open_by_key(SOURCE_SPREADSHEET_ID).worksheet(DBLH_WORKSHEET_NAME)
+    cab = [_norm_cab(c) for c in ws.row_values(1)]
+    faltam = [c for c in DBLH_COLUNAS if _norm_cab(c) not in cab]
+    if faltam:
+        raise KeyError(f"Aba '{DBLH_WORKSHEET_NAME}' sem as colunas {faltam}.")
+    letras = [re.sub(r"\d", "", gspread.utils.rowcol_to_a1(1, cab.index(_norm_cab(c)) + 1))
+              for c in DBLH_COLUNAS]
+    colunas = ws.batch_get([f"{l}2:{l}" for l in letras])
+
+    def cel(col, i):
+        return str(col[i][0]) if i < len(col) and col[i] else ""
+
+    pernas = {}
+    for i in range(len(colunas[0])):
+        trip, status, eta_origem, cpt, chegada = (cel(col, i) for col in colunas)
+        trip = trip.strip().upper()
+        if not trip or "CANCEL" in status.upper():
+            continue
+        pernas.setdefault(trip, []).append((_dt_dblh(eta_origem) or datetime.max, _dt_dblh(cpt), _dt_dblh(chegada)))
+    saida = {}
+    for trip, lista in pernas.items():
+        lista.sort(key=lambda p: p[0])
+        saida[trip] = {"cpt": lista[0][1], "chegada": lista[-1][2]}
+    return saida
+
+
 # =============================================================================
 # RASTREAMENTO DA SEGURADORA (aba Rastreamento_Angellira)
 # =============================================================================
@@ -704,14 +749,14 @@ def seconds_to_hhmm(total_seconds: float) -> str:
 # 6. REGRAS DE NEGÓCIO — processamento de cada rota
 # =============================================================================
 
-def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> dict:
+def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, realizado=None) -> dict:
     """
     Atualiza o estado da rota `row` e devolve um dicionário já pronto para
     virar uma linha da planilha de resultados.
 
     `eventos` é uma lista (efeito colateral) na qual cada perda/retorno
     detectado nesta execução é registrado, para depois ser gravado na aba
-    de histórico/auditoria.
+    de histórico/auditoria. `realizado` vem de read_realizados.
     """
     trip_number = str(row["trip_number"]).strip()
     inicio_previsto = row["eta_scheduled_origin_edited"]
@@ -837,20 +882,62 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
                 trip_number, dados["sla_result"],
             )
 
-    # --- Regra 4: % de espelhamento ------------------------------------------
-    # A janela de contagem vai de (início previsto - 1h35) até o fim previsto.
-    # Só a parte de cada queda que cai DENTRO da janela entra na conta; quedas
-    # (ou trechos de queda) antes do início da janela ou depois do fim são
-    # ignorados. A queda em aberto é contada até min(agora, fim da janela).
+    dados["base"] = {
+        "inicio": _iso(inicio_previsto),
+        "fim": _iso(fim_previsto),
+        "info": info_veiculo,
+    }
+    atualizar_realizado(dados, realizado)
+
+    resultado = montar_resultado(trip_number, dados, status_atual, corte=now, now=now)
+    # Rastreamento da seguradora (vazio se a aba Rastreamento_Angellira não existir).
+    resultado.update({titulo: _valor(row.get(chave)) for chave, titulo in TRACKING_OUTPUT})
+    return resultado
+
+
+def _iso(value):
+    if value is None or pd.isna(value):
+        return None
+    return pd.Timestamp(value).to_pydatetime().isoformat()
+
+
+def atualizar_realizado(dados: dict, realizado) -> None:
+    """Guarda no estado o CPT e a chegada realizados (sobrevivem a uma falha de
+    leitura da DBLH e à saída da rota da aba Telemetria)."""
+    if not realizado:
+        return
+    for chave, campo in (("cpt", "cpt_realizado"), ("chegada", "chegada_realizada")):
+        if realizado.get(chave):
+            dados[campo] = realizado[chave].isoformat()
+
+
+def janela_shopee(inicio_previsto, fim_previsto, cpt, chegada, now):
+    """Do que vier primeiro entre ETA Origem programado e CPT realizado até o ETA
+    Destino realizado. Sem chegada, o fim é provisório: o fim previsto, ou agora
+    se a viagem já passou dele."""
+    inicio = min(inicio_previsto, cpt) if cpt else inicio_previsto
+    return inicio, chegada or max(fim_previsto, now)
+
+
+def montar_resultado(trip_number: str, dados: dict, status_atual: str, corte: datetime, now: datetime) -> dict:
+    """Linha de Resultado_Espelhamento a partir do estado da rota. `corte` é até
+    quando o sinal é conhecido: agora, ou a última leitura de uma rota que já
+    saiu da aba Telemetria."""
+    base = dados.get("base") or {}
+    inicio_previsto, fim_previsto = _parse_iso(base.get("inicio")), _parse_iso(base.get("fim"))
+    cpt, chegada = _parse_iso(dados.get("cpt_realizado")), _parse_iso(dados.get("chegada_realizada"))
+
+    # --- Regra 4: % de espelhamento (regra da Shopee) ------------------------
+    # Só a parte de cada queda que cai DENTRO da janela entra na conta. A queda
+    # em aberto é contada até min(corte, fim da janela).
     inicio_janela = None
     duracao_total_rota = None
     duracao_janela = None
     tempo_sem_sinal_total = dados["total_loss_seconds"]  # bruto, sem recorte
     percentual_espelhamento = None
 
-    if pd.notna(inicio_previsto) and pd.notna(fim_previsto):
-        inicio_janela = (inicio_previsto - timedelta(minutes=JANELA_MINUTES_BEFORE_START)).to_pydatetime()
-        fim_janela = fim_previsto.to_pydatetime()
+    if inicio_previsto and fim_previsto:
+        inicio_janela, fim_janela = janela_shopee(inicio_previsto, fim_previsto, cpt, chegada, now)
         duracao_total_rota = (fim_previsto - inicio_previsto).total_seconds()
         duracao_janela = (fim_janela - inicio_janela).total_seconds()
 
@@ -864,7 +951,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         for per in dados["loss_periods"]:
             sem_sinal_janela += _overlap(_parse_iso(per["perda"]), _parse_iso(per["retorno"]))
         if dados["current_loss_start"]:
-            sem_sinal_janela += _overlap(_parse_iso(dados["current_loss_start"]), now)
+            sem_sinal_janela += _overlap(_parse_iso(dados["current_loss_start"]), corte)
 
         tempo_sem_sinal_total = sem_sinal_janela
         if duracao_janela > 0:
@@ -873,9 +960,8 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
             )
 
     # --- Quedas contabilizadas: Qtd., Última Perda e Último Retorno ----------
-    # Só contam a partir do início da janela (início previsto - 1h35). Queda
-    # que termina antes disso é ignorada; queda que atravessa o início da
-    # janela entra com a perda "cortada" no início da janela.
+    # Só contam a partir do início da janela. Queda que termina antes disso é
+    # ignorada; queda que atravessa o início entra "cortada" no início.
     quedas = []  # (perda, retorno | None), em ordem cronológica
     for per in dados["loss_periods"]:
         perda, retorno = _parse_iso(per["perda"]), _parse_iso(per["retorno"])
@@ -888,7 +974,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         quedas.append((perda, retorno))
     if dados["current_loss_start"]:
         perda_aberta = _parse_iso(dados["current_loss_start"])
-        if perda_aberta is not None and (inicio_janela is None or now > inicio_janela):
+        if perda_aberta is not None and (inicio_janela is None or corte > inicio_janela):
             if inicio_janela is not None:
                 perda_aberta = max(perda_aberta, inicio_janela)
             quedas.append((perda_aberta, None))
@@ -896,10 +982,10 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
     ultima_perda = quedas[-1][0] if quedas else None
     ultimo_retorno = retornos[-1] if retornos else None
 
-    # --- Status geral (extra, além do que foi pedido) ------------------------
-    # Combina as duas condições de NOK já usadas hoje no acompanhamento de
-    # espelhamento (SLA não cumprido OU percentual abaixo da meta), para a
-    # aba de resultados já sair pronta para cobrar o time de GR.
+    # --- Status geral ---------------------------------------------------------
+    # Regra da Shopee: OK só se cumpriu as duas etapas (espelhado 1h30 antes do
+    # ETA Origem e pelo menos 95% da janela). Antes da chegada realizada o % é
+    # provisório.
     if not dados["sla_check_done"]:
         status_geral = "Pendente"
     elif dados["sla_result"] == "Não":
@@ -929,10 +1015,34 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list) -> d
         "Status Geral": status_geral,
         "Atualizado Em": _fmt(now),
         # Colunas informativas, ao final para não deslocar as letras das colunas existentes.
-        **{titulo: _txt(row.get(chave)) for chave, (_n, _l, titulo) in OPTIONAL_COLUMNS.items()},
-        # Rastreamento da seguradora (vazio se a aba Rastreamento_Angellira não existir).
-        **{titulo: _valor(row.get(chave)) for chave, titulo in TRACKING_OUTPUT},
+        **base.get("info", {}),
     }
+
+
+def colunas_realizadas(resultado: dict, dados: dict) -> None:
+    """Últimas colunas de Resultado_Espelhamento (depois de Status Viagem)."""
+    resultado["CPT Realizado"] = _fmt(_parse_iso(dados.get("cpt_realizado")))
+    resultado["Chegada Realizada"] = _fmt(_parse_iso(dados.get("chegada_realizada")))
+    resultado["Janela Final"] = "Sim" if dados.get("chegada_realizada") else "Não"
+
+
+def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) -> list:
+    """Rotas que já saíram da aba Telemetria mas chegaram há menos de
+    FINALIZADAS_HORAS: resultado com a janela fechada na chegada realizada."""
+    saida = []
+    for trip_number, dados in state.items():
+        if trip_number in ativos or not dados.get("base") or dados.get("cancelada"):
+            continue
+        atualizar_realizado(dados, (realizados or {}).get(trip_number.upper()))
+        chegada = _parse_iso(dados.get("chegada_realizada"))
+        if chegada is None or now - chegada > timedelta(hours=FINALIZADAS_HORAS):
+            continue
+        corte = _parse_iso(dados.get("last_seen")) or now
+        r = montar_resultado(trip_number, dados, dados.get("last_status") or "", corte=corte, now=now)
+        r["Status Viagem"] = "FINALIZADA"
+        colunas_realizadas(r, dados)
+        saida.append(r)
+    return saida
 
 
 def _txt(value) -> str:
@@ -987,7 +1097,7 @@ def write_results(client: gspread.Client, resultados: list) -> None:
 
     cabecalho = list(resultados[0].keys())
     garantir_colunas(ws, len(cabecalho))
-    linhas = [cabecalho] + [[linha[c] for c in cabecalho] for linha in resultados]
+    linhas = [cabecalho] + [[linha.get(c, "") for c in cabecalho] for linha in resultados]
 
     ws.clear()
     ws.update(values=linhas, range_name="A1")
@@ -1065,29 +1175,32 @@ def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str):
             "% Final": round(pct, 1) if pct is not None else "", **resultado}
 
 
-def fechar_rotas(state: dict, df: pd.DataFrame, resultados: list, now: datetime) -> list:
-    """Retrato final de cada rota, uma única vez: depois do fim previsto (quando
-    o % para de mudar) ou, se ela sumir da Telemetria antes, com o último retrato."""
-    # Espera as leituras de confirmação: uma queda ainda pendente no fim previsto
+def fechar_rotas(state: dict, resultados: list, finalizados: list, now: datetime) -> list:
+    """Retrato final de cada rota, uma única vez: depois da chegada realizada
+    (quando a janela da Shopee fecha e o % para de mudar) ou, se ela sumir da
+    Telemetria antes, com o último retrato (fechado na chegada, se já houver)."""
+    # Espera as leituras de confirmação: uma queda ainda pendente na chegada
     # é datada na 1ª leitura e mudaria o % depois de gravado.
     espera = timedelta(minutes=CHECK_INTERVAL_MINUTES * CONFIRMACAO_LEITURAS)
     fechadas, ativos = [], set()
-    for r, fim in zip(resultados, df["eta_destination_edited"]):
+    for r in resultados:
         trip = r["Trip Number"]
         ativos.add(trip)
         dados = state.get(trip)
         if dados is None or dados.get("fechada_em"):
             continue
-        if pd.notna(fim) and now >= fim.to_pydatetime() + espera:
-            fechadas.append(_fechar(dados, r, now, "Fim previsto"))
+        chegada = _parse_iso(dados.get("chegada_realizada"))
+        if chegada and now >= chegada + espera:
+            fechadas.append(_fechar(dados, r, now, "Chegada realizada"))
         else:
             dados["ultimo_resultado"] = r
+    finais = {r["Trip Number"]: r for r in finalizados}
     limite = now - timedelta(minutes=FECHAMENTO_SUMIDA_MIN)
     for trip, dados in state.items():
         visto = _parse_iso(dados.get("last_seen"))
         if (trip not in ativos and not dados.get("fechada_em") and dados.get("ultimo_resultado")
                 and visto and visto < limite):
-            fechadas.append(_fechar(dados, dados["ultimo_resultado"], now, "Saiu da Telemetria"))
+            fechadas.append(_fechar(dados, finais.get(trip) or dados["ultimo_resultado"], now, "Saiu da Telemetria"))
     return [f for f in fechadas if f]
 
 
@@ -1207,6 +1320,7 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
         "geo": geo_por_trip,
+        "estacoes": GEO.estacoes_mapa,
         "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
     }
 
@@ -1228,13 +1342,21 @@ def job():
 
         df, ref_rastreamento = enriquecer_com_rastreamento(client, df, now)
 
+        try:
+            realizados = read_realizados(client)
+        except Exception:
+            # Sem a DBLH o ciclo segue com os realizados já guardados no estado.
+            logging.exception("Falha ao ler CPT/chegada realizados da aba %s.", DBLH_WORKSHEET_NAME)
+            realizados = None
+
         state = load_state(client)
         eventos_do_ciclo = []
         resultados = []
 
         for _, row in df.iterrows():
             n_antes = len(eventos_do_ciclo)
-            resultado_linha = process_trip(row, state, now, eventos_do_ciclo)
+            realizado = (realizados or {}).get(str(row["trip_number"]).strip().upper())
+            resultado_linha = process_trip(row, state, now, eventos_do_ciclo, realizado)
             resultados.append(resultado_linha)
             # Cada evento do histórico leva o "retrato" completo da linha de
             # Resultado_Espelhamento no momento em que o evento foi detectado.
@@ -1250,6 +1372,7 @@ def job():
         # Depois das colunas TomTom, para ser a última e não deslocar as existentes.
         for r, status_viagem in zip(resultados, df["status_viagem"]):
             r["Status Viagem"] = _txt(status_viagem)
+            colunas_realizadas(r, state.get(r["Trip Number"], {}))
 
         cancelamentos = carregar_cancelamentos(client)
         for r in resultados:
@@ -1259,22 +1382,25 @@ def job():
         eventos_do_ciclo = [ev for ev in eventos_do_ciclo if not cancelamentos.get(ev["trip_number"])]
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
-        fechadas = fechar_rotas(state, df, resultados, now)
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
+        finalizados = resultados_finalizados(state, trip_numbers_ativos, realizados, now)
+        fechadas = fechar_rotas(state, resultados, finalizados, now)
         cleanup_state(state, trip_numbers_ativos)
         save_state(state, client)
 
         client_escrita = client  # mesma sessão autenticada
-        write_results(client_escrita, resultados)
+        # Finalizadas só vão para a planilha (o BSC lê de lá); o site e a TomTom
+        # ficam com as rotas ativas.
+        write_results(client_escrita, resultados + finalizados)
         append_events(client_escrita, eventos_do_ciclo)
         append_fechamentos(client_escrita, fechadas)
 
         publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento)
 
         logging.info(
-            "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s), "
+            "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s), "
             "%s rota(s) fechada(s), %s cancelada(s).",
-            len(resultados), len(eventos_do_ciclo), len(fechadas),
+            len(resultados), len(finalizados), len(eventos_do_ciclo), len(fechadas),
             sum(1 for r in resultados if r["Cancelamento"]),
         )
 
