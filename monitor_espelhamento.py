@@ -74,6 +74,10 @@ SOURCE_WORKSHEET_NAME = "Telemetria"
 RESULTS_SPREADSHEET_ID = os.getenv("RESULTS_SPREADSHEET_ID", "1qsluTmC9w_4GggvtvJQk6D5PMKYb0v7B6kZjRwKJm9A")
 RESULTS_WORKSHEET_NAME = "Resultado_Espelhamento"
 EVENTS_WORKSHEET_NAME = "Historico_Quedas_Sinal"  # aba de auditoria (extra)
+# Uma linha por rota, gravada uma vez quando ela termina (retrato final).
+FECHAMENTO_WORKSHEET_NAME = os.getenv("FECHAMENTO_WORKSHEET_NAME", "Fechamento_Rotas")
+# Rota que some da Telemetria só é fechada depois disto (evita fechar numa piscada do DBLH).
+FECHAMENTO_SUMIDA_MIN = int(os.getenv("FECHAMENTO_SUMIDA_MIN", "30"))
 
 # Intervalo de execução do robô.
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "5"))
@@ -981,6 +985,29 @@ def write_results(client: gspread.Client, resultados: list) -> None:
     ws.update(values=linhas, range_name="A1")
 
 
+def _preparar_cabecalho(ws, cabecalho: list) -> None:
+    garantir_colunas(ws, len(cabecalho))
+    atual = ws.row_values(1)
+    if not atual:
+        ws.append_row(cabecalho, value_input_option="USER_ENTERED")
+    elif atual != cabecalho:
+        if cabecalho[:len(atual)] == atual:
+            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
+            # com as colunas novas em branco.
+            ws.update(values=[cabecalho], range_name="A1")
+        else:
+            logging.warning("Cabeçalho da aba '%s' diferente do esperado; não foi alterado. "
+                            "Esperado: %s", ws.title, cabecalho)
+
+
+def _texto(v):
+    # Apóstrofo força texto no USER_ENTERED: a linha fica idêntica ao que está
+    # em Resultado_Espelhamento (sem converter datas, % ou IDs).
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return v  # números (ex.: Qtd. Quedas) continuam numéricos
+    return ("'" + str(v)) if v not in ("", None) else ""
+
+
 @gspread_retry()
 def append_events(client: gspread.Client, eventos: list) -> None:
     """Acrescenta ao final da aba de histórico os eventos de perda/retorno
@@ -1000,26 +1027,7 @@ def append_events(client: gspread.Client, eventos: list) -> None:
                          if c != "Trip Number" and c not in titulos_extra]
     cabecalho = (["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"]
                  + titulos_extra + colunas_resultado)
-    garantir_colunas(ws, len(cabecalho))
-
-    atual = ws.row_values(1)
-    if not atual:
-        ws.append_row(cabecalho, value_input_option="USER_ENTERED")
-    elif atual != cabecalho:
-        if cabecalho[:len(atual)] == atual:
-            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
-            # com as colunas novas em branco.
-            ws.update(values=[cabecalho], range_name="A1")
-        else:
-            logging.warning("Cabeçalho do histórico diferente do esperado; não foi alterado. "
-                            "Esperado: %s", cabecalho)
-
-    def _texto(v) -> str:
-        # Apóstrofo força texto no USER_ENTERED: o histórico fica idêntico ao
-        # que está em Resultado_Espelhamento (sem converter datas, % ou IDs).
-        if isinstance(v, (int, float)) and not isinstance(v, bool):
-            return v  # números (ex.: Qtd. Quedas) continuam numéricos
-        return ("'" + str(v)) if v not in ("", None) else ""
+    _preparar_cabecalho(ws, cabecalho)
 
     linhas = []
     for ev in eventos:
@@ -1035,6 +1043,53 @@ def append_events(client: gspread.Client, eventos: list) -> None:
             *[_texto(snap.get(c, "")) for c in colunas_resultado],
         ])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
+
+
+def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str) -> dict:
+    dados["fechada_em"] = now.isoformat()
+    dados.pop("ultimo_resultado", None)
+    pct = _num(str(resultado.get("% Espelhamento", "")).replace("%", ""))
+    return {"Fechada Em": _fmt(now), "Motivo": motivo,
+            "% Final": round(pct, 1) if pct is not None else "", **resultado}
+
+
+def fechar_rotas(state: dict, df: pd.DataFrame, resultados: list, now: datetime) -> list:
+    """Retrato final de cada rota, uma única vez: depois do fim previsto (quando
+    o % para de mudar) ou, se ela sumir da Telemetria antes, com o último retrato."""
+    # Espera as leituras de confirmação: uma queda ainda pendente no fim previsto
+    # é datada na 1ª leitura e mudaria o % depois de gravado.
+    espera = timedelta(minutes=CHECK_INTERVAL_MINUTES * CONFIRMACAO_LEITURAS)
+    fechadas, ativos = [], set()
+    for r, fim in zip(resultados, df["eta_destination_edited"]):
+        trip = r["Trip Number"]
+        ativos.add(trip)
+        dados = state.get(trip)
+        if dados is None or dados.get("fechada_em"):
+            continue
+        if pd.notna(fim) and now >= fim.to_pydatetime() + espera:
+            fechadas.append(_fechar(dados, r, now, "Fim previsto"))
+        else:
+            dados["ultimo_resultado"] = r
+    limite = now - timedelta(minutes=FECHAMENTO_SUMIDA_MIN)
+    for trip, dados in state.items():
+        visto = _parse_iso(dados.get("last_seen"))
+        if (trip not in ativos and not dados.get("fechada_em") and dados.get("ultimo_resultado")
+                and visto and visto < limite):
+            fechadas.append(_fechar(dados, dados["ultimo_resultado"], now, "Saiu da Telemetria"))
+    return fechadas
+
+
+@gspread_retry()
+def append_fechamentos(client: gspread.Client, fechadas: list) -> None:
+    if not fechadas:
+        return
+    ws = get_or_create_worksheet(client.open_by_key(RESULTS_SPREADSHEET_ID), FECHAMENTO_WORKSHEET_NAME)
+    cabecalho = list(fechadas[0].keys())
+    for f in fechadas[1:]:
+        cabecalho += [c for c in f if c not in cabecalho]
+    _preparar_cabecalho(ws, cabecalho)
+    ws.append_rows([[_texto(f.get(c, "")) for c in cabecalho] for f in fechadas],
+                   value_input_option="USER_ENTERED")
 
 
 # =============================================================================
@@ -1118,10 +1173,6 @@ def job():
             for ev in eventos_do_ciclo[n_antes:]:
                 ev["resultado"] = resultado_linha
 
-        trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
-        cleanup_state(state, trip_numbers_ativos)
-        save_state(state, client)
-
         if not _SNAPSHOT:
             # Logo após reiniciar, o site já mostra as rotas enquanto a TomTom
             # recalcula (a primeira passada pode levar mais de um minuto).
@@ -1132,15 +1183,23 @@ def job():
         for r, status_viagem in zip(resultados, df["status_viagem"]):
             r["Status Viagem"] = _txt(status_viagem)
 
+        # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
+        fechadas = fechar_rotas(state, df, resultados, now)
+        trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
+        cleanup_state(state, trip_numbers_ativos)
+        save_state(state, client)
+
         client_escrita = client  # mesma sessão autenticada
         write_results(client_escrita, resultados)
         append_events(client_escrita, eventos_do_ciclo)
+        append_fechamentos(client_escrita, fechadas)
 
         publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento)
 
         logging.info(
-            "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s).",
-            len(resultados), len(eventos_do_ciclo),
+            "Ciclo concluído: %s rota(s) processada(s), %s evento(s) de sinal registrado(s), "
+            "%s rota(s) fechada(s).",
+            len(resultados), len(eventos_do_ciclo), len(fechadas),
         )
 
     except Exception:
