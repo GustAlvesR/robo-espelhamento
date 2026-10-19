@@ -109,6 +109,76 @@ function el(tag, attrs = {}, ...filhos) {
   return n;
 }
 
+// Estações da Shopee (aba Estacoes): nada aparece até alguém ligar um tipo no
+// controle do mapa, e só então a lista é pedida ao servidor.
+const TIPOS_ESTACAO = [
+  ["HUB", "HUBs (last mile)", "hub"],
+  ["FM HUB", "FM HUBs", "fmh"],
+  ["SOC", "SOCs", "soc"],
+  ["Outros", "Outras estações", "outra"],
+];
+const CLASSE_ESTACAO = Object.fromEntries(TIPOS_ESTACAO.map(([t, , c]) => [t, c]));
+mapa.createPane("estacoes").style.zIndex = 390;
+const camadaEstacoes = L.layerGroup().addTo(mapa);
+const tiposLigados = new Set();
+let estacoes = null;
+
+async function carregarEstacoes() {
+  const resp = await fetch("/api/estacoes", { credentials: "same-origin" });
+  if (resp.status === 401) { location.href = "/login"; return; }
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const lista = await resp.json();
+  // Lista vazia = robô recém-reiniciado: não guarda, tenta de novo no próximo clique.
+  if (lista.length) estacoes = lista;
+}
+
+function desenharEstacoes() {
+  camadaEstacoes.clearLayers();
+  if (!estacoes) return;
+  for (const e of estacoes) {
+    if (!tiposLigados.has(e.tipo)) continue;
+    L.marker([e.lat, e.lon], {
+      pane: "estacoes", keyboard: false,
+      icon: L.divIcon({ className: `estacao ${CLASSE_ESTACAO[e.tipo] || "outra"}`, html: "<span></span>",
+        iconSize: [14, 14], iconAnchor: [7, 7] }),
+    }).bindTooltip(escHtml(e.nome ? `${e.codigo} · ${e.nome}` : e.codigo)).addTo(camadaEstacoes);
+  }
+}
+
+async function alternarTipoEstacao(tipo, ligar) {
+  if (ligar) tiposLigados.add(tipo);
+  else tiposLigados.delete(tipo);
+  const aviso = document.getElementById("avisoEstacoes");
+  aviso.textContent = "";
+  if (tiposLigados.size && !estacoes) {
+    aviso.textContent = "Carregando…";
+    try { await carregarEstacoes(); } catch (e) { console.error(e); }
+    aviso.textContent = estacoes ? "" : "Estações ainda não disponíveis. Tente em alguns minutos.";
+  }
+  desenharEstacoes();
+}
+
+const ControleEstacoes = L.Control.extend({
+  options: { position: "topleft" },
+  onAdd() {
+    const box = el("details", { class: "leaflet-bar controle-estacoes" },
+      el("summary", { title: "Mostrar estações da Shopee no mapa" }, "Estações"));
+    L.DomEvent.disableClickPropagation(box);
+    L.DomEvent.disableScrollPropagation(box);
+    const opcoes = el("div", { class: "opcoes" });
+    for (const [tipo, rotulo, cls] of TIPOS_ESTACAO) {
+      const cb = el("input", { type: "checkbox" });
+      cb.checked = tiposLigados.has(tipo);
+      cb.addEventListener("change", () => alternarTipoEstacao(tipo, cb.checked));
+      opcoes.append(el("label", {}, cb, el("i", { class: `estacao amostra ${cls}` }, el("span")), rotulo));
+    }
+    opcoes.append(el("span", { class: "aviso", id: "avisoEstacoes", "aria-live": "polite" }));
+    box.append(opcoes);
+    if (tiposLigados.size) box.open = true;
+    return box;
+  },
+});
+
 const statusDe = (r) => r["Status Geral"] || "Pendente";
 const classeStatus = (r) => ({ OK: "ok", NOK: "nok", Cancelada: "canc" }[statusDe(r)] || "pend");
 const cancelada = (r) => statusDe(r) === "Cancelada";
@@ -432,14 +502,14 @@ function aplicarDados(j) {
   const parado = idadeCiclo !== null && idadeCiclo > 15 ? ` · ATENÇÃO: sem ciclo há ${idadeCiclo} min` : "";
   aviso.textContent = `Ciclo: ${j.atualizado_em || "aguardando o primeiro"}` + parado
     + (tt.ultimo_erro ? ` · TomTom: ${tt.ultimo_erro}` : "");
-  aviso.style.color = parado ? "var(--nok)" : "";
+  aviso.classList.toggle("parado", !!parado);
   mostrarAngellira(j.angellira_em);
   try {
     render();
   } catch (e) {
     console.error(e);
     aviso.textContent += ` · Erro ao desenhar: ${e.message}`;
-    aviso.style.color = "var(--nok)";
+    aviso.classList.add("parado");
   }
 }
 
@@ -452,6 +522,7 @@ function salvarVisao() {
       busca: document.getElementById("busca").value,
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
+      estacoes: [...tiposLigados],
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -465,6 +536,7 @@ function restaurarVisao() {
     selecionada = v.sel || null;
     semSinal = !!v.semSinal;
     for (const id of ["busca", "fStatus", "fRisco"]) document.getElementById(id).value = v[id] || "";
+    for (const t of v.estacoes || []) if (CLASSE_ESTACAO[t]) tiposLigados.add(t);
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -517,6 +589,8 @@ for (const id of ["busca", "fStatus", "fRisco"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });
 }
 restaurarVisao();
+new ControleEstacoes().addTo(mapa);
+if (tiposLigados.size) alternarTipoEstacao([...tiposLigados][0], true);
 try {
   aplicarDados(JSON.parse(document.getElementById("dados-iniciais").textContent));
 } catch (e) {

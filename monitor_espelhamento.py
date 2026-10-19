@@ -1320,6 +1320,7 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
         "geo": geo_por_trip,
+        "estacoes": GEO.estacoes_mapa,
         "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
     }
 

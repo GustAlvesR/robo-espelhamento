@@ -155,6 +155,14 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     def api_rotas():
         return Response(dados_json(), mimetype="application/json")
 
+    @app.get("/api/estacoes")
+    @exige_login
+    def api_estacoes():
+        # Separado de /api/rotas: só é pedido quando alguém liga a camada no mapa.
+        resp = jsonify((get_snapshot() or {}).get("estacoes", []))
+        resp.headers["Cache-Control"] = "private, max-age=300"
+        return resp
+
     def dados_json() -> str:
         snap = get_snapshot() or {}
         geo = snap.get("geo", {})

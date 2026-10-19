@@ -3,15 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Torre LH · Entrar</title>
+<title>Entrar · Torre LH · CEVA Logistics</title>
+<script>
+  try {
+    const t = localStorage.getItem("torreLH.tema");
+    if (t === "claro" || t === "escuro") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body class="tela-login">
   <form class="cartao-login" method="post" autocomplete="on">
-    <div class="marca">Torre LH <span>espelhamento · rotas</span></div>
+    <img class="login-logo login-logo-claro" src="{{ url_for('static', filename='img/logo-ceva.svg') }}" alt="CEVA Logistics">
+    <img class="login-logo login-logo-escuro" src="{{ url_for('static', filename='img/logo-ceva-escuro.svg') }}" alt="CEVA Logistics">
+    <h1>Torre LH</h1>
+    <p class="intro">Espelhamento, posição e previsão das rotas de LH.</p>
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-    <label>E-mail<input type="email" name="email" required autofocus></label>
-    <label>Senha<input type="password" name="senha" required></label>
+    <label>E-mail<input type="email" name="email" autocomplete="username" required autofocus></label>
+    <label>Senha<input type="password" name="senha" autocomplete="current-password" required></label>
     {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
     <button type="submit">Entrar</button>
   </form>
