@@ -37,6 +37,8 @@ TOLERANCIA_ATRASO_MIN = int(os.getenv("TOLERANCIA_ATRASO_MIN", "30"))
 # Ponto de referência da Angellira só é aceito se cair a até X km do centro da cidade.
 RAIO_REFERENCIA_KM = float(os.getenv("RAIO_REFERENCIA_KM", "30"))
 MAX_PONTOS_ROTA = 300
+# Caminho recalculado da posição atual: vai para todas as rotas dentro da página.
+MAX_PONTOS_ROTA_ATUAL = 150
 
 ESTACOES_WORKSHEET_NAME = os.getenv("ESTACOES_WORKSHEET_NAME", "Estacoes")
 GEO_CACHE_WORKSHEET_NAME = os.getenv("GEO_CACHE_WORKSHEET_NAME", "_cache_geo")
@@ -221,7 +223,7 @@ class GeoTomTom:
         return (centro[0], centro[1], "cidade")
 
     # -------------------------------------------------------------- Routing
-    def _rota(self, origem, destino, depart_at: datetime, com_pontos: bool):
+    def _rota(self, origem, destino, depart_at: datetime, com_pontos: bool, max_pontos: int = MAX_PONTOS_ROTA):
         params = {"travelMode": "truck", "traffic": "true", "routeType": "fastest",
                   "vehicleCommercial": "true", "language": "pt-BR",
                   "departAt": depart_at.strftime("%Y-%m-%dT%H:%M:%S") + "-03:00"}
@@ -237,8 +239,8 @@ class GeoTomTom:
         if com_pontos:
             for leg in rota.get("legs", []):
                 pontos += [[round(p["latitude"], 5), round(p["longitude"], 5)] for p in leg.get("points", [])]
-            if len(pontos) > MAX_PONTOS_ROTA:
-                passo = math.ceil(len(pontos) / MAX_PONTOS_ROTA)
+            if len(pontos) > max_pontos:
+                passo = math.ceil(len(pontos) / max_pontos)
                 pontos = pontos[::passo] + [pontos[-1]]
         return {"dur_s": resumo.get("travelTimeInSeconds"),
                 "dist_m": resumo.get("lengthInMeters"),
@@ -263,11 +265,14 @@ class GeoTomTom:
         atual = self.etas.get(trip)
         if atual and atual["chave"] == chave and now - atual["calc_em"] < timedelta(minutes=ETA_RECALCULO_MIN):
             return atual
-        r = self._rota(posicao[:2], destino, now + timedelta(minutes=1), com_pontos=False)
+        # Mesma chamada de antes, agora com o desenho: é o caminho mais rápido com o
+        # trânsito do momento, da posição até o destino.
+        r = self._rota(posicao[:2], destino, now + timedelta(minutes=1), com_pontos=True,
+                       max_pontos=MAX_PONTOS_ROTA_ATUAL)
         if not r:
             return atual  # mantém o último cálculo válido, se houver
         novo = {"chave": chave, "calc_em": now, "travel_s": r["dur_s"],
-                "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"]}
+                "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"], "pontos": r["pontos"]}
         self.etas[trip] = novo
         return novo
 
@@ -478,6 +483,11 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                     risco = "Posição antiga"
                 else:
                     eta = geo.eta_da_posicao(trip, info["veiculo"], dest, dt_pos, now)
+                    if eta and eta.get("pontos"):
+                        info["rota_atual"] = eta["pontos"]
+                        info["rota_atual_em"] = eta["calc_em"].strftime("%H:%M")
+                        info["rota_atual_km"] = round(eta["dist_m"] / 1000) if eta.get("dist_m") else None
+                        info["transito_min"] = round((eta.get("atraso_transito_s") or 0) / 60)
                     if eta and eta.get("travel_s") is not None:
                         vel = _num(r.get("Velocidade (km/h)"))
                         # A velocidade manda; a ignição só decide quando não há velocidade.

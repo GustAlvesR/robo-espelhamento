@@ -390,8 +390,9 @@ function desenharDetalhe() {
       ...linha("Data da posição", r["Data da Posição"]),
       ...linha("Idade da posição", idade(g.idade_pos_min)),
       ...linha("Precisão no mapa", g.precisao),
+      ...linha("Posições guardadas", (g.trilha || []).length || ""),
       ...linha("Ignição", r["Ignição"]),
-      ...linha("Velocidade", r["Velocidade (km/h)"] !== "" ? `${r["Velocidade (km/h)"]} km/h` : ""),
+      ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
     el("div", { class: "sec" }, "Previsão TomTom"),
@@ -400,36 +401,62 @@ function desenharDetalhe() {
       ...linha("Chegada prevista", r["Previsão TomTom"]),
       ...linha("Desvio", desvio !== "" && desvio !== undefined ? `${desvio > 0 ? "+" : ""}${desvio} min` : ""),
       ...linha("Rota TomTom", g.rota_tomtom_min ? idade(g.rota_tomtom_min) : ""),
+      ...linha("Caminho até o destino", g.rota_atual_km ? `${g.rota_atual_km} km, calculado às ${g.rota_atual_em}` : ""),
+      ...linha("Trânsito no caminho", g.transito_min ? `+${g.transito_min} min` : ""),
       ...linha("Planejado", g.planejado_min ? idade(g.planejado_min) : ""),
     ),
   );
   box.hidden = false;
 }
 
+// Já percorrido = posições reais recebidas da Angellira, ligadas em linha reta
+// (não há o caminho entre uma posição e outra). Falta percorrer = caminho mais
+// rápido da TomTom com o trânsito do momento, recalculado a cada 30 min. Sem
+// isso, cai no trajeto planejado cortado no ponto mais próximo do caminhão.
 function desenharTrajeto(r, g) {
   const pts = g.pontos || [];
-  if (pts.length < 2) return;
+  const trilha = g.trilha || [];
+  const atual = g.rota_atual || [];
   const base = { weight: 5, bubblingMouseEvents: false };
   const acento = corCss("var(--acento)");
+  const cinza = corCss("var(--pend)");
   const tracar = (trecho, estilo, dica) =>
-    L.polyline(trecho, { ...base, ...estilo }).bindTooltip(dica, { sticky: true }).addTo(camadaSel);
+    L.polyline(trecho, { ...base, ...estilo }).bindTooltip(escHtml(dica), { sticky: true }).addTo(camadaSel);
   if (aguardandoInicio(r)) {
-    tracar(pts, { color: acento, dashArray: "10 8" }, "Trajeto previsto (viagem não iniciada)");
+    if (pts.length >= 2) tracar(pts, { color: acento, dashArray: "10 8" }, "Trajeto previsto (viagem não iniciada)");
     return;
   }
+  if ((trilha.length || atual.length >= 2) && pts.length >= 2) {
+    tracar(pts, { color: cinza, weight: 3, opacity: 0.45, dashArray: "2 7" }, "Trajeto planejado (origem → destino)");
+  }
+  if (trilha.length) {
+    const caminho = [g.origem, ...trilha.map((p) => [p[0], p[1]])].filter(Boolean);
+    if (caminho.length >= 2) tracar(caminho, { color: cinza, opacity: 0.9 }, "Já percorrido: posições recebidas da Angellira");
+    for (const [lat, lon, desde, ate, precisao] of trilha) {
+      const quando = desde === ate ? desde : `${desde} até ${ate}`;
+      L.circleMarker([lat, lon], { radius: 3.5, color: "#fff", weight: 1, fillColor: cinza, fillOpacity: 1,
+        bubblingMouseEvents: false }).bindTooltip(escHtml(precisao ? `${quando} · ${precisao}` : quando)).addTo(camadaSel);
+    }
+  }
+  if (atual.length >= 2) {
+    tracar(atual, { color: acento }, `Melhor caminho agora (TomTom com trânsito, calculado às ${g.rota_atual_em || "?"})`);
+    return;
+  }
+  if (pts.length < 2) return;
   const corte = indiceDeCorte(r, g);
   if (corte === null) {
-    tracar(pts, { color: acento }, "Trajeto previsto");
+    if (!trilha.length) tracar(pts, { color: acento }, "Trajeto previsto");
     return;
   }
-  if (corte > 0) tracar(pts.slice(0, corte + 1), { color: corCss("var(--pend)"), opacity: 0.8 }, "Já percorrido (estimado)");
-  if (corte < pts.length - 1) tracar(pts.slice(corte), { color: acento }, "Falta percorrer");
+  if (corte > 0 && !trilha.length) tracar(pts.slice(0, corte + 1), { color: cinza, opacity: 0.8 }, "Já percorrido (estimado)");
+  if (corte < pts.length - 1) tracar(pts.slice(corte), { color: acento }, "Falta percorrer (trajeto previsto)");
 }
 
 function enquadrarSelecionada() {
   const r = dados.find((x) => x["Trip Number"] === selecionada);
   const g = (r && r._geo) || {};
-  const pts = [...(g.pontos || []), g.veiculo, g.origem, g.destino].filter(Boolean);
+  const pts = [...(g.pontos || []), ...(g.rota_atual || []), ...(g.trilha || []).map((p) => [p[0], p[1]]),
+    g.veiculo, g.origem, g.destino].filter(Boolean);
   if (!pts.length) return;
   // No computador o detalhe cobre a direita do mapa; no celular, a parte de baixo.
   const box = document.getElementById("detalhe");

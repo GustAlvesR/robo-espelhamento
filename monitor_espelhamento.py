@@ -1313,6 +1313,44 @@ def enriquecer_geo(client, df: pd.DataFrame, resultados: list, now: datetime) ->
         return {}
 
 
+TRILHA_MAX_PONTOS = int(os.getenv("TRILHA_MAX_PONTOS", "300"))
+
+
+def viagem_iniciada(r: dict, dados: dict, now: datetime) -> bool:
+    if dados.get("cpt_realizado"):
+        return True
+    status = _norm_chave(r.get("Status Viagem", ""))
+    if status:
+        return status != "PREVIAGEM"
+    inicio = _parse_dt_flex(r.get("Início Previsto"))
+    return inicio is not None and now >= inicio
+
+
+def atualizar_trilhas(state: dict, resultados: list, geo_por_trip: dict, now: datetime) -> None:
+    """Guarda no estado cada posição nova da Angellira (já no mapa) a partir do
+    início da viagem e entrega a trilha ao site: [lat, lon, desde, até, precisão].
+    Posição repetida só estende o 'até' (veículo parado)."""
+    for r in resultados:
+        trip = r["Trip Number"]
+        dados, g = state.get(trip), geo_por_trip.get(trip)
+        if dados is None or g is None:
+            continue
+        trilha = dados.setdefault("trilha", [])
+        quando = _parse_dt_flex(r.get("Data da Posição"))
+        v = g.get("veiculo")
+        if v and quando and viagem_iniciada(r, dados, now):
+            texto = _fmt(quando)
+            ultimo = trilha[-1] if trilha else None
+            ate_ultimo = _parse_dt_flex(ultimo[3]) if ultimo else None
+            if ultimo and ultimo[:2] == list(v[:2]):
+                if ate_ultimo is None or quando > ate_ultimo:
+                    ultimo[3] = texto
+            elif ate_ultimo is None or quando > ate_ultimo:
+                trilha.append([v[0], v[1], texto, texto, g.get("precisao", "")])
+                del trilha[:-TRILHA_MAX_PONTOS]
+        g["trilha"] = [list(p) for p in trilha]  # cópia: o site serializa enquanto o próximo ciclo roda
+
+
 def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None) -> None:
     global _SNAPSHOT
     _SNAPSHOT = {
@@ -1372,6 +1410,7 @@ def job():
         for r, status_viagem in zip(resultados, df["status_viagem"]):
             r["Status Viagem"] = _txt(status_viagem)
             colunas_realizadas(r, state.get(r["Trip Number"], {}))
+        atualizar_trilhas(state, resultados, geo_por_trip, now)
 
         cancelamentos = carregar_cancelamentos(client)
         for r in resultados:
