@@ -126,10 +126,9 @@ let estacoes = null;
 async function carregarEstacoes() {
   const resp = await fetch("/api/estacoes", { credentials: "same-origin" });
   if (resp.status === 401) { location.href = "/login"; return; }
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const lista = await resp.json();
-  // Lista vazia = robô recém-reiniciado: não guarda, tenta de novo no próximo clique.
-  if (lista.length) estacoes = lista;
+  const corpo = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(corpo.erro || `HTTP ${resp.status}`);
+  estacoes = corpo;
 }
 
 function desenharEstacoes() {
@@ -152,8 +151,13 @@ async function alternarTipoEstacao(tipo, ligar) {
   aviso.textContent = "";
   if (tiposLigados.size && !estacoes) {
     aviso.textContent = "Carregando…";
-    try { await carregarEstacoes(); } catch (e) { console.error(e); }
-    aviso.textContent = estacoes ? "" : "Estações ainda não disponíveis. Tente em alguns minutos.";
+    try {
+      await carregarEstacoes();
+      aviso.textContent = "";
+    } catch (e) {
+      console.error(e);
+      aviso.textContent = `Não foi possível carregar as estações (${e.message}). Desmarque e marque de novo para tentar outra vez.`;
+    }
   }
   desenharEstacoes();
 }
