@@ -45,6 +45,7 @@ import schedule
 from google.oauth2.service_account import Credentials
 from gspread.exceptions import APIError, WorksheetNotFound
 
+import clima
 import geo_tomtom
 
 
@@ -1278,6 +1279,8 @@ def carregar_cancelamentos(client) -> dict:
 # =============================================================================
 
 GEO = geo_tomtom.GeoTomTom()
+INMET_ATIVO = os.getenv("INMET_ATIVO", "1") != "0"
+CLIMA = clima.AlertasInmet()
 _SNAPSHOT = {}  # lido pelo site; trocado inteiro a cada ciclo (atribuição é atômica)
 
 
@@ -1358,6 +1361,8 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
         "geo": geo_por_trip,
+        "clima": CLIMA.para_mapa() if INMET_ATIVO else [],
+        "clima_erro": CLIMA.ultimo_erro if INMET_ATIVO else "",
         "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
     }
 
@@ -1418,6 +1423,16 @@ def job():
             if r["Cancelamento"]:
                 r["Status Geral"] = "Cancelada"
         eventos_do_ciclo = [ev for ev in eventos_do_ciclo if not cancelamentos.get(ev["trip_number"])]
+        # Por último, para a coluna nova não deslocar as existentes.
+        if INMET_ATIVO:
+            try:
+                CLIMA.atualizar(now)
+                clima.aplicar_nas_rotas(CLIMA, resultados, geo_por_trip,
+                                        lambda r: viagem_iniciada(r, state.get(r["Trip Number"], {}), now))
+            except Exception:
+                logging.exception("Falha na etapa de clima (INMET); seguindo sem ela.")
+                for r in resultados:
+                    r.setdefault("Alerta Chuva (INMET)", "")
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())

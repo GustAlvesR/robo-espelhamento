@@ -81,6 +81,9 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   `Sem coord. da estação`.
 - `Status Viagem`: cópia da coluna `status_corrigido` da Telemetria (PRE VIAGEM,
   EM TRANSITO). Se a coluna sumir, sai vazia e o site usa o horário de início previsto.
+- `Alerta Chuva (INMET)` (última coluna): alertas de chuva do INMET cuja área o
+  caminho que falta percorrer atravessa, do mais grave para o menos, por exemplo
+  `Perigo: Chuvas Intensas até 21/10 10:00`. Vazio quando não há alerta.
 
 ## Uso do mapa
 
@@ -109,7 +112,7 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   Shopee. Quando a planilha mudar: `pip install openpyxl`, depois
   `python importar_estacoes.py "Endereços e CNPJ.xlsx"` e commit do CSV. Endereço e
   CNPJ não entram no arquivo.
-- Botão "Estações" no canto do mapa: mostra os HUBs (last mile, códigos `HUB-`),
+- Botão "Camadas" no canto do mapa, com as estações da Shopee e o clima. Estações: mostra os HUBs (last mile, códigos `HUB-`),
   FM HUBs (`FMH-`), SOCs (`SOC-`) e as outras estações da aba `Estacoes` que têm
   latitude e longitude. Começa tudo desligado. A lista vem dentro da página, como
   as rotas (a aba é relida a cada 10 minutos), porque há redes que bloqueiam as
@@ -133,3 +136,25 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   da cidade. A previsão é tão atual quanto a última importação do relatório.
 - A TomTom não conhece as paradas obrigatórias do motorista (descanso da Lei
   do Motorista). Em viagens longas, isso deixa a previsão otimista.
+
+## Alertas de chuva (INMET)
+
+- Fonte: feed oficial de avisos do INMET (`https://apiprevmet3.inmet.gov.br/avisos/rss`),
+  um aviso por item, no padrão CAP (evento, severidade, vigência e polígono da área).
+  Gratuito, sem chave. O robô relê o feed a cada 30 minutos e só baixa os avisos novos.
+- Entram os avisos de chuva e tempestade vigentes e os que começam nas próximas 12 horas.
+  Cores: amarelo = Perigo Potencial, laranja = Perigo, vermelho = Grande Perigo.
+- Para cada rota, o robô verifica se o caminho que falta percorrer (o azul da TomTom) ou,
+  antes da viagem, o trajeto planejado passa por alguma área com alerta. As rotas
+  marcadas ganham a etiqueta "Chuva" na lista, a seção "Chuva no caminho" no detalhe e
+  entram no KPI "Chuva no caminho" (clique para filtrar).
+- No mapa, "Camadas" → "Alertas de chuva (INMET)" desenha as áreas. Começa desligado.
+- É alerta de área, não previsão hora a hora: diz onde o INMET espera chuva forte, não a
+  que horas vai chover no ponto em que o caminhão estará. A previsão por ponto fica para
+  a integração com o AccuWeather, quando houver a chave.
+- Confira no log do Render: `INMET: N aviso(s) no feed, M área(s) de chuva vigente(s)`.
+  Se aparecer `INMET: falha ao ler o feed`, o motivo vem junto (alguns serviços do governo
+  bloqueiam acessos de fora do Brasil, e o Render não tem servidor no Brasil). O resto do
+  robô segue funcionando.
+- Variáveis opcionais: `INMET_ATIVO=0` desliga; `INMET_ATUALIZAR_MIN` (30),
+  `INMET_ANTECEDENCIA_H` (12), `INMET_MAX_NOVOS_POR_CICLO` (40), `INMET_RSS_URL`.
