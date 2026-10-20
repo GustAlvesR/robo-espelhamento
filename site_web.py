@@ -175,7 +175,10 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     def dados_json() -> str:
         snap = get_snapshot() or {}
         geo = snap.get("geo", {})
-        rotas = [{**r, "_geo": geo.get(r["Trip Number"], {})} for r in snap.get("resultados", [])]
+        rotas = [{**r, "_geo": geo.get(r["Trip Number"], {}),
+                  "_origem_local": geo_tomtom.local_estacao(r.get("Origin Station Code")),
+                  "_destino_local": geo_tomtom.local_estacao(r.get("Destination Station Code"))}
+                 for r in snap.get("resultados", [])]
         corpo = {"atualizado_em": snap.get("atualizado_em", ""),
                  "angellira_em": snap.get("angellira_em", ""),
                  "tomtom": snap.get("tomtom", {}), "rotas": rotas}

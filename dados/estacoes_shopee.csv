@@ -1,0 +1,1382 @@
+codigo,tipo,nome,cidade,uf
+FBS-GO3,Fullfilment,FBS_GO_Hidrolândia,Hidrolândia,GO
+FBS-MG5,Fullfilment,FBS_MG_Contagem_1,Contagem,MG
+FBS-PE3,Fullfilment,FBS_PE_Jaboatão dos Guararapes,Jaboatão dos Guararapes,PE
+FBS-RS3,Fullfilment,FBS_RS_Nova Santa Rita,Nova Santa Rita,RS
+FBS-RS4,Fullfilment,,,RS
+FBS-SP20,Fullfilment,FBS_SP_FrancodaRocha_02,FrancodaRocha,SP
+FBS-SP21,Fullfilment,,Guarulhos,SP
+FBS-SP22,Fullfilment,FBS_SP_Guarulhos,Guarulhos,SP
+FBS-SP9,Fullfilment,FBS_SP_Franco da Rocha,Franco da Rocha,SP
+FMH-AIF-01,FMH,FM Hub_SP_Assis,Assis,SP
+FMH-AJU-01,FMH,FM Hub_SE_Aracaju,Aracaju,SE
+FMH-AJU-02,FMH,FM Hub_SE_Aracaju02,Aracaju02,SE
+FMH-ARU-01,FMH,FM Hub_SP_Araçatuba_01,Araçatuba,SP
+FMH-ARU-02,FMH,FM Hub_SP_Araçatuba_02,Araçatuba,SP
+FMH-BAT-01,FMH,,,SP
+FMH-BAU-02,FMH,FM Hub_SP_Bauru_Distrito_Indust,Bauru Distrito Indust,SP
+FMH-BAU-03,FMH,FM Hub_SP_Bauru,Bauru,SP
+FMH-BAU-04,FMH,FMH-BAU-04_Bauru_SP,Bauru,SP
+FMH-BCN-01,FMH,FM Hub_MG_Barbacena_01,Barbacena,MG
+FMH-BEL-03,FMH,,,PA
+FMH-BHZ-06,FMH,,Betim,MG
+FMH-BHZ-07,FMH,FM Hub_MG_Vespaziano,Vespaziano,MG
+FMH-BHZ-10,FMH,FM Hub_MG_Belo Horizonte_10,Belo Horizonte,MG
+FMH-BHZ-12,FMH,FM Hub_MG_SeteLagoas,SeteLagoas,MG
+FMH-BJP-02,FMH,FM Hub_SP_Atibaia_Ponte Alta,Atibaia Ponte Alta,SP
+FMH-BNU-01,FMH,FM Hub_SC_Blumenau_Itoupava_Norte,Blumenau Itoupava Norte,SC
+FMH-BNU-02,FMH,FM Hub_SC_Blumenau,Blumenau,SC
+FMH-BSB-01,FMH,FM Hub_DF_Brasília_Zona_Indust,Brasília Zona Indust,DF
+FMH-BSB-02,FMH,FM Hub_DF_Brasilia_Areal,Brasilia Areal,DF
+FMH-BSB-04,FMH,FM Hub_DF_Porto Seco,Porto Seco,DF
+FMH-CAC-01,FMH,FM Hub_PR_Cascavel,Cascavel,PR
+FMH-CAC-02,FMH,FM Hub_PR_Cascavel_02,Cascavel,PR
+FMH-CAU-01,FMH,FM Hub_PE_Caruaru_Cidade_Alta,Caruaru Cidade Alta,PE
+FMH-CAU-02,FMH,FM Hub_PE_Caruaru,Caruaru,PE
+FMH-CBW-01,FMH,FM Hub_PR_Campo Mourão_Urba,Campo Mourão Urba,PR
+FMH-CCI-01,FMH,,Camaçari,BA
+FMH-CCM-01,FMH,FM Hub_SC_Criciuma_Verdinho,Criciuma Verdinho,SC
+FMH-CCM-02,FMH,,Criciúma,SC
+FMH-CFB-01,FMH,FM Hub_RJ_Cabo Frio,Cabo Frio,RJ
+FMH-CGR-01,FMH,FM Hub_MS_Campo Grande,Campo Grande,MS
+FMH-CGR-02,FMH,FM Hub_MS_CampoGrande_02,CampoGrande,MS
+FMH-CGZ-01,FMH,FM Hub_RJ_Cps dos Goytacazes,Cps dos Goytacazes,RJ
+FMH-CGZ-02,FMH,FM Hub_RJ_CamposGoytacazes_Rod,CamposGoytacazes Rod,RJ
+FMH-CPS-01,FMH,FM Hub_SP_Campinas,Campinas,SP
+FMH-CPS-04,FMH,FM Hub_SP_Sumaré_04,Sumaré,SP
+FMH-CPS-06,FMH,,Paulínia,SP
+FMH-CPV-01,FMH,FM Hub_PB_Campina Grande_01,Campina Grande,PB
+FMH-CPV-02,FMH,,,PB
+FMH-CTN-01,FMH,FM Hub_ES_Colatina_01,Colatina,ES
+FMH-DOU-01,FMH,FM Hub_MS_Dourados,Dourados,MS
+FMH-EXA-01,FMH,FM Hub_MG_Extrema,Extrema,MG
+FMH-FEC-01,FMH,FM Hub_BA_Feira de Santana,Feira de Santana,BA
+FMH-FLN-01,FMH,FM Hub_SC_São_José_Dst_Ind,São José Dst Ind,SC
+FMH-FLN-02,FMH,FM Hub_SC_Florianópolis-02,Florianópolis-02,SC
+FMH-FLN-04,FMH,FMH-FLN-04_Florianopolis_SC,Florianopolis,SC
+FMH-FOR-01,FMH,FM Hub_CE_Fortaleza_Cajazeiras,Fortaleza Cajazeiras,CE
+FMH-FOR-02,FMH,FM Hub_CE_Fortaleza-02,Fortaleza-02,CE
+FMH-FRC-01,FMH,FM Hub_SP_Franca_Dst Ind Antonio,Franca Dst Ind Antonio,SP
+FMH-FRC-03,FMH,FM Hub_SP_Franca,Franca,SP
+FMH-GIG-01,Cross Border,FM Hub_RJ_CB_GIG,CB GIG,RJ
+FMH-GOV-01,FMH,FM Hub_MG_Governador Valadares,Governador Valadares,MG
+FMH-GOV-02,FMH,FM Hub_MG_Governador Valadares-2,Governador Valadares-2,MG
+FMH-GOV-03,FMH,FM Hub_MG_GovernadorValadares-3,GovernadorValadares-3,MG
+FMH-GRU-02,Cross Border,FM Hub_SP_CB_Guarulhos,CB Guarulhos,SP
+FMH-GYN-01,FMH,FM_Hub_GO_Goiania_Parque_Industrial,Hub Goiania Parque Industrial,GO
+FMH-GYN-02,FMH,FM Hub_GO_Goiania_Fazenda_Cav,Goiania Fazenda Cav,GO
+FMH-IAV-01,FMH,FM Hub_SP_Itapeva_01,Itapeva,SP
+FMH-IBT-01,FMH,FM Hub_SP_Ibitinga_Dist Ind,Ibitinga Dist Ind,SP
+FMH-IPN-01,FMH,FM Hub_MG_Ipatinga,Ipatinga,MG
+FMH-IPN-02,FMH,FM Hub_MG_Ipatinga-02,Ipatinga-02,MG
+FMH-JDF-01,FMH,FM Hub_MG_Juiz_de_Fora,Juiz de Fora,MG
+FMH-JDF-02,FMH,FM Hub_MG_Juiz_de_Fora_Sta_Cruz,Juiz de Fora Sta Cruz,MG
+FMH-JDF-03,FMH,FM Hub_MG_Juiz de Fora 03,Juiz de Fora,MG
+FMH-JNE-01,FMH,FM Hub_CE_Juazeiro do Norte_01,Juazeiro do Norte,CE
+FMH-JOI-01,FMH,FM Hub_SC_Joinville_Sao Marcos,Joinville Sao Marcos,SC
+FMH-JOI-02,FMH,FM Hub_SC_Joinville_Dist Ind,Joinville Dist Ind,SC
+FMH-JPA-01,FMH,FM Hub_PB_João Pessoa,João Pessoa,PB
+FMH-JPA-02,FMH,FM Hub_PB_João Pessoa-02,João Pessoa-02,PB
+FMH-JPA-03,FMH,FM Hub_PB_JoãoPessoa_Industrial,JoãoPessoa Industrial,PB
+FMH-JUN-03,FMH,FM Hub_SP_Jundiaí_Fernandes,Jundiaí Fernandes,SP
+FMH-LAJ-01,FMH,FM Hub_SC_Lages_01,Lages,SC
+FMH-LDB-01,FMH,FM Hub_PR_Londrina_Parque_ABC,Londrina Parque ABC,PR
+FMH-LDB-02,FMH,FM Hub_PR_Londrina_02,Londrina,PR
+FMH-LDB-03,FMH,FM Hub_PR_Londrina_03,Londrina,PR
+FMH-LDB-V04,FMH,FMH-LDB-V04_Londrina_PR,Londrina,PR
+FMH-LPA-01,FMH,FM Hub_MG_Lagoa_da_Prata,Lagoa da Prata,MG
+FMH-LPA-02,FMH,FM Hub_MG_Lagoa da Prata_02,Lagoa da Prata,MG
+FMH-MCZ-03,FMH,FM Hub_AL_Maceió_Rio_Largo,Maceió Rio Largo,AL
+FMH-MGF-01,FMH,FM Hub_PR_Maringa_Zona 09,Maringa Zona,PR
+FMH-MGF-02,FMH,FM Hub_PR_Maringa-02,Maringa-02,PR
+FMH-MHU-01,FMH,FM Hub_MG_Manhuaçu_01,Manhuaçu,MG
+FMH-MII-01,FMH,FM Hub_SP_Marília,Marília,SP
+FMH-MII-02,FMH,FM Hub_SP_Marília-02,Marília-02,SP
+FMH-MOC-01,FMH,FM Hub_MG_Montes_Claros,Montes Claros,MG
+FMH-MUR-01,FMH,FM Hub_MG_Muriaé_01,Muriaé,MG
+FMH-NAT-03,FMH,FM Hub_RN_Natal_S Jose de Mipibu,Natal S Jose de Mipibu,RN
+FMH-NFU-01,FMH,FM Hub_RJ__Duas Pedras_Nv Fri,Duas Pedras Nv Fri,RJ
+FMH-NFU-02,FMH,FM Hub_RJ_Nova Friburgo,Nova Friburgo,RJ
+FMH-NSA-01,FMH,FM Hub_MG_Nova Serrana_01,Nova Serrana,MG
+FMH-OSO-01,FMH,FM Hub_RS_Tramandai_01,Tramandai,RS
+FMH-PET-01,FMH,FM Hub_RS_Pelotas_01,Pelotas,RS
+FMH-PGZ-02,FMH,FM Hub_PR_Ponta Grossa_Dist_Ind,Ponta Grossa Dist Ind,PR
+FMH-PGZ-03,FMH,FM Hub_PR_Ponta Grossa_03,Ponta Grossa,PR
+FMH-POA-01,FMH,FM Hub_RS_Porto_Alegre_Floresta,Porto Alegre Floresta,RS
+FMH-POA-02,FMH,FM Hub_RS_Camp Bom_Dist_Ind,Camp Bom Dist Ind,RS
+FMH-POA-V05,FMH,FM Hub_RS_Porto Alegre_V05,Porto Alegre,RS
+FMH-POJ-02,FMH,FM Hub_MG_Patos de Minas_02,Patos de Minas,MG
+FMH-PPE-01,FMH,FM Hub_SP_Pres Prud_Jd Itaipu,Pres Prud Jd Itaipu,SP
+FMH-PPE-02,FMH,FM Hub_SP_PresidentePrudente-02,PresidentePrudente-02,SP
+FMH-QLB-01,FMH,FM Hub_RS_Lajeado_01,Lajeado,RS
+FMH-QLB-02,FMH,,Estrela,RS
+FMH-QPE-01,FMH,FM Hub_RJ_Petropolis_Carangola,Petropolis Carangola,RJ
+FMH-RAO-01,FMH,FM Hub_SP_Ribeirão_Preto,Ribeirão Preto,SP
+FMH-RAO-02,FMH,FM Hub_SP_RibeirãoPretoEstaçã,RibeirãoPretoEstaçã,SP
+FMH-REC-01,Cross Border,FM Hub_PE_CB_REC_RecifeDC,CB REC RecifeDC,PE
+FMH-RGI-01,FMH,FM Hub_SP_Registro_01,Registro,SP
+FMH-RIO-04,FMH,FM Hub_RJ_Campo Grande,Campo Grande,RJ
+FMH-RIO-06,FMH,FM Hub_RJ_Jacarepaguá,Jacarepaguá,RJ
+FMH-SAO-04,FMH,FM Hub_SP_SBC_Alvinópolis,SBC Alvinópolis,SP
+FMH-SAO-07,FMH,FM Hub_SP_São_Paulo_Artur_Alvim,São Paulo Artur Alvim,SP
+FMH-SAO-10,FMH,FM Hub_SP_Mogi_das_Cruzes,Mogi das Cruzes,SP
+FMH-SAO-11,FMH,FM Hub_SP_São Bernardo do Campo,São Bernardo do Campo,SP
+FMH-SAO-13,FMH,FM Hub_SP_São Paulo_Pq Mooca,São Paulo Pq Mooca,SP
+FMH-SAO-19,FMH,FM Hub_SP_Mauá_02,Mauá,SP
+FMH-SAO-23,FMH,FM Hub_SP_Osasco_02,Osasco,SP
+FMH-SAO-24,FMH,FM Hub_SP_VilaGuilherme,VilaGuilherme,SP
+FMH-SAO-25,FMH,FM Hub_SP_Itaquaquecetuba,Itaquaquecetuba,SP
+FMH-SAO-28,FMH,FM Hub_SP_Guarulhos_28,Guarulhos,SP
+FMH-SAO-30,FMH,FM Hub_SP_São Bernardo do Ca_30,São Bernardo do Ca,SP
+FMH-SAO-31,FMH,FM Hub_SP_Barueri_31,Barueri,SP
+FMH-SAO-32,FMH,FM Hub_SP_Parque Novo Mundo,Parque Novo Mundo,SP
+FMH-SAO-33,FMH,FM Hub_SP_Santo André_33,Santo André,SP
+FMH-SAO-35,FMH,FM Hub_SP_Embu das Artes_35,Embu das Artes,SP
+FMH-SAO-41,FMH,FM Hub_SP_Taboão da Serra,Taboão da Serra,SP
+FMH-SAO-43,FMH,FM Hub_SP_São Bernardo_43,São Bernardo,SP
+FMH-SAO-71,FMH,FM Hub_SP_PUDO_Brás,PUDO Brás,SP
+FMH-SAO-V49,FMH,FM Hub_SP_Embu das Artes_49,Embu das Artes,SP
+FMH-SJP-01,FMH,FM Hub_SP_SJ_Rio_Pt_Vila_Toninho,SJ Rio Pt Vila Toninho,SP
+FMH-SJP-03,FMH,,,SP
+FMH-SLZ-02,FMH,FM Hub_MA_São Luís_Maracanã,São Luís Maracanã,MA
+FMH-SOR-01,FMH,FM Hub_SP_Sorocaba,Sorocaba,SP
+FMH-STS-01,FMH,FM Hub_SP_Praia_Grande_Sit_Campo,Praia Grande Sit Campo,SP
+FMH-STS-03,FMH,,Município de Praia Grande,SP
+FMH-TBA-01,FMH,FM Hub_SP_Taubaté,Taubaté,SP
+FMH-TBA-02,FMH,FM Hub_SP_Taubaté_02,Taubaté,SP
+FMH-THE-02,FMH,FM Hub_PI_Teresina,Teresina,PI
+FMH-UDI-01,FMH,FM Hub_MG_Uberlandia_Laranjeiras,Uberlandia Laranjeiras,MG
+FMH-UDI-02,FMH,FM Hub_MG_Uberlandia,Uberlandia,MG
+FMH-UMU-01,FMH,FM Hub_PR_Umuarama_Pq_Indust_II,Umuarama Pq Indust II,PR
+FMH-UMU-02,FMH,FM Hub_PR_Umuarama_02,Umuarama,PR
+FMH-VAG-01,FMH,FM Hub_MG_Varginha_Rezende,Varginha Rezende,MG
+FMH-VAG-02,FMH,FM Hub_MG_Varginha_Fausto_Rib,Varginha Fausto Rib,MG
+FMH-VAG-03,FMH,FM Hub_MG_Varginha_03,Varginha,MG
+FMH-VCP-01,Cross Border,FM Hub_SP_CB_VCP,CB VCP,SP
+FMH-VIX-01,FMH,FM Hub_ES_Vitória_Vila_Velha,Vitória Vila Velha,ES
+FMH-VIX-02,FMH,FM Hub_ES_Vila Velha_Aracas,Vila Velha Aracas,ES
+FMH-VIX-05,FMH,FM Hub_ES_Vila Velha,Vila Velha,ES
+FMH-XAP-01,FMH,FM Hub_SC_Chapecó_Eld,Chapecó Eld,SC
+FMH-XAP-03,FMH,FM Hub_SC_Chapecó,Chapecó,SC
+HUB-BAU-01,LMH,LM HUB-BAU-01_Bauru_SP,Bauru,SP
+HUB-BHZ-01,LMH,,Contagem,MG
+HUB-BHZ-02,LMH,LM Hub_MG_Belo Horizonte,Belo Horizonte,MG
+HUB-BHZ-03,LMH,LM HUB-BHZ-03_Vespasiano_MG,Vespasiano,MG
+HUB-BNU-01,LMH,LM HUB-BNU-01_Blumenau_SC,Blumenau,SC
+HUB-CGB-01,LMH,LM HUB-CGB-01_Cuiabá_MT,Cuiabá,MT
+HUB-GYN-01,LMH,LM Hub_GO_Goiânia,Goiânia,GO
+HUB-JDF-01,LMH,LM Hub_MG_Juiz de Fora_Distrito,Juiz de Fora Distrito,MG
+HUB-LAL-01,LMH,LM HUB-LAL-01_Maceió_AL,Maceió,AL
+HUB-LAL-02,LMH,LM Hub_AL_Maceió_02,Maceió,AL
+HUB-LAL-03,LMH,LM Hub_AL_Arapiraca,Arapiraca,AL
+HUB-LAL-04,LMH,LM Hub_AL_Maceió_01,Maceió,AL
+HUB-LAM-01,LMH,LM Hub_AM_Manaus,Manaus,AM
+HUB-LAM-02,LMH,LM Hub_AM_Manaus_2,Manaus,AM
+HUB-LBA-01,LMH,LM Hub_BA_Feira de Santana,Feira de Santana,BA
+HUB-LBA-02,LMH,,Salvador,BA
+HUB-LBA-03,LMH,LM HUB-LBA-03_Salvador (Vila Laura)_BA,Salvador (Vila Laura),BA
+HUB-LBA-04,LMH,LM HUB-SSA-04_Lauro de Freitas_BA,Lauro de Freitas,BA
+HUB-LBA-05,LMH,LM HUB-LBA-05_Santo Antônio de Jesus_BA,Santo Antônio de Jesus,BA
+HUB-LBA-06,LMH,LM HUB-LBA-06_Itabuna_BA,Itabuna,BA
+HUB-LBA-07,LMH,LM Hub_BA_Vitória da Conquista,Vitória da Conquista,BA
+HUB-LBA-08,LMH,LM Hub_BA_Irecê,Irecê,BA
+HUB-LBA-10,LMH,LM HUB-TXF-01_Teixeira de Freitas_BA,Teixeira de Freitas,BA
+HUB-LBA-11,LMH,LM HUB-LBA-11_Barreiras_BA,Barreiras,BA
+HUB-LBA-12,LMH,LM Hub_BA_Alagoinhas,Alagoinhas,BA
+HUB-LBA-14,LMH,LM Hub_BA_Camaçari,Camaçari,BA
+HUB-LBA-17,LMH,LM Hub_BA_Simões Filho,Simões Filho,BA
+HUB-LBA-18,LMH,LM Hub_BA_Salvador_Pirajá,Salvador Pirajá,BA
+HUB-LBA-19,LMH,LM Hub_BA_Salvador_Retiro,Salvador Retiro,BA
+HUB-LBA-21,LMH,LM HUB-LBA-21_Feira de Santana_BA,Feira de Santana,BA
+HUB-LBA-22,LMH,LM Hub_BA_Itabuna,Itabuna,BA
+HUB-LBA-25,LMH,LM Hub_BA_Santo Antônio deJesus,Santo Antônio deJesus,BA
+HUB-LBA-27,LMH,LM Hub_BA_Lauro de Freitas,Lauro de Freitas,BA
+HUB-LBA-29,LMH,LM Hub_BA_Juazeiro,Juazeiro,BA
+HUB-LBA-33,LMH,LM Hub_BA_Barreiras,Barreiras,BA
+HUB-LCE-01,LMH,LM Hub_CE_Fortaleza_Cajazeiras,Fortaleza Cajazeiras,CE
+HUB-LCE-02,LMH,LM Hub_CE_Caucaia,Caucaia,CE
+HUB-LCE-03,LMH,HUB-LCE-03_Sobral_CE,Sobral,CE
+HUB-LCE-04,LMH,LM Hub_CE_Juazeiro do Norte,Juazeiro do Norte,CE
+HUB-LCE-05,LMH,LM Hub_CE_Fortaleza-02,Fortaleza-02,CE
+HUB-LCE-06,LMH,LM Hub_CE_Itaitinga,Itaitinga,CE
+HUB-LCE-08,LMH,HUB-LCE-08_Itaitinga_CE,Itaitinga,CE
+HUB-LDB-01,LMH,LM HUB-LDB-01_Londrina_PR,Londrina,PR
+HUB-LDF-01,LMH,LM Hub_DF_Brasília_SAAN,Brasília SAAN,DF
+HUB-LDF-02,LMH,LM HUB-LDF-02_Brasília Taguatinga_DF,Brasília Taguatinga,DF
+HUB-LDF-03,LMH,LM Hub_DF_Brasília_Recanto_Emas,Brasília Recanto Emas,DF
+HUB-LDF-04,LMH,LM Hub_DF_Luziania,Luziania,DF
+HUB-LDF-05,LMH,LM Hub_DF_Brasília_SIA,Brasília SIA,DF
+HUB-LDF-06,LMH,HUB-LDF-06_Taguatinga (Provisório)_DF,Taguatinga (Provisório),DF
+HUB-LDF-07,LMH,,,
+HUB-LES-01,LMH,LM Hub_ES_Cachoeiro de Itap,Cachoeiro de Itap,ES
+HUB-LES-02,LMH,LM Hub_ES_Vila Velha_Novo Mex,Vila Velha Novo Mex,ES
+HUB-LES-03,LMH,LM Hub_ES_Serra,Serra,ES
+HUB-LES-04,LMH,LM Hub_ES_Guarapari,Guarapari,ES
+HUB-LES-05,LMH,LM Hub_ES_Linhares,Linhares,ES
+HUB-LES-06,LMH,LM HUB-LES-06_São Mateus_ES,São Mateus,ES
+HUB-LES-07,LMH,LM Hub_ES_Colatina,Colatina,ES
+HUB-LES-08,LMH,LM Hub_ES_Cariacica,Cariacica,ES
+HUB-LES-09,LMH,LM Hub_ES_Viana,Viana,ES
+HUB-LES-10,LMH,LM Hub_ES_Vila Velha,Vila Velha,ES
+HUB-LES-15,LMH,LM Hub_ES_Serra_15,Serra,ES
+HUB-LES-16,LMH,LM Hub_ES_São Mateus,São Mateus,ES
+HUB-LES-V10,LMH,LM Hub_ES_Vila Velha_V10,Vila Velha,ES
+HUB-LGO-02,LMH,LM Hub_GO_Goiânia_ St. Empr_02,Goiânia St. Empr,GO
+HUB-LGO-03,LMH,LM Hub_GO_Anápolis,Anápolis,GO
+HUB-LGO-04,LMH,LM Hub_GO_Rio Verde,Rio Verde,GO
+HUB-LGO-05,LMH,LM Hub_GO_Aparecida de Goiânia,Aparecida de Goiânia,GO
+HUB-LGO-06,LMH,LM Hub_GO_Goiânia_Aeroporto,Goiânia Aeroporto,GO
+HUB-LGO-11,LMH,HUB-LGO-11_Goiânia_GO,Goiânia,GO
+HUB-LMA-01,LMH,LM Hub_MA_São Luís_01,São Luís,MA
+HUB-LMA-02,LMH,LM Hub_MA_São Luís_02,São Luís,MA
+HUB-LMA-05,LMH,LM Hub_MA_Imperatriz,Imperatriz,MA
+HUB-LMG-01,LMH,LM HUB-LMG-01_Sete Lagoas_MG,Sete Lagoas,MG
+HUB-LMG-02,LMH,FM HUB-VAG-02_Varginha Fausto_MG,Varginha Fausto,MG
+HUB-LMG-03,LMH,,Teófilo Otoni,MG
+HUB-LMG-04,LMH,FLMH-GOV-01_Governador Valadares_MG,Governador Valadares,MG
+HUB-LMG-05,LMH,LM Hub_MG_Contagem_01,Contagem,MG
+HUB-LMG-06,LMH,FM HUB-DIV-01_Divinópolis _MG,Divinópolis,MG
+HUB-LMG-07,LMH,LM HUB-BHZ-07_Vespasiano_MG,Vespasiano,MG
+HUB-LMG-08,LMH,FLMH-IPN-01_Ipatinga _MG,Ipatinga,MG
+HUB-LMG-09,LMH,LM Hub_MG_Manhuaçu,Manhuaçu,MG
+HUB-LMG-10,LMH,FLMH-UDI-01_Uberlandia_MG,Uberlandia,MG
+HUB-LMG-108,LMH,HUB-LMG-108_Juiz de Fora_MG,Juiz de Fora,MG
+HUB-LMG-11,LMH,LM Hub_MG_Montes Claros,Montes Claros,MG
+HUB-LMG-119,LMH,LM Hub_MG_Contagem_Industrial,Contagem Industrial,MG
+HUB-LMG-12,LMH,LM HUB-LMG-12_Patos de Minas_MG,Patos de Minas,MG
+HUB-LMG-123,LMH,,Betim,MG
+HUB-LMG-13,LMH,LM HUB-LMG-13_Uberaba_MG,Uberaba,MG
+HUB-LMG-14,LMH,LM Hub_MG_Juiz de Fora_14,Juiz de Fora,MG
+HUB-LMG-15,LMH,LM Hub_MG_Betim,Betim,MG
+HUB-LMG-17,LMH,LM Hub_MG_Lavras,Lavras,MG
+HUB-LMG-18,LMH,LM HUB-LMG-18_Passos_MG,Passos,MG
+HUB-LMG-19,LMH,LM Hub_MG_Extrema,Extrema,MG
+HUB-LMG-20,LMH,LM Hub_MG_Barbacena,Barbacena,MG
+HUB-LMG-21,LMH,LM Hub_MG_Muriaé,Muriaé,MG
+HUB-LMG-23,LMH,LM Hub_MG_Ubá,Ubá,MG
+HUB-LMG-27,LMH,LM Hub_MG_Lagoa da Prata,Lagoa da Prata,MG
+HUB-LMG-36,LMH,LM Hub_MG_Divinópolis,Divinópolis,MG
+HUB-LMG-37,LMH,LM HUB-LMG-37_Governador Valadares_MG,Governador Valadares,MG
+HUB-LMG-38,LMH,LM Hub_MG_Ipatinga,Ipatinga,MG
+HUB-LMG-39,LMH,LM Hub_MG_Patos de Minas,Patos de Minas,MG
+HUB-LMG-40,LMH,LM Hub_MG_Vespasiano,Vespasiano,MG
+HUB-LMG-43,LMH,LM Hub_MG_Teófilo Otoni,Teófilo Otoni,MG
+HUB-LMG-44,LMH,LM Hub_MG_Uberlândia,Uberlândia,MG
+HUB-LMG-45,LMH,LM Hub_MG_Varginha_Fausto,Varginha Fausto,MG
+HUB-LMG-47,LMH,LM HUB-PAR-01_Pouso Alegre_MG,Pouso Alegre,MG
+HUB-LMG-48,LMH,LM Hub_MG_Uberaba,Uberaba,MG
+HUB-LMG-49,LMH,LM Hub_MG_Sete Lagoas,Sete Lagoas,MG
+HUB-LMG-50,LMH,LM Hub_MG_Belo Horizonte_02,Belo Horizonte,MG
+HUB-LMG-55,LMH,HUB-LMG-55_Divinópolis_MG,Divinópolis,MG
+HUB-LMG-56,LMH,LM Hub_MG_Governador Valadares,Governador Valadares,MG
+HUB-LMG-58,LMH,LM Hub_MG_Betim_58,Betim,MG
+HUB-LMG-59,LMH,LM Hub_MG_Juiz de Fora_Dist Ind,Juiz de Fora Dist Ind,MG
+HUB-LMG-60,LMH,HUB-LMG-60_Montes Claros BTS_MG,Montes Claros,MG
+HUB-LMG-61,LMH,LM Hub_MG_São José da Lapa,São José da Lapa,MG
+HUB-LMG-62,LMH,LM Hub_MG_Contagem 02,Contagem,MG
+HUB-LMG-V58,LMH,LM Hub_MG_Betim_V58,Betim,MG
+HUB-LMS-01,LMH,LM HUB-LMS-01_Campo Grande_MS,Campo Grande,MS
+HUB-LMS-02,LMH,LM Hub_MS_Dourados,Dourados,MS
+HUB-LMS-03,LMH,LM Hub_MS_Três Lagoas,Três Lagoas,MS
+HUB-LMS-04,LMH,LM Hub_MS_Campo Grande,Campo Grande,MS
+HUB-LMS-90,XPT,LM Hub_MS_Campo Grande_XPT,Campo Grande XPT,MS
+HUB-LMT-01,LMH,LM Hub_MT_Cuiabá_01,Cuiabá,MT
+HUB-LMT-02,LMH,LM Hub_MT_Cuiabá_02,Cuiabá,MT
+HUB-LPA-02,LMH,LM HUB-LPA-02_Belém (Ananindeua)_PA,Belém (Ananindeua),PA
+HUB-LPA-03,LMH,LM Hub_PA_Belém,Belém,PA
+HUB-LPA-04,LMH,HUB-LPA-04_Belém_PA,Belém,PA
+HUB-LPB-01,LMH,LM HUB-JPA-01_João Pessoa_PB,João Pessoa,PB
+HUB-LPB-02,LMH,LM Hub_PB_Campina Grande,Campina Grande,PB
+HUB-LPB-03,LMH,LM Hub_PB_João Pessoa_Gramame,João Pessoa Gramame,PB
+HUB-LPB-04,LMH,LM Hub_PB_JoãoPessoa_Industrial,JoãoPessoa Industrial,PB
+HUB-LPB-05,LMH,HUB-LPB-05_Campina Grande_PB,Campina Grande,PB
+HUB-LPE-01,LMH,LM HUB-LPE-01_Recife Imbiribeira_PE,Recife Imbiribeira,PE
+HUB-LPE-02,LMH,LM Hub_PE_Recife_Cabo de Santo A,Recife Cabo de Santo A,PE
+HUB-LPE-03,LMH,LM Hub_PE_Recife_Guabiraba,Recife Guabiraba,PE
+HUB-LPE-04,LMH,FLM HUB-LPE-04_Caruaru Cidade Alta_PE,Caruaru Cidade Alta,PE
+HUB-LPE-05,LMH,LM HUB-LPE-05_Juazeiro (Petrolina)_BA,Juazeiro (Petrolina),BA
+HUB-LPE-06,LMH,LM Hub_PE_Garanhuns,Garanhuns,PE
+HUB-LPE-07,LMH,LM Hub_PE_Recife_Jaboatão,Recife Jaboatão,PE
+HUB-LPE-08,LMH,LM Hub_PE_Carpina,Carpina,PE
+HUB-LPE-11,LMH,LM Hub_PE_Recife_Muribeca,Recife Muribeca,PE
+HUB-LPE-12,LMH,LM Hub_PE_Recife_Paulista,Recife Paulista,PE
+HUB-LPE-14,LMH,LM Hub_PE_Caruaru_Cidade_Alta,Caruaru Cidade Alta,PE
+HUB-LPE-15,LMH,HUB-LPE-15_Curado_PE,Curado,PE
+HUB-LPE-16,LMH,HUB-LPE-16_Juazeiro_PE,Juazeiro,PE
+HUB-LPE-17,LMH,HUB-LPE-17_Palmares_PE,Palmares,PE
+HUB-LPE-V22,LMH,,,PE
+HUB-LPI-01,LMH,LM Hub_PI_Teresina_01,Teresina,PI
+HUB-LPI-02,LMH,LM Hub_PI_Teresina_02,Teresina,PI
+HUB-LPR-01,LMH,LM Hub_PR_Pinhais,Pinhais,PR
+HUB-LPR-02,LMH,LM HUB-LPR-02_Curitiba Cidade Industrial_PR,Curitiba Cidade Industrial,PR
+HUB-LPR-03,LMH,LM Hub_PR_Maringá_Parque Indus,Maringá Parque Indus,PR
+HUB-LPR-04,LMH,FLMH-LPR-04_Cascavel_PR,Cascavel,PR
+HUB-LPR-05,LMH,FM HUB-LPR-05_Umuarama / FMH-UMU-01_Umuarama_PR,Umuarama,PR
+HUB-LPR-06,LMH,LM HUB-LPR-06_Londrina (Cambé) / FMH-LDB-02_Londrina (Cambé)_PR,Londrina (Cambé),PR
+HUB-LPR-07,LMH,LM HUB-LPR-07_Ponta Grossa / FMH-PGZ-02_Ponta Grossa_PR,Ponta Grossa,PR
+HUB-LPR-08,LMH,LM HUB-LPR-08_Toledo_PR,Toledo,PR
+HUB-LPR-10,LMH,LM Hub_PR_Campo Mourão,Campo Mourão,PR
+HUB-LPR-11,LMH,LM Hub_PR_Paranaguá,Paranaguá,PR
+HUB-LPR-12,LMH,LM Hub_PR_Foz do Iguaçu,Foz do Iguaçu,PR
+HUB-LPR-13,LMH,LM Hub_PR_Guarapuava,Guarapuava,PR
+HUB-LPR-15,LMH,LM Hub_PR_Pato Branco,Pato Branco,PR
+HUB-LPR-16,LMH,LM Hub_PR_Curitiba,Curitiba,PR
+HUB-LPR-18,LMH,LM Hub_PR_Maringá,Maringá,PR
+HUB-LPR-19,LMH,LM Hub_PR_Cascavel,Cascavel,PR
+HUB-LPR-20,LMH,LM Hub_PR_Londrina_Parque ABC II,Londrina Parque ABC II,PR
+HUB-LPR-21,LMH,LM Hub_PR_Umuarama,Umuarama,PR
+HUB-LPR-22,LMH,LM Hub_PR_Ponta Grossa,Ponta Grossa,PR
+HUB-LPR-24,LMH,LM Hub_PR_SaoJosedosPinhais,SaoJosedosPinhais,PR
+HUB-LPR-26,LMH,LM Hub_PR_Toledo,Toledo,PR
+HUB-LPR-27,LMH,LM Hub_PR_Fazenda Rio Grande,Fazenda Rio Grande,PR
+HUB-LPR-29,LMH,LM Hub_PR_São José dos Pinhais,São José dos Pinhais,PR
+HUB-LRJ-01,LMH,LM Hub_RJ_São João do Meriti,São João do Meriti,RJ
+HUB-LRJ-01-X,LMH,,Sao Joao do Meriti,RJ
+HUB-LRJ-02,LMH,LM Hub_RJ_Nova Friburgo,Nova Friburgo,RJ
+HUB-LRJ-03,LMH,LM Hub_RJ_Cabo Frio,Cabo Frio,RJ
+HUB-LRJ-04,LMH,LM Hub_RJ_Rio de Janeiro_Campo G,Rio de Janeiro Campo G,RJ
+HUB-LRJ-05,LMH,LM Hub_RJ_Macae_ Imboassica,Macae Imboassica,RJ
+HUB-LRJ-06,LMH,LM HUB-LRJ-06_Jacarepaguá_RJ,Jacarepaguá,RJ
+HUB-LRJ-07,LMH,LM Hub_RJ_São Cristóvão,São Cristóvão,RJ
+HUB-LRJ-08,LMH,LM Hub_RJ_São Gonçalo,São Gonçalo,RJ
+HUB-LRJ-09,LMH,LM HUB-LRJ-09_Campos dos Goytacazes / FMH-CGZ-01_Campos dos Goytacazes_MG,Campos dos Goytacazes,RJ
+HUB-LRJ-10,LMH,LM Hub_RJ_Volta Redonda,Volta Redonda,RJ
+HUB-LRJ-11,LMH,LM Hub_RJ_Petrópolis,Petrópolis,RJ
+HUB-LRJ-12,LMH,,Queimados,RJ
+HUB-LRJ-13,LMH,LM Hub_RJ_Maricá,Maricá,RJ
+HUB-LRJ-14,LMH,LM Hub_RJ_Duque de Caxias,Duque de Caxias,RJ
+HUB-LRJ-15,LMH,LM Hub_RJ_Mage,Mage,RJ
+HUB-LRJ-18,LMH,LM Hub_RJ_Resende,Resende,RJ
+HUB-LRJ-19,LMH,LM Hub_RJ_Itaboraí,Itaboraí,RJ
+HUB-LRJ-21,LMH,LM Hub_RJ_Cabo Frio_Jd Flamb,Cabo Frio Jd Flamb,RJ
+HUB-LRJ-23,LMH,LM Hub_RJ_São Gonçalo_02,São Gonçalo,RJ
+HUB-LRJ-24,LMH,LM Hub_RJ_Cps dos Goytacazes,Cps dos Goytacazes,RJ
+HUB-LRJ-25,LMH,HUB-LRJ-25_Macaé_RJ,Macaé,RJ
+HUB-LRJ-27,LMH,LM Hub_RJ_Nova Iguaçu,Nova Iguaçu,RJ
+HUB-LRJ-29,LMH,LM Hub_RJ_Jacarepaguá,Jacarepaguá,RJ
+HUB-LRJ-32,LMH,LM Hub_RJ_Ilha do Governador,Ilha do Governador,RJ
+HUB-LRJ-37,LMH,LM Hub_RJ_Benfica,Benfica,RJ
+HUB-LRN-01,LMH,LM Hub_RN_Natal_01,Natal,RN
+HUB-LRN-02,LMH,HUB-LRN-02 A - Mossoró_RN,Mossoró,RN
+HUB-LRN-03,LMH,LM Hub_RN_Natal_03,Natal,RN
+HUB-LRN-04,LMH,HUB-LRN-04_Natal_RN,Natal,RN
+HUB-LRO-01,LMH,LM Hub_RO_Porto Velho,Porto Velho,RO
+HUB-LRS-01,LMH,LM HUB-LRS-01_Campo Bom_RS,Campo Bom,RS
+HUB-LRS-02,LMH,LM HUB-LRS-02_Gravataí Ipiranga_RS,Gravataí Ipiranga,RS
+HUB-LRS-03,LMH,LM Hub_RS_Porto Alegre_Floresta,Porto Alegre Floresta,RS
+HUB-LRS-04,LMH,LM HUB-LRS-04_Caxias do Sul_RS,Caxias do Sul,RS
+HUB-LRS-05,LMH,LM Hub_RS_Pelotas,Pelotas,RS
+HUB-LRS-06,LMH,LM Hub_RS_Santa Maria,Santa Maria,RS
+HUB-LRS-07,LMH,LM Hub_RS_Lajeado,Lajeado,RS
+HUB-LRS-08,LMH,LM Hub_RS_Passo Fundo,Passo Fundo,RS
+HUB-LRS-09,LMH,LM Hub_RS_Santa Rosa,Santa Rosa,RS
+HUB-LRS-10,LMH,LM Hub_RS_Tramandai,Tramandai,RS
+HUB-LRS-13,LMH,LM Hub_RS_Porto Alegre_Canoas,Porto Alegre Canoas,RS
+HUB-LRS-15,LMH,LM Hub_RS_Gravataí_Neopolis,Gravataí Neopolis,RS
+HUB-LRS-17,LMH,HUB-LRS-17_Santa Maria_RS,Santa Maria,RS
+HUB-LRS-19,LMH,HUB-LRS-19_Tramandaí_RS,Tramandaí,RS
+HUB-LRS-20,LMH,LM Hub_RS_Esteio_Três Portos,Esteio Três Portos,RS
+HUB-LRS-21,LMH,LM Hub_RS_Flores da Cunha,Flores da Cunha,RS
+HUB-LRS-22,LMH,LM Hub_RS_Ijuí,Ijuí,RS
+HUB-LRS-27,LMH,HUB-LRS-27_Lajeado_RS,Lajeado,RS
+HUB-LSC-02,LMH,LM Hub_SC_São José,São José,SC
+HUB-LSC-03,LMH,HUB-LSC-03_Criciuma_SC,Criciuma,SC
+HUB-LSC-04,LMH,LM HUB-ITJ-01_Itajaí_SC,Itajaí,SC
+HUB-LSC-05,LMH,LM HUB-LSC-05_Chapecó Eldorado / FMH-XAP-01_Chapecó_SC,Chapecó Eldorado,SC
+HUB-LSC-06,LMH,LM Hub_SC_Blumenau,Blumenau,SC
+HUB-LSC-07,LMH,LM HUB-LSC-07_Tubarão_SC,Tubarão,SC
+HUB-LSC-09,LMH,LM Hub_SC_Itapema,Itapema,SC
+HUB-LSC-10,LMH,LM Hub_SC_Lages,Lages,SC
+HUB-LSC-11,LMH,LM Hub_SC_Araranguá,Araranguá,SC
+HUB-LSC-12,LMH,LM HUB-LSC-12_Florianópolis (Palhoça)_SC,Florianópolis (Palhoça),SC
+HUB-LSC-13,LMH,LM Hub_SC_Joinville_01,Joinville,SC
+HUB-LSC-15,LMH,LM Hub_SC_Itajaí_Espinheiros,Itajaí Espinheiros,SC
+HUB-LSC-17,LMH,LM Hub_SC_Tubarão,Tubarão,SC
+HUB-LSC-18,LMH,,Criciúma,SC
+HUB-LSC-19,LMH,LM Hub_SC_Chapecó_Eldorado,Chapecó Eldorado,SC
+HUB-LSC-20,LMH,LM Hub_SC_Florianópolis,Florianópolis,SC
+HUB-LSC-21,LMH,LM Hub_SC_Itajaí_Brilhante_02,Itajaí Brilhante,SC
+HUB-LSC-22,LMH,LM Hub_SC_Joinville_02,Joinville,SC
+HUB-LSE-01,LMH,LM Hub_SE_Aracaju_01,Aracaju,SE
+HUB-LSE-03,LMH,LM Hub_SE_Aracaju_02,Aracaju,SE
+HUB-LSE-04,LMH,,,
+HUB-LSP-01,LMH,LM Hub_SP_Osasco_Bonfim,Osasco Bonfim,SP
+HUB-LSP-02,LMH,LM Hub_SP_Araçatuba,Araçatuba,SP
+HUB-LSP-03,LMH,HUB-SAO-03_Embu das Artes_SP,Embu das Artes,SP
+HUB-LSP-04,LMH,LM Hub_SP_São José dos Campos,São José dos Campos,SP
+HUB-LSP-05,LMH,LM HUB-SAO-05_Mauá_SP,Mauá,SP
+HUB-LSP-06,LMH,LM Hub_SP_Guarujá,Guarujá,SP
+HUB-LSP-07,LMH,LM Hub_SP_Artur Alvim,Artur Alvim,SP
+HUB-LSP-08,LMH,LM Hub_SP_Taubaté,Taubaté,SP
+HUB-LSP-09,LMH,LM Hub_SP_Santos_Praia Grande,Santos Praia Grande,SP
+HUB-LSP-10,LMH,LM Hub_SP_Sorocaba_Região Norte,Sorocaba Região Norte,SP
+HUB-LSP-100,LMH,LM Hub_SP_Jundiaí,Jundiaí,SP
+HUB-LSP-103,LMH,LM Hub_SP_São José dos Cam_103,São José dos Cam,SP
+HUB-LSP-105,LMH,LM Hub_SP_Campinas_PqCidade,Campinas PqCidade,SP
+HUB-LSP-107,LMH,HUB-LSP-107_Santos_SP,Santos,SP
+HUB-LSP-11,LMH,LM HUB-LSP-11_São Bernardo do Campo_SP,São Bernardo do Campo,SP
+HUB-LSP-114,LMH,HUB-LSP-114_Avaré_SP,Avaré,SP
+HUB-LSP-118,LMH,HUB-LSP-118_Barra Funda_SP,Barra Funda,SP
+HUB-LSP-119,LMH,LM Hub_SP_Guarulhos_119,Guarulhos,SP
+HUB-LSP-12,LMH,LM Hub_SP_Jardim Adriana,Jardim Adriana,SP
+HUB-LSP-123,LMH,HUB-LSP-123_Praia Grande_SP,Praia Grande,SP
+HUB-LSP-125,LMH,,,
+HUB-LSP-128,LMH,,,
+HUB-LSP-129,LMH,HUB-LSP-129_Pedreira_SP,Pedreira,SP
+HUB-LSP-13,LMH,LM Hub_SP_São Paulo_Mooca,São Paulo Mooca,SP
+HUB-LSP-131,LMH,,,
+HUB-LSP-133,LMH,,Santo André,SP
+HUB-LSP-135,LMH,,Santo André,SP
+HUB-LSP-137,LMH,LM Hub_SP_Taboão da Serra,Taboão da Serra,SP
+HUB-LSP-139,LMH,,,
+HUB-LSP-14,LMH,,Guarulhos,SP
+HUB-LSP-140,LMH,HUB-LSP-140_São Bernardo do Campo_SP,São Bernardo do Campo,SP
+HUB-LSP-142,LMH,LM Hub_SP_Guarulhos_142,Guarulhos,SP
+HUB-LSP-145,LMH,LM Hub_SP_Ibitinga,Ibitinga,SP
+HUB-LSP-146,LMH,,Embu das Artes,SP
+HUB-LSP-15,LMH,LM Hub_SP_São Paulo_Lapa,São Paulo Lapa,SP
+HUB-LSP-150,LMH,,,SP
+HUB-LSP-156,LMH,HUB-LSP-156_São José do Rio Preto_SP,São José do Rio Preto,SP
+HUB-LSP-16,LMH,LM Hub_SP_Jurubatuba,Jurubatuba,SP
+HUB-LSP-17,LMH,LM HUB-LSP-17_Mogi das Cruzes_SP,Mogi das Cruzes,SP
+HUB-LSP-18,LMH,LM Hub_SP_São Paulo_Carandiru,São Paulo Carandiru,SP
+HUB-LSP-19,LMH,LM Hub_SP_Campinas_São Martinho,Campinas São Martinho,SP
+HUB-LSP-20,LMH,LM Hub_SP_Várzea Paulista,Várzea Paulista,SP
+HUB-LSP-21,LMH,LM HUB-LSP-21_Piracicaba_SP,Piracicaba,SP
+HUB-LSP-22,LMH,LM HUB-LSP-22_Bragança Paulista_SP,Bragança Paulista,SP
+HUB-LSP-23,LMH,FM HUB-LSP-23_ Bauru_SP,Bauru,SP
+HUB-LSP-24,LMH,LM Hub_SP_Limeira_Campo Belo,Limeira Campo Belo,SP
+HUB-LSP-25,LMH,LM HUB-LSP-25_Sumaré Nova Veneza_SP,Sumaré Nova Veneza,SP
+HUB-LSP-26,LMH,LM Hub_SP_Franca_Distrito_Indust,Franca Distrito Indust,SP
+HUB-LSP-27,LMH,LM Hub_SP_São José do Rio P,São José do Rio P,SP
+HUB-LSP-28,LMH,LM Hub_SP_Ribeirão Preto,Ribeirão Preto,SP
+HUB-LSP-29,LMH,LM HUB-LSP-29_Araraquara_SP,Araraquara,SP
+HUB-LSP-30,LMH,LM HUB-LSP-30_Marília_SP,Marília,SP
+HUB-LSP-31,LMH,LM HUB-LSP-31_São Carlos_SP,São Carlos,SP
+HUB-LSP-32,LMH,FLMH-LSP-32_Presidente Prudente_SP,Presidente Prudente,SP
+HUB-LSP-33,LMH,LM Hub_SP_Guaratinguetá,Guaratinguetá,SP
+HUB-LSP-35,LMH,LM Hub_SP_Jaú,Jaú,SP
+HUB-LSP-36,LMH,LM Hub_SP_Embu das Artes,Embu das Artes,SP
+HUB-LSP-37,LMH,LM Hub_SP_Mogi Mirim,Mogi Mirim,SP
+HUB-LSP-38,LMH,LM Hub_SP_Votuporanga,Votuporanga,SP
+HUB-LSP-39,LMH,LM Hub_SP_Itapeva,Itapeva,SP
+HUB-LSP-40,LMH,LM Hub_SP_Registro,Registro,SP
+HUB-LSP-41,LMH,LM Hub_SP_Itapevi,Itapevi,SP
+HUB-LSP-42,LMH,LM Hub_SP_Assis,Assis,SP
+HUB-LSP-43,LMH,LM Hub_SP_Barretos,Barretos,SP
+HUB-LSP-46,LMH,LM Hub_SP_Botucatu,Botucatu,SP
+HUB-LSP-47,LMH,LM Hub_SP_Leme,Leme,SP
+HUB-LSP-51,LMH,LM Hub_SP_Tatuí,Tatuí,SP
+HUB-LSP-53,LMH,LM Hub_SP_Itapetininga,Itapetininga,SP
+HUB-LSP-54,LMH,LM Hub_SP_Granja Julieta,Granja Julieta,SP
+HUB-LSP-55,LMH,LM Hub_SP_Ribeirão Preto_02,Ribeirão Preto,SP
+HUB-LSP-56,LMH,LM Hub_SP_Bauru_Centro,Bauru Centro,SP
+HUB-LSP-60,LMH,LM Hub_SP_Osasco_02,Osasco,SP
+HUB-LSP-61,LMH,"Avenida Marginal do Rio Jundiaí, 630, Distrito Industrial, Várzea Paulista","Avenida Marginal do Rio Jundiaí, 630, Distrito Industrial, Várzea Paulista",SP
+HUB-LSP-62,LMH,LM Hub_SP_Piracicaba,Piracicaba,SP
+HUB-LSP-63,LMH,LM Hub_SP_Santos_PraiaGrande_02,Santos PraiaGrande,SP
+HUB-LSP-64,LMH,LM Hub_SP_Mauá,Mauá,SP
+HUB-LSP-65,LMH,HUB-LSP-65_Mirassol_SP,Mirassol,SP
+HUB-LSP-66,LMH,LM Hub_SP_Marília,Marília,SP
+HUB-LSP-68,LMH,LM Hub_SP_VilaGuilherme,VilaGuilherme,SP
+HUB-LSP-69,LMH,LM Hub_SP_Araçatuba_69,Araçatuba,SP
+HUB-LSP-72,LMH,LM Hub_SP_Araraquara,Araraquara,SP
+HUB-LSP-73,LMH,LM Hub_SP_Presidente Prudente,Presidente Prudente,SP
+HUB-LSP-74,LMH,LM Hub_SP_Itaqua_Zimba,Itaqua Zimba,SP
+HUB-LSP-77,LMH,LM Hub_SP_Guarulhos,Guarulhos,SP
+HUB-LSP-78,LMH,LM Hub_SP_Mogi das Cruzes_Jund,Mogi das Cruzes Jund,SP
+HUB-LSP-79,LMH,LM Hub_SP_São Bernardo do Campo,São Bernardo do Campo,SP
+HUB-LSP-81,LMH,LM Hub_SP_Barueri_01,Barueri,SP
+HUB-LSP-82,LMH,LM Hub_SP_Sorocaba_02,Sorocaba,SP
+HUB-LSP-84,LMH,LM Hub_SP_São Carlos,São Carlos,SP
+HUB-LSP-86,LMH,,,
+HUB-LSP-87,LMH,LM Hub_SP_Atibaia_Ponte_Alta,Atibaia Ponte Alta,SP
+HUB-LSP-88,LMH,LM Hub_SP_Sumaré_Nova Veneza_1,Sumaré Nova Veneza,SP
+HUB-LSP-89,LMH,LM Hub_SP_Parque Novo Mundo,Parque Novo Mundo,SP
+HUB-LSP-91,XPT,LM Hub_SP_Vargem Grande_XPT,Vargem Grande XPT,SP
+HUB-LSP-93,LMH,LM Hub_SP_Santo André,Santo André,SP
+HUB-LSP-94,LMH,LM Hub_SP_Mooca_02,Mooca,SP
+HUB-LSP-95,LMH,LM Hub_SP_RibeirãoPretoEstaçã,RibeirãoPretoEstaçã,SP
+HUB-LSP-96,LMH,LM Hub_SP_Embu das Artes_02,Embu das Artes,SP
+HUB-LSP-97,LMH,LM Hub_SP_Suzano_Baruel,Suzano Baruel,SP
+HUB-LSP-V147,LMH,,Guarulhos,SP
+HUB-LSP-V148,LMH,,Guarulhos,SP
+HUB-LSP-V36,LMH,LM Hub_SP_Embu das Artes_03,Embu das Artes,SP
+HUB-LTO-01,LMH,LM Hub_TO_Palmas,Palmas,TO
+HUB-LTO-02,LMH,,,
+HUB-MAC-01,LMH,LM HUB-MAC-01_Macaé_RJ,Macaé,RJ
+HUB-OSP-01,Own FLEX,OF Hub_SP_Lapa,OF Hub Lapa,SP
+HUB-OSP-02,Own FLEX,OF Hub_SP_Guarulhos,OF Hub Guarulhos,SP
+HUB-OSP-03,Own FLEX,OF Hub_SP_Mooca,OF Hub Mooca,SP
+HUB-OSP-04,Own FLEX,OF Hub_SP_Vila Guilherme,OF Hub Vila Guilherme,SP
+HUB-PGZ-01,LMH,LM HUB-PGZ-01_Ponta Grossa_PR,Ponta Grossa,PR
+HUB-POA-01,LMH,LM HUB-POA-01_Porto Alegre_RS,Porto Alegre,RS
+HUB-RIO-02,LMH,LM HUB-RIO-02_Rio de Janeiro (São Cristovão)_RJ,Rio de Janeiro (São Cristovão),RJ
+HUB-RIO-03,LMH,LM HUB-RIO-03_Rio de Janeiro (São Gonçalo)_RJ,Rio de Janeiro (São Gonçalo),RJ
+HUB-RIO-05,LMH,LM Hub_RJ_Niterói,Niterói,RJ
+HUB-SAO-02,LMH,LM HUB-SAO-02_São Paulo (Vila Regente Feijó)_SP,São Paulo (Vila Regente Feijó),SP
+HUB-SAO-04,LMH,LM HUB-SAO-04_São Bernardo do Campo_SP,São Bernardo do Campo,SP
+HUB-SAO-06,LMH,LM HUB-SAO-06_Guarulhos_SP,Guarulhos,SP
+HUB-SAO-08,LMH,LM HUB-SAO-08_São Paulo (Varzea da Barra Funda)_SP,São Paulo (Varzea da Barra Funda),SP
+HUB-SAO-10,LMH,LM HUB-SAO-10_Mogi das Cruzes_SP,Mogi das Cruzes,SP
+HUB-SJC-01,LMH,LM HUB-SJC-01_Jacareí_SP,Jacareí,SP
+HUB-SSA-01,LMH,LM Hub_BA_Salvador_01,Salvador,BA
+HUB-VAG-01,LMH,LM Hub_MG_Varginha_Rezende,Varginha Rezende,MG
+MHB-AQA-01,Mini Hub,Mini Hub_SP_Araraquara,Araraquara,SP
+MHB-CFB-01,Mini Hub,Mini Hub_RJ_Cabo Frio_Jd Flamb,Cabo Frio Jd Flamb,RJ
+MHB-CGZ-01,Mini Hub,Mini Hub_RJ_Cps dos Goytacazes,Cps dos Goytacazes,RJ
+MHB-GOV-01,Mini Hub,Mini Hub_MG_Governador Valadares,Governador Valadares,MG
+MHB-LPA-01,Mini Hub,Mini Hub_MG_Lagoa da Prata,Lagoa da Prata,MG
+MHB-PNZ-01,Mini Hub,Mini Hub_PE_Juazeiro,Juazeiro,PE
+MHB-POJ-01,Mini Hub,Mini Hub_MG_Patos de Minas,Patos de Minas,MG
+MHB-QHB-01,Mini Hub,Mini Hub_SP_Piracicaba,Piracicaba,SP
+MHB-QSC-01,Mini Hub,Mini Hub_SP_São Carlos,São Carlos,SP
+MHB-STS-02,Mini Hub,Mini Hub_SP_Guarujá,Guarujá,SP
+MHB-UBA-01,Mini Hub,Mini Hub_MG_Uberaba,Uberaba,MG
+MHB-VAG-02,Mini Hub,Mini Hub_MG_Varginha_Fausto Ribe,Varginha Fausto Ribe,MG
+SOC-BA1,SOC,SoC_BA_Salvador,Salvador,BA
+SOC-BA2,SOC,SoC_BA_Simoes Filho,Simoes Filho,BA
+SOC-CE3,SOC,SoC_CE_Itaitinga,Itaitinga,CE
+SOC-ES2,SOC,SoC_ES_Viana,Viana,ES
+SOC-ES3,SOC,SoC_ES_Viana_03,Viana,ES
+SOC-ES4,SOC,,Viana,ES
+SOC-ESV3,SOC,SoC_ES_Viana_V03,Viana,ES
+SOC-GO1,SOC,SoC_GO_Goiania,Goiania,GO
+SOC-GO2,SOC,SoC_GO_Goiânia_02,Goiânia,GO
+SOC-MG1,SOC,SoC_MG_Contagem,Contagem,MG
+SOC-MG2,SOC,SoC_MG_Betim,Betim,MG
+SOC-MG3,SOC,SOC-MG-03 - Contagem_MG,Contagem,MG
+SOC-MG4,SOC,SoC_MG_Contagem_Industrial,Contagem Industrial,MG
+SOC-MGV8,SOC,SoC_MG_Betim_V08,Betim,MG
+SOC-PE1,SOC,SoC_PE_Recife,Recife,PE
+SOC-PE2,SOC,SoC_PE_Jaboatão dos Guararapes,Jaboatão dos Guararapes,PE
+SOC-PE4,SOC,SoC_PE_Recife_04,Recife,PE
+SOC-PEV4,SOC,,Jaboatão dos Guararapes,PE
+SOC-PR1,SOC,SoC_PR_Curitiba,Curitiba,PR
+SOC-PR2,SOC,,Londrina,PR
+SOC-PR4,SOC,SoC_PR_Campina Grande,Campina Grande,PR
+SOC-RJ1,SOC,SoC_RJ_Rio de Janeiro,Rio de Janeiro,RJ
+SOC-RJ2,SOC,SoC_RJ_Duque de Caxias,Duque de Caxias,RJ
+SOC-RJ4,SOC,SoC_RJ_Jacarepagua,Jacarepagua,RJ
+SOC-RJ6,SOC,SOC-RJ6_Queimados_RJ,Queimados,RJ
+SOC-RS1,SOC,SoC_RS_Gravatai,Gravatai,RS
+SOC-RS2,SOC,SoC_RS_Gravataí_02,Gravataí,RS
+SOC-SC1,SOC,SoC_SC_Itajaí,Itajaí,SC
+SOC-SC2,SOC,SoC_SC_Blumenau,Blumenau,SC
+SOC-SP1,SOC,SOC-SP1_Barueri_SP,Barueri,SP
+SOC-SP10,SOC,SoC_SP_Ibitinga,Ibitinga,SP
+SOC-SP11,SOC,SOC-SP11_Araçatuba BTS _SP,Araçatuba,SP
+SOC-SP12,SOC,SOC-SP12_São José do Rio Preto / FMH-SJP-02_São José do Rio Preto_SP,São José do Rio Preto,SP
+SOC-SP13,SOC,,,SP
+SOC-SP15,SOC,,Franco da Rocha,SP
+SOC-SP18,SOC,SoC_SP_Piracicaba,Piracicaba,SP
+SOC-SP2,SOC,SoC_SP_Santana,Santana,SP
+SOC-SP24,SOC,SoC_SP_Guarulhos_24,Guarulhos,SP
+SOC-SP25,SOC,SoC_SP_Cumbica_Guarulhos,Cumbica Guarulhos,SP
+SOC-SP26,SOC,SoC_SP_Guarulhos_26,Guarulhos,SP
+SOC-SP29,SOC,,Guarulhos,SP
+SOC-SP3,SOC,SoC_SP_Campinas,Campinas,SP
+SOC-SP30,SOC,,,SP
+SOC-SP35,SOC,SoC_SP_Piracicaba_35,Piracicaba,SP
+SOC-SP4,SOC,SoC_SP_Ribeirao,Ribeirao,SP
+SOC-SP5,SOC,SoC_SP_Cravinhos,Cravinhos,SP
+SOC-SP6,SOC,SoC_SP_Guarulhos,Guarulhos,SP
+SOC-SP7,SOC,SoC_SP_Louveira,Louveira,SP
+SOC-SP8,SOC,SoC_SP_São Bernardo do Campo,São Bernardo do Campo,SP
+SOC-SPV32,SOC,,Guarulhos,SP
+SOC-SPV33,SOC,SoC_SP_Guarulhos_V33,Guarulhos,SP
+XPT-AAN-01,XPT,XPT_SP_Andradina,Andradina,SP
+XPT-AAN-02,XPT,XPT_SP_Andradina_02,Andradina,SP
+XPT-AAX-01,XPT,XPT_MG_Araxá,Araxá,MG
+XPT-ABB-01,XPT,XPT_PA_Abaetetuba,Abaetetuba,PA
+XPT-ABR-01,XPT,XPT_BA_Abaré,Abaré,BA
+XPT-ABT-01,XPT,XPT_MG_Abaeté,Abaeté,MG
+XPT-ABX-01,XPT,XPT_PI_Água Branca,Água Branca,PI
+XPT-ACC-01,XPT,XPT_RN_Açu,Açu,RN
+XPT-ACL-01,XPT,XPT_MA_Açailândia,Açailândia,MA
+XPT-ACU-01,XPT,XPT_CE_Acaraú,Acaraú,CE
+XPT-ACZ-01,XPT,XPT_ES_Aracruz,Aracruz,ES
+XPT-ADI-01,XPT,XPT_PE_Afogados da Ingazeira,Afogados da Ingazeira,PE
+XPT-ADR-01,XPT,XPT_RJ_Angra dos Reis,Angra dos Reis,RJ
+XPT-ADR-02,XPT,XPT_RJ_Angra dos Reis_02,Angra dos Reis,RJ
+XPT-AFC-01,XPT,XPT_ES_Afonso Cláudio,Afonso Cláudio,ES
+XPT-AFL-01,XPT,XPT_MT_Alta Floresta,Alta Floresta,MT
+XPT-AFO-01,XPT,XPT_MG_Águas Formosas,Águas Formosas,MG
+XPT-AGL-01,XPT,XPT_GO_Águas Lindas de Goiás,Águas Lindas de Goiás,GO
+XPT-AGL-02,XPT,XPT_GO_Águas Lindas Goiás_02,Águas Lindas Goiás,GO
+XPT-AGS-01,XPT,XPT_BA_Alagoinhas,Alagoinhas,BA
+XPT-AGX-01,XPT,XPT_TO_Araguatins,Araguatins,TO
+XPT-AIF-01,XPT,XPT_SP_Assis,Assis,SP
+XPT-AIM-01,XPT,XPT_MG_Aimorés - Resplendor,Aimorés - Resplendor,MG
+XPT-AIP-01,XPT,XPT_PE_Araripina,Araripina,PE
+XPT-ALF-01,XPT,XPT_MG_Alfenas,Alfenas,MG
+XPT-ALF-02,XPT,XPT_MG_Alfenas_02,Alfenas,MG
+XPT-ALF-03,XPT,XPT_MG_Alfenas_03,Alfenas,MG
+XPT-ALG-01,XPT,XPT_ES_Alegre,Alegre,ES
+XPT-AMB-01,XPT,XPT_MS_Amambai,Amambai,MS
+XPT-AMB-02,XPT,XPT_MS_Amambai_02,Amambai,MS
+XPT-AMJ-01,XPT,XPT_MG_Almenara,Almenara,MG
+XPT-AMT-01,XPT,XPT_SP_Adamantina - Lucélia,Adamantina - Lucélia,SP
+XPT-APQ-01,XPT,XPT_AL_Arapiraca,Arapiraca,AL
+XPT-APS-01,XPT,XPT_GO_Anápolis,Anápolis,GO
+XPT-APU-01,XPT,XPT_PR_Apucarana,Apucarana,PR
+XPT-AQA-01,XPT,XPT_SP_Araraquara,Araraquara,SP
+XPT-AQD-01,XPT,XPT_MS_Aquidauana,Aquidauana,MS
+XPT-AQX-01,XPT,XPT_SE_Aquidabã,Aquidabã,SE
+XPT-ARA-01,XPT,XPT_SP_Araras,Araras,SP
+XPT-ARI-01,XPT,XPT_MG_Araçuaí,Araçuaí,MG
+XPT-ARN-01,XPT,XPT_SC_Araranguá,Araranguá,SC
+XPT-ARS-01,XPT,XPT_GO_Aragarças,Aragarças,GO
+XPT-ART-01,XPT,XPT_CE_Aracati,Aracati,CE
+XPT-ARU-01,XPT,XPT_SP_Araçatuba,Araçatuba,SP
+XPT-ARV-01,XPT,XPT_PE_Arcoverde,Arcoverde,PE
+XPT-ATM-01,XPT,XPT_PA_Altamira,Altamira,PA
+XPT-AUX-01,XPT,XPT_TO_Araguaína,Araguaína,TO
+XPT-AVA-01,XPT,XPT_SP_Avaré,Avaré,SP
+XPT-AVZ-01,XPT,XPT_RS_Arvorezinha,Arvorezinha,RS
+XPT-AXN-01,XPT,XPT_GO_Alexânia,Alexânia,GO
+XPT-BAT-01,XPT,XPT_SP_Barretos,Barretos,SP
+XPT-BAT-02,XPT,XPT_SP_Barretos_02,Barretos,SP
+XPT-BAT-03,XPT,XPT_SP_Barretos_03,Barretos,SP
+XPT-BBA-01,XPT,XPT_MA_Bacabal,Bacabal,MA
+XPT-BBA-02,XPT,XPT_MA_Bacabal_02,Bacabal,MA
+XPT-BCN-01,XPT,XPT_MG_Barbacena,Barbacena,MG
+XPT-BCN-02,XPT,XPT_MG_Barbacena_02,Barbacena,MG
+XPT-BDE-01,XPT,XPT_BA_Barra da Estiva,Barra da Estiva,BA
+XPT-BDE-02,XPT,XPT_BA_Barra da Estiva_02,Barra da Estiva,BA
+XPT-BGA-01,XPT,XPT_BA_Baixa Grande,Baixa Grande,BA
+XPT-BGU-01,XPT,XPT_MS_Bataguassu,Bataguassu,MS
+XPT-BGV-01-X,XPT,XPT_RS_Bento Gonçalves,Bento Gonçalves,RS
+XPT-BGX-01,XPT,XPT_RS_Bagé,Bagé,RS
+XPT-BIT-01,XPT,XPT_PR_Ibaiti,Ibaiti,PR
+XPT-BJA-01,XPT,XPT_RS_São Borja,São Borja,RS
+XPT-BJS-01,XPT,XPT_GO_Bom Jesus,Bom Jesus,GO
+XPT-BMI-01,XPT,XPT_MG_Brasilândia de Minas,Brasilândia de Minas,MG
+XPT-BMI-02,XPT,XPT_MG_Brasilândia de Minas_02,Brasilândia de Minas,MG
+XPT-BMS-01,XPT,XPT_BA_Brumado,Brumado,BA
+XPT-BOJ-01,XPT,XPT_PI_Bom Jesus,Bom Jesus,PI
+XPT-BPG-01,XPT,XPT_MT_Barra do Garças,Barra do Garças,MT
+XPT-BPS-01,XPT,XPT_BA_Eunápolis - Porto Seguro,Eunápolis - Porto Seguro,BA
+XPT-BPS-02,XPT,XPT_BA_Eunápolis - Porto Seguro_02,Eunápolis - Porto Seguro,BA
+XPT-BPS-03,XPT,XPT_BA_Porto Seguro_03,Porto Seguro,BA
+XPT-BRA-01,XPT,XPT_BA_Barreiras,Barreiras,BA
+XPT-BRB-01,XPT,XPT_MA_Barreirinhas,Barreirinhas,MA
+XPT-BRG-01,XPT,XPT_PA_Bragança,Bragança,PA
+XPT-BRG-02,XPT,XPT_PA_Bragança_02,Bragança,PA
+XPT-BRU-01,XPT,XPT_SC_Brusque,Brusque,SC
+XPT-BRU-02,XPT,XPT_SC_Brusque_02,Brusque,SC
+XPT-BSS-01,XPT,XPT_MA_Balsas,Balsas,MA
+XPT-BSS-02,XPT,XPT_MA_Balsas_02,Balsas,MA
+XPT-BTG-01,XPT,XPT_SP_Bertioga,Bertioga,SP
+XPT-BUA-01,XPT,XPT_RS_Butiá,Butiá,RS
+XPT-BVB-01,XPT,XPT_RR_Boa Vista,Boa Vista,RR
+XPT-CAA-01,XPT,XPT_BA_Camacan,Camacan,BA
+XPT-CAA-02,XPT,XPT_BA_Camacan_02,Camacan,BA
+XPT-CAC-01,XPT,XPT_PR_Cascavel,Cascavel,PR
+XPT-CAD-01,XPT,XPT_CE_Canindé,Canindé,CE
+XPT-CAR-01,XPT,XPT_BA_Carinhanha,Carinhanha,BA
+XPT-CAU-01,XPT,XPT_PE_Caruaru,Caruaru,PE
+XPT-CBS-01,XPT,XPT_GO_Campos Belos,Campos Belos,GO
+XPT-CBS-02,XPT,XPT_GO_Campos Belos_02,Campos Belos,GO
+XPT-CCD-01,XPT,XPT_SC_Concórdia,Concórdia,SC
+XPT-CCI-01,XPT,XPT_BA_Camaçari,Camaçari,BA
+XPT-CCI-02,XPT,XPT_BA_Camaçari_02,Camaçari,BA
+XPT-CCR-01,XPT,XPT_MT_Cáceres,Cáceres,MT
+XPT-CCT-01,XPT,XPT_MG_Conceição do MatoDentro,Conceição do MatoDentro,MG
+XPT-CCT-02,XPT,XPT_MG_ConceiçãodoMatoDentro02,ConceiçãodoMatoDentro02,MG
+XPT-CCT-03,XPT,XPT_MG_ConceiçãodoMatoDentro03,ConceiçãodoMatoDentro03,MG
+XPT-CDA-01,XPT,XPT_PR_Campina da Lagoa,Campina da Lagoa,PR
+XPT-CDI-01,XPT,XPT_ES_Cachoeiro de Itapemirim,Cachoeiro de Itapemirim,ES
+XPT-CDV-01,XPT,XPT_SP_Catanduva,Catanduva,SP
+XPT-CDV-02,XPT,XPT_SP_Catanduva_02,Catanduva,SP
+XPT-CEC-01,XPT,XPT_BA_Conceição do Coité,Conceição do Coité,BA
+XPT-CER-01,XPT,XPT_PR_Cerro Azul,Cerro Azul,PR
+XPT-CFA-01,XPT,XPT_SE_Canindé de S. Francisco,Canindé de S. Francisco,SE
+XPT-CFC-01-X,XPT,XPT_SC_Caçador,Caçador,SC
+XPT-CFS-01,XPT,XPT_MT_Confresa,Confresa,MT
+XPT-CGU-01,XPT,XPT_SP_Caraguatatuba,Caraguatatuba,SP
+XPT-CGZ-01,XPT,XPT_RJ_Campos dos Goytacazes,Campos dos Goytacazes,RJ
+XPT-CHA-01,XPT,XPT_GO_Cachoeira Alta,Cachoeira Alta,GO
+XPT-CHD-01,XPT,XPT_GO_Chapadão do Céu,Chapadão do Céu,GO
+XPT-CHD-02,XPT,XPT_GO_Chapadão do Céu_02,Chapadão do Céu,GO
+XPT-CHP-01,XPT,XPT_MG_Conselheiro Pena,Conselheiro Pena,MG
+XPT-CHS-01,XPT,XPT_RS_Cachoeira do Sul,Cachoeira do Sul,RS
+XPT-CHX-01,XPT,XPT_MA_Chapadinha,Chapadinha,MA
+XPT-CIC-01,XPT,XPT_RN_Caicó,Caicó,RN
+XPT-CIG-01,XPT,XPT_MG_Caratinga,Caratinga,MG
+XPT-CII-01-X,XPT,XPT_ES_Cariacica,Cariacica,ES
+XPT-CIN-01,XPT,XPT_PE_Carpina,Carpina,PE
+XPT-CIS-01,XPT,XPT_BA_Candeias,Candeias,BA
+XPT-CKO-01,XPT,XPT_PR_Cornélio Procópio,Cornélio Procópio,PR
+XPT-CLH-01,XPT,XPT_MG_Capelinha,Capelinha,MG
+XPT-CLH-02,XPT,XPT_MG_Capelinha_02,Capelinha,MG
+XPT-CLV-01,XPT,XPT_GO_Caldas Novas,Caldas Novas,GO
+XPT-CMC-01,XPT,XPT_CE_Camocim,Camocim,CE
+XPT-CMG-01,XPT,XPT_MS_Corumbá,Corumbá,MS
+XPT-CMI-01,XPT,XPT_MG_Cambuí,Cambuí,MG
+XPT-CMO-01,XPT,XPT_PR_Campo Mourão,Campo Mourão,PR
+XPT-CMR-01,XPT,XPT_PA_Cametá,Cametá,PA
+XPT-CNO-01,XPT,XPT_PR_Cianorte,Cianorte,PR
+XPT-CNT-01,XPT,XPT_PI_Corrente,Corrente,PI
+XPT-COI-01,XPT,XPT_MG_Coroaci,Coroaci,MG
+XPT-COO-01,XPT,XPT_MA_Codó,Codó,MA
+XPT-COX-01,XPT,XPT_MS_Coxim,Coxim,MS
+XPT-CPL-01,XPT,XPT_MS_Chapadão do Sul,Chapadão do Sul,MS
+XPT-CPU-01,XPT,XPT_MA_Cururupu,Cururupu,MA
+XPT-CPV-01,XPT,XPT_PB_Campina Grande,Campina Grande,PB
+XPT-CQA-01,XPT,XPT_RS_Camaquã,Camaquã,RS
+XPT-CRR-01,XPT,XPT_PI_Canto do Buriti,Canto do Buriti,PI
+XPT-CRX-01,XPT,XPT_GO_Crixás,Crixás,GO
+XPT-CSR-01,XPT,XPT_MS_Costa Rica,Costa Rica,MS
+XPT-CST-01,XPT,XPT_GO_Cristalina,Cristalina,GO
+XPT-CSX-01,XPT,XPT_CE_Campos Sales,Campos Sales,CE
+XPT-CSX-02,XPT,XPT_CE_Campos Sales_02,Campos Sales,CE
+XPT-CTD-01,XPT,XPT_PR_Centenário do Sul,Centenário do Sul,PR
+XPT-CTL-01,XPT,XPT_PA_Castanhal,Castanhal,PA
+XPT-CTN-01,XPT,XPT_ES_Colatina,Colatina,ES
+XPT-CTU-01,XPT,XPT_CE_Crateús,Crateús,CE
+XPT-CUA-01,XPT,XPT_BA_Curaçá,Curaçá,BA
+XPT-CUC-01,XPT,XPT_CE_Caucaia,Caucaia,CE
+XPT-CVL-01,XPT,XPT_MG_Curvelo,Curvelo,MG
+XPT-CXS-01,XPT,XPT_RS_Caxias do Sul,Caxias do Sul,RS
+XPT-CZA-01,XPT,XPT_RS_Cruz Alta,Cruz Alta,RS
+XPT-CZJ-01,XPT,XPT_PB_Cajazeiras,Cajazeiras,PB
+XPT-DDI-01,XPT,XPT_MG_Dores do Indaiá,Dores do Indaiá,MG
+XPT-DIV-01,XPT,XPT_MG_Divinópolis,Divinópolis,MG
+XPT-DMS-01,XPT,XPT_ES_Cariacica_02,Cariacica,ES
+XPT-DNO-01,XPT,XPT_TO_Dianópolis,Dianópolis,TO
+XPT-DOE-01,XPT,XPT_MT_Mirassol D'Oeste,Mirassol D'Oeste,MT
+XPT-DOE-02,XPT,XPT_MT_Mirassol D'Oeste_02,Mirassol D'Oeste,MT
+XPT-DOU-01,XPT,XPT_MS_Dourados,Dourados,MS
+XPT-DOU-02,XPT,XPT_MS_Dourados_02,Dourados,MS
+XPT-DRA-01,XPT,XPT_SP_Dracena,Dracena,SP
+XPT-DSU-01,XPT,XPT_RS_Santa Cruz do Sul,Santa Cruz do Sul,RS
+XPT-DSU-02,XPT,XPT_RS_Santa Cruz do Sul_02,Santa Cruz do Sul,RS
+XPT-DTA-01,XPT,XPT_MG_Diamantina,Diamantina,MG
+XPT-DUQ-03,XPT,XPT_RJ_Duque de Caxias_03,Duque de Caxias,RJ
+XPT-DVS-01,XPT,XPT_PR_Dois Vizinhos,Dois Vizinhos,PR
+XPT-EPO-01,XPT,XPT_BA_Eunápolis,Eunápolis,BA
+XPT-EPO-02,XPT,XPT_BA_Eunápolis_02,Eunápolis,BA
+XPT-ERM-01,XPT,XPT_RS_Erechim,Erechim,RS
+XPT-ERM-02,XPT,XPT_RS_Erechim_02,Erechim,RS
+XPT-ERM-03,XPT,XPT_RS_Erechim_03,Erechim,RS
+XPT-ESI-01,XPT,XPT_MG_Espinosa,Espinosa,MG
+XPT-ETC-01,XPT,XPT_SE_Estância,Estância,SE
+XPT-ETR-01,XPT,XPT_MA_Estreito,Estreito,MA
+XPT-EXA-01,XPT,XPT_MG_Extrema,Extrema,MG
+XPT-FBE-01,XPT,XPT_PR_Francisco Beltrão,Francisco Beltrão,PR
+XPT-FEC-01,XPT,XPT_BA_Feira de Santana,Feira de Santana,BA
+XPT-FMI-01,XPT,XPT_MG_Formiga,Formiga,MG
+XPT-FMO-01,XPT,XPT_GO_Formosa,Formosa,GO
+XPT-FOA-01,XPT,XPT_PI_Floriano,Floriano,PI
+XPT-FRU-01,XPT,XPT_MG_Frutal,Frutal,MG
+XPT-FWP-01,XPT,XPT_RS_Frederico Westphalen,Frederico Westphalen,RS
+XPT-GAV-01,XPT,XPT_PR_Guarapuava,Guarapuava,PR
+XPT-GAV-02,XPT,XPT_PR_Guarapuava_02,Guarapuava,PR
+XPT-GBR-01,XPT,XPT_PB_Guarabira,Guarabira,PB
+XPT-GEL-01,XPT,XPT_RS_Santo Ângelo,Santo Ângelo,RS
+XPT-GEL-02,XPT,XPT_RS_Santo Ângelo_02,Santo Ângelo,RS
+XPT-GHE-01,XPT,XPT_MG_Guanhães,Guanhães,MG
+XPT-GHU-01,XPT,XPT_PE_Garanhuns,Garanhuns,PE
+XPT-GJA-01,XPT,XPT_MA_Grajaú,Grajaú,MA
+XPT-GJA-02,XPT,XPT_MA_Grajaú_02,Grajaú,MA
+XPT-GNA-01,XPT,XPT_PE_Goiana,Goiana,PE
+XPT-GNI-01,XPT,XPT_GO_Goianésia,Goianésia,GO
+XPT-GNI-02-X,XPT,XPT_GO_Goianésia_02,Goianésia,GO
+XPT-GNM-01,XPT,XPT_BA_Guanambi,Guanambi,BA
+XPT-GNM-02,XPT,XPT_BA_Guanambi_02,Guanambi,BA
+XPT-GNN-01,XPT,XPT_RN_Goianinha,Goianinha,RN
+XPT-GNR-01,XPT,XPT_MT_Guarantã do Norte,Guarantã do Norte,MT
+XPT-GOI-01,XPT,XPT_GO_Goiás - Itapuranga,Goiás - Itapuranga,GO
+XPT-GOI-02,XPT,XPT_GO_Goiás - Itapuranga_02,Goiás - Itapuranga,GO
+XPT-GPO-01,XPT,XPT_GO_Goianápolis,Goianápolis,GO
+XPT-GTA-01,XPT,XPT_SP_Guaratinguetá,Guaratinguetá,SP
+XPT-GUR-01,XPT,XPT_TO_Gurupi,Gurupi,TO
+XPT-GUX-01,XPT,XPT_MG_Guapé,Guapé,MG
+XPT-GXP-01,XPT,XPT_MG_Guaxupé,Guaxupé,MG
+XPT-GXP-02,XPT,XPT_MG_Guaxupé_02,Guaxupé,MG
+XPT-HPI-01,XPT,XPT_PR_Pitanga,Pitanga,PR
+XPT-IAJ-01,XPT,XPT_MG_Itajubá,Itajubá,MG
+XPT-IAJ-02,XPT,XPT_MG_Itajubá_02,Itajubá,MG
+XPT-IAR-01,XPT,XPT_AM_Itacoatiara,Itacoatiara,AM
+XPT-IAV-01,XPT,XPT_SP_Itapeva,Itapeva,SP
+XPT-IBA-01,XPT,XPT_BA_Itaberaba,Itaberaba,BA
+XPT-IEM-01,XPT,XPT_SC_Itapema,Itapema,SC
+XPT-IEM-02,XPT,XPT_SC_Itapema_02,Itapema,SC
+XPT-IGG-01,XPT,XPT_CE_Iguatu,Iguatu,CE
+XPT-IGI-01,XPT,XPT_RJ_Itaguaí,Itaguaí,RJ
+XPT-IGI-02,XPT,XPT_RJ_Itaguaí_02,Itaguaí,RJ
+XPT-IGU-01,XPT,XPT_PR_Foz do Iguaçu,Foz do Iguaçu,PR
+XPT-IIG-01,XPT,XPT_SP_Itapetininga,Itapetininga,SP
+XPT-IJU-01,XPT,XPT_RS_Ijuí,Ijuí,RS
+XPT-IJU-02,XPT,XPT_RS_Ijuí_02,Ijuí,RS
+XPT-IMM-01,XPT,XPT_MA_Itapecuru Mirim,Itapecuru Mirim,MA
+XPT-IMP-01,XPT,XPT_MA_Imperatriz,Imperatriz,MA
+XPT-INH-01,XPT,XPT_GO_Inhumas,Inhumas,GO
+XPT-IPG-01,XPT,XPT_BA_Itapetinga,Itapetinga,BA
+XPT-IPJ-01,XPT,XPT_CE_Itapipoca,Itapipoca,CE
+XPT-IPN-01,XPT,XPT_MG_Ipatinga,Ipatinga,MG
+XPT-IPR-01,XPT,XPT_GO_Iporá,Iporá,GO
+XPT-IPU-01,XPT,XPT_BA_Ipiaú,Ipiaú,BA
+XPT-IRA-01,XPT,XPT_PR_Irati,Irati,PR
+XPT-IRE-01,XPT,XPT_BA_Irecê,Irecê,BA
+XPT-IRM-01,XPT,XPT_MG_Iturama,Iturama,MG
+XPT-ITB-01,XPT,XPT_PB_Itabaiana,Itabaiana,PB
+XPT-ITH-01,XPT,XPT_SP_Itanhaém,Itanhaém,SP
+XPT-ITI-01,XPT,XPT_MG_Itabira,Itabira,MG
+XPT-ITJ-01,XPT,XPT_SC_Itajaí,Itajaí,SC
+XPT-ITP-01,XPT,XPT_RJ_Itaperuna,Itaperuna,RJ
+XPT-ITQ-01,XPT,XPT_RS_Itaqui,Itaqui,RS
+XPT-ITR-01,XPT,XPT_GO_Itumbiara,Itumbiara,GO
+XPT-ITR-02,XPT,XPT_GO_Itumbiara_02,Itumbiara,GO
+XPT-IUB-01,XPT,XPT_MG_Ituiutaba,Ituiutaba,MG
+XPT-IVP-01,XPT,XPT_PR_Ivaiporã,Ivaiporã,PR
+XPT-IVP-02,XPT,XPT_PR_Ivaiporã_02,Ivaiporã,PR
+XPT-JAG-01,XPT,XPT_RS_Jaguarão,Jaguarão,RS
+XPT-JAP-01,XPT,XPT_RJ_Japeri,Japeri,RJ
+XPT-JAP-02,XPT,XPT_RJ_Japeri_02,Japeri,RJ
+XPT-JAU-01,XPT,XPT_SP_Jaú,Jaú,SP
+XPT-JAU-02,XPT,XPT_SP_Jaú_02,Jaú,SP
+XPT-JBO-01,XPT,XPT_BA_Jeremoabo,Jeremoabo,BA
+XPT-JCA-01,XPT,XPT_RN_João Câmara,João Câmara,RN
+XPT-JCM-01,XPT,XPT_BA_Jacobina,Jacobina,BA
+XPT-JCM-02,XPT,XPT_BA_Jacobina_02,Jacobina,BA
+XPT-JCX-01,XPT,XPT_BA_Jacaraci,Jacaraci,BA
+XPT-JDM-01,XPT,XPT_MS_Jardim,Jardim,MS
+XPT-JEQ-01,XPT,XPT_BA_Jequié,Jequié,BA
+XPT-JEQ-02,XPT,XPT_BA_Jequié_02,Jequié,BA
+XPT-JLS-01,XPT,XPT_SP_Jales,Jales,SP
+XPT-JMA-01,XPT,XPT_RN_João Câmara,João Câmara,RN
+XPT-JMV-01,XPT,XPT_MG_João Monlevade,João Monlevade,MG
+XPT-JNA-01,XPT,XPT_MG_Januária,Januária,MG
+XPT-JNE-01,XPT,XPT_CE_Juazeiro do Norte,Juazeiro do Norte,CE
+XPT-JNU-01,XPT,XPT_MG_Janaúba,Janaúba,MG
+XPT-JOA-01,XPT,XPT_SC_Joaçaba - Herval d'Oeste,Joaçaba - Herval d'Oeste,SC
+XPT-JOI-01,XPT,XPT_SC_Joinvelle,Joinvelle,SC
+XPT-JPU-01,XPT,XPT_RJ_Jacarepaguá,Jacarepaguá,RJ
+XPT-JRU-01,XPT,XPT_GO_Jaraguá,Jaraguá,GO
+XPT-JRV-01,XPT,XPT_PR_Jaguariaíva,Jaguariaíva,PR
+XPT-JTI-01,XPT,XPT_GO_Jataí-Mineiros,Jataí-Mineiros,GO
+XPT-JTI-02,XPT,XPT_GO_Jataí-Mineiros_02,Jataí-Mineiros,GO
+XPT-JUI-01,XPT,XPT_MT_Juína,Juína,MT
+XPT-JUN-01,XPT,XPT_SP_Jundiaí,Jundiaí,SP
+XPT-KNO-01,XPT,XPT_RN_Currais Novos,Currais Novos,RN
+XPT-LAC-99,XPT,XPT_AC_Rio Branco,Rio Branco,AC
+XPT-LAF-01,XPT,XPT_MG_Conselheiro Lafaiete,Conselheiro Lafaiete,MG
+XPT-LAJ-01,XPT,XPT_SC_Lages,Lages,SC
+XPT-LAL-90,XPT,XPT_AL_Maragogi,Maragogi,AL
+XPT-LAL-91,XPT,XPT_AL_União dos Palmares,União dos Palmares,AL
+XPT-LAR-01,XPT,XPT_MG_Lavras,Lavras,MG
+XPT-LAR-02,XPT,XPT_MG_Lavras_02,Lavras,MG
+XPT-LAR-03,XPT,XPT_MG_Lavras_03,Lavras,MG
+XPT-LAZ-01,XPT,XPT_BA_Bom Jesus da Lapa,Bom Jesus da Lapa,BA
+XPT-LAZ-02,XPT,XPT_BA_Bom Jesus da Lapa_02,Bom Jesus da Lapa,BA
+XPT-LBA-73,XPT,XPT_BA_Bom Jesus da Lapa_02,Bom Jesus da Lapa,BA
+XPT-LBA-75,XPT,XPT_BA_Camaçari_03,Camaçari,BA
+XPT-LBA-76,XPT,XPT_BA_Eunápolis_02,Eunápolis,BA
+XPT-LBA-77,XPT,XPT_BA_Santo Amaro,Santo Amaro,BA
+XPT-LBA-78,XPT,XPT_BA_Salvador,Salvador,BA
+XPT-LBA-79,XPT,XPT_BA_Porto Seguro_04,Porto Seguro,BA
+XPT-LBA-80,XPT,XPT_BA_Jeremoabo,Jeremoabo,BA
+XPT-LBA-81,XPT,XPT_BA_Baixa Grande,Baixa Grande,BA
+XPT-LBA-82,XPT,XPT_BA_Barra da Estiva_02,Barra da Estiva,BA
+XPT-LBA-83,XPT,XPT_BA_Jacobina_02,Jacobina,BA
+XPT-LBA-84,XPT,XPT_BA_Paulo Afonso,Paulo Afonso,BA
+XPT-LBA-85,XPT,XPT_BA_Valença_02,Valença,BA
+XPT-LBA-86,XPT,XPT_BA_Ribeira do Pombal,Ribeira do Pombal,BA
+XPT-LBA-87,XPT,XPT_BA_Itaberaba,Itaberaba,BA
+XPT-LBA-88,XPT,XPT_BA_Guanambi_02,Guanambi,BA
+XPT-LBA-89,XPT,XPT_BA_Porto Seguro_03,Porto Seguro,BA
+XPT-LBA-90,XPT,XPT_BA_Camaçari_02,Camaçari,BA
+XPT-LBA-91,XPT,XPT_BA_Jequié_02,Jequié,BA
+XPT-LBA-92,XPT,XPT_BA_Teixeira de Freitas_03,Teixeira de Freitas,BA
+XPT-LBA-93,XPT,XPT_BA_Ipiaú,Ipiaú,BA
+XPT-LBA-94,XPT,XPT_BA_Senhor do Bonfim,Senhor do Bonfim,BA
+XPT-LBA-95,XPT,XPT_BA_Conceição do Coité,Conceição do Coité,BA
+XPT-LBA-96,XPT,XPT_BA_Mata de São João,Mata de São João,BA
+XPT-LBA-97,XPT,XPT_BA_Serrinha,Serrinha,BA
+XPT-LBA-98,XPT,XPT_BA_Candeias,Candeias,BA
+XPT-LBA-99,XPT,XPT_BA_Rio Real,Rio Real,BA
+XPT-LCE-100,XPT,XPT_CE_Camocim,Camocim,CE
+XPT-LCE-88,XPT,XPT_CE_Acaraú,Acaraú,CE
+XPT-LCE-89,XPT,XPT_CE_Itapipoca,Itapipoca,CE
+XPT-LCE-90,XPT,XPT_CE_Quixadá,Quixadá,CE
+XPT-LCE-91,XPT,XPT_CE_Redenção-Acarape,Redenção-Acarape,CE
+XPT-LCE-92,XPT,XPT_CE_Limoeiro do Norte,Limoeiro do Norte,CE
+XPT-LCE-93,XPT,XPT_CE_Canindé,Canindé,CE
+XPT-LCE-94,XPT,XPT_CE_São Gonçalo do Amarante,São Gonçalo do Amarante,CE
+XPT-LCE-95,XPT,XPT_CE_São Benedito,São Benedito,CE
+XPT-LCE-96,XPT,XPT_CE_Iguatu,Iguatu,CE
+XPT-LCE-97,XPT,XPT_CE_Crateús,Crateús,CE
+XPT-LCE-98,XPT,XPT_CE_Sobral_02,Sobral,CE
+XPT-LCE-99,XPT,XPT_CE_Aracati,Aracati,CE
+XPT-LDN-01,XPT,XPT_CE_Limoeiro do Norte,Limoeiro do Norte,CE
+XPT-LEP-01,XPT,XPT_MG_Leopoldina,Leopoldina,MG
+XPT-LEP-02,XPT,XPT_MG_Leopoldina_02,Leopoldina,MG
+XPT-LES-91,XPT,XPT_ES_Alegre,Alegre,ES
+XPT-LES-92,XPT,XPT_ES_Nova Venécia,Nova Venécia,ES
+XPT-LES-93,XPT,XPT_ES_São Mateus,São Mateus,ES
+XPT-LES-94,XPT,XPT_ES_Afonso Cláudio,Afonso Cláudio,ES
+XPT-LES-95,XPT,XPT_ES_Linhares,Linhares,ES
+XPT-LGO-81,XPT,XPT_GO_Formosa_02,Formosa,GO
+XPT-LGO-82,XPT,XPT_GO_Iporá,Iporá,GO
+XPT-LGO-83,XPT,XPT_GO_Pires do Rio,Pires do Rio,GO
+XPT-LGO-84,XPT,XPT_GO_São Luís de Montes Belo,São Luís de Montes Belo,GO
+XPT-LGO-85,XPT,XPT_GO_Pontalina,Pontalina,GO
+XPT-LGO-86,XPT,XPT_GO_Palmeiras de Goiás,Palmeiras de Goiás,GO
+XPT-LGO-87,XPT,XPT_GO_Goiás - Itapuranga_02,Goiás - Itapuranga,GO
+XPT-LGO-88,XPT,XPT_GO_Itumbiara_02,Itumbiara,GO
+XPT-LGO-89,XPT,XPT_GO_Formosa,Formosa,GO
+XPT-LGO-90,XPT,XPT_GO_Luziânia_02,Luziânia,GO
+XPT-LGO-91,XPT,XPT_GO_Aragarças,Aragarças,GO
+XPT-LGO-92,XPT,XPT_GO_Goianésia_02,Goianésia,GO
+XPT-LGO-93,XPT,XPT_GO_Jataí-Mineiros_02,Jataí-Mineiros,GO
+XPT-LGO-95,XPT,XPT_GO_Águas Lindas Goiás_02,Águas Lindas Goiás,GO
+XPT-LGO-96,XPT,XPT_GO_Inhumas,Inhumas,GO
+XPT-LGO-97,XPT,XPT_GO_Caldas Novas,Caldas Novas,GO
+XPT-LGO-98,XPT,XPT_GO_Bom Jesus,Bom Jesus,GO
+XPT-LIP-01,XPT,XPT_SP_Lins,Lins,SP
+XPT-LIP-02,XPT,XPT_SP_Lins_02,Lins,SP
+XPT-LMG-110,XPT,XPT_MG_Abaeté,Abaeté,MG
+XPT-LMG-111,XPT,XPT_MG_Guanhães,Guanhães,MG
+XPT-LMG-112,XPT,XPT_MG_Piumhi,Piumhi,MG
+XPT-LMG-113,XPT,XPT_MG_São João del Rei_02,São João del Rei,MG
+XPT-LMG-114,XPT,XPT_MG_Alfenas_03,Alfenas,MG
+XPT-LMG-116,XPT,XPT_MG_Congonhas,Congonhas,MG
+XPT-LMG-118,XPT,XPT_MG_Conselheiro Lafaiete_02,Conselheiro Lafaiete,MG
+XPT-LMG-120,XPT,XPT_MG_Pouso Alegre_03,Pouso Alegre,MG
+XPT-LMG-122,XPT,XPT_MG_Araçuaí,Araçuaí,MG
+XPT-LMG-124,XPT,XPT_MG_Mantena,Mantena,MG
+XPT-LMG-125,XPT,XPT_MG_Aimorés - Resplendor,Aimorés - Resplendor,MG
+XPT-LMG-126,XPT,XPT_MG_Iturama,Iturama,MG
+XPT-LMG-127,XPT,XPT_MG_Frutal,Frutal,MG
+XPT-LMG-128,XPT,XPT_MG_São Lourenço_02,São Lourenço,MG
+XPT-LMG-130,XPT,XPT_MG_Passos_03,Passos,MG
+XPT-LMG-131,XPT,XPT_MG_Viçosa_02,Viçosa,MG
+XPT-LMG-132,XPT,XPT_MG_Pedra Azul,Pedra Azul,MG
+XPT-LMG-133,XPT,XPT_MG_Cambuí,Cambuí,MG
+XPT-LMG-134,XPT,XPT_MG_Itajubá_02,Itajubá,MG
+XPT-LMG-73,XPT,XPT_MG_Salinas,Salinas,MG
+XPT-LMG-74,XPT,XPT_MG_São João da Ponte,São João da Ponte,MG
+XPT-LMG-75,XPT,XPT_MG_São Francisco,São Francisco,MG
+XPT-LMG-76,XPT,XPT_MG_Januária,Januária,MG
+XPT-LMG-77,XPT,XPT_MG_Leopoldina_03,Leopoldina,MG
+XPT-LMG-78,XPT,XPT_MG_Poços de Caldas_03,Poços de Caldas,MG
+XPT-LMG-79,XPT,XPT_MG_Guaxupé_02,Guaxupé,MG
+XPT-LMG-80,XPT,XPT_MG_Paracatu_02,Paracatu,MG
+XPT-LMG-81,XPT,XPT_MG_Unaí_02,Unaí,MG
+XPT-LMG-82,XPT,XPT_MG_Ituiutaba,Ituiutaba,MG
+XPT-LMG-83,XPT,XPT_MG_Capelinha_02,Capelinha,MG
+XPT-LMG-84,XPT,XPT_MG_Pirapora,Pirapora,MG
+XPT-LMG-85,XPT,XPT_MG_Curvelo,Curvelo,MG
+XPT-LMG-86,XPT,XPT_MG_Almenara,Almenara,MG
+XPT-LMG-87,XPT,XPT_MG_Janaúba,Janaúba,MG
+XPT-LMG-88,XPT,XPT_MG_Diamantina,Diamantina,MG
+XPT-LMG-89,XPT,XPT_MG_Caratinga,Caratinga,MG
+XPT-LMG-90,XPT,XPT_MG_Pouso Alegre_02,Pouso Alegre,MG
+XPT-LMG-91,XPT,XPT_MG_Lavras_03,Lavras,MG
+XPT-LMG-92,XPT,XPT_MG_Conselheiro Lafaiete,Conselheiro Lafaiete,MG
+XPT-LMG-93,XPT,XPT_MG_São Gotardo,São Gotardo,MG
+XPT-LMG-94,XPT,XPT_MG_Patrocínio,Patrocínio,MG
+XPT-LMG-95,XPT,XPT_MG_Ouro Preto_02,Ouro Preto,MG
+XPT-LMG-96,XPT,XPT_MG_Itabira,Itabira,MG
+XPT-LMG-97,XPT,XPT_MG_Araxá,Araxá,MG
+XPT-LMG-98,XPT,XPT_MG_Ponte Nova,Ponte Nova,MG
+XPT-LMG-99,XPT,XPT_MG_João Monlevade,João Monlevade,MG
+XPT-LMS-90,XPT,XPT_MS_Campo Grande,Campo Grande,MS
+XPT-LMS-91,XPT,XPT_MS_Paranaíba,Paranaíba,MS
+XPT-LMT-90,XPT,XPT_MT_Barra do Garças,Barra do Garças,MT
+XPT-LMT-91,XPT,XPT_MT_Água Boa,Água Boa,MT
+XPT-LMT-92,XPT,XPT_MT_Rondonópolis_02,Rondonópolis,MT
+XPT-LMT-93,XPT,XPT_MT_Sorriso_02,Sorriso,MT
+XPT-LMT-94,XPT,XPT_MT_Sinop_02,Sinop,MT
+XPT-LMT-95,XPT,XPT_MT_Primavera do Leste_02,Primavera do Leste,MT
+XPT-LMT-96,XPT,XPT_MT_Sorriso_03,Sorriso,MT
+XPT-LOD-01,XPT,XPT_PR_Loanda,Loanda,PR
+XPT-LPB-90,XPT,XPT_PB_Patos,Patos,PB
+XPT-LPB-91,XPT,XPT_PB_Guarabira,Guarabira,PB
+XPT-LPB-92,XPT,XPT_PB_Itabaiana,Itabaiana,PB
+XPT-LPB-93,XPT,XPT_PB_Cajazeiras,Cajazeiras,PB
+XPT-LPB-94,XPT,XPT_PB_Taperoá,Taperoá,PB
+XPT-LPE-90,XPT,XPT_PE_Goiana,Goiana,PE
+XPT-LPE-91,XPT,XPT_PE_Vitória de Santo Antão,Vitória de Santo Antão,PE
+XPT-LPE-92,XPT,XPT_PE_Palmares_02,Palmares,PE
+XPT-LPE-93,XPT,XPT_PE_Arcoverde,Arcoverde,PE
+XPT-LPE-94,XPT,XPT_PE_Serra Talhada,Serra Talhada,PE
+XPT-LPE-95,XPT,XPT_PE_Salgueiro,Salgueiro,PE
+XPT-LPE-96,XPT,XPT_PE_Afogados da Ingazeira,Afogados da Ingazeira,PE
+XPT-LPI-99,XPT,XPT_PI_Parnaíba,Parnaíba,PI
+XPT-LPR-86,XPT,XPT_PR_Jaguariaíva,Jaguariaíva,PR
+XPT-LPR-87,XPT,XPT_PR_Centenário do Sul,Centenário do Sul,PR
+XPT-LPR-88,XPT,XPT_PR_Cornélio Procópio,Cornélio Procópio,PR
+XPT-LPR-89,XPT,XPT_PR_Ibaiti,Ibaiti,PR
+XPT-LPR-90,XPT,XPT_PR_Telêmaco Borba,Telêmaco Borba,PR
+XPT-LPR-91,XPT,XPT_PR_Francisco Beltrão,Francisco Beltrão,PR
+XPT-LPR-92,XPT,XPT_PR_União da Vitória,União da Vitória,PR
+XPT-LPR-93,XPT,XPT_PR_Paranavaí,Paranavaí,PR
+XPT-LPR-94,XPT,XPT_PR_Santo Antônio da Platina,Santo Antônio da Platina,PR
+XPT-LRJ-73,XPT,XPT_Rio de Janeiro_03,Rio de Janeiro,RJ
+XPT-LRJ-74,XPT,XPT_Rio de Janeiro_02,Rio de Janeiro,RJ
+XPT-LRJ-75,XPT,XPT_Rio de Janeiro_01,Rio de Janeiro,RJ
+XPT-LRJ-76,XPT,XPT_RJ_São João de Meriti_04,São João de Meriti,RJ
+XPT-LRJ-77,XPT,XPT_RJ_Rio - Bonsucesso_03,Rio - Bonsucesso,RJ
+XPT-LRJ-78,XPT,XPT_RJ_Rio - Bangu,Rio - Bangu,RJ
+XPT-LRJ-79,XPT,XPT_RJ_Guaratiba,Guaratiba,RJ
+XPT-LRJ-80,XPT,XPT_RJ_Japeri_02,Japeri,RJ
+XPT-LRJ-81,XPT,XPT_RJ_Nova Iguaçu_02,Nova Iguaçu,RJ
+XPT-LRJ-82,XPT,XPT_RJ_Queimados_02,Queimados,RJ
+XPT-LRJ-83,XPT,XPT_RJ_Rio - Belford Roxo_02,Rio - Belford Roxo,RJ
+XPT-LRJ-84,XPT,XPT_RJ_Belford Roxo_04,Belford Roxo,RJ
+XPT-LRJ-85,XPT,XPT_RJ_São João de Meriti_03,São João de Meriti,RJ
+XPT-LRJ-86,XPT,XPT_RJ_Itaguaí_02,Itaguaí,RJ
+XPT-LRJ-87,XPT,XPT_RJ_Rio - São Cristovão,Rio - São Cristovão,RJ
+XPT-LRJ-88,XPT,XPT_RJ_Jacarepaguá,Jacarepaguá,RJ
+XPT-LRJ-89,XPT,XPT_RJ_Itaperuna,Itaperuna,RJ
+XPT-LRJ-91,XPT,XPT_RJ_Rio - Penha_02,Rio - Penha,RJ
+XPT-LRJ-92,XPT,XPT_RJ_Angra dos Reis_02,Angra dos Reis,RJ
+XPT-LRJ-93,XPT,XPT_RJ_Teresópolis,Teresópolis,RJ
+XPT-LRJ-94,XPT,XPT_RJ_Saquarema,Saquarema,RJ
+XPT-LRJ-95,XPT,XPT_RJ_Duque de Caxias_03,Duque de Caxias,RJ
+XPT-LRJ-96,XPT,XPT_RJ_Santo Antônio de Pádua,Santo Antônio de Pádua,RJ
+XPT-LRJ-97,XPT,XPT_RJ_Três Rios,Três Rios,RJ
+XPT-LRJ-98,XPT,XPT_RJ_Valença-RJ_02,Valença-RJ,RJ
+XPT-LRJ-99,XPT,XPT_RJ_Rio - Pavuna_03,Rio - Pavuna,RJ
+XPT-LRN-90,XPT,XPT_RN_São Gonçalo do Amarante,São Gonçalo do Amarante,RN
+XPT-LRN-91,XPT,XPT_RN_Pau dos Ferros,Pau dos Ferros,RN
+XPT-LRN-92,XPT,XPT_RN_Açu,Açu,RN
+XPT-LRN-93,XPT,XPT_RN_Goianinha,Goianinha,RN
+XPT-LRN-94,XPT,XPT_RN_Caicó,Caicó,RN
+XPT-LRN-95,XPT,XPT_RN_Mossoró,Mossoró,RN
+XPT-LRS-01,XPT,XPT_ES_Linhares,Linhares,ES
+XPT-LRS-78,XPT,XPT_RS_Sobradinho,Sobradinho,RS
+XPT-LRS-79,XPT,XPT_RS_Soledade,Soledade,RS
+XPT-LRS-80,XPT,XPT_RS_Santa Vitória do Palmar,Santa Vitória do Palmar,RS
+XPT-LRS-81,XPT,XPT_RS_São Gabriel,São Gabriel,RS
+XPT-LRS-82,XPT,XPT_RS_Jaguarão,Jaguarão,RS
+XPT-LRS-83,XPT,XPT_RS_Cachoeira do Sul,Cachoeira do Sul,RS
+XPT-LRS-84,XPT,XPT_RS_Butiá,Butiá,RS
+XPT-LRS-86,XPT,XPT_RS_Uruguaiana,Uruguaiana,RS
+XPT-LRS-87,XPT,XPT_RS_Tapejara,Tapejara,RS
+XPT-LRS-88,XPT,XPT_RS_Torres,Torres,RS
+XPT-LRS-89,XPT,XPT_RS_Erechim_04,Erechim,RS
+XPT-LRS-90,XPT,XPT_RS_Pelotas_02,Pelotas,RS
+XPT-LRS-91,XPT,XPT_RS_Bento Gonçalves,Bento Gonçalves,RS
+XPT-LRS-92,XPT,XPT_RS_Camaquã,Camaquã,RS
+XPT-LRS-93,XPT,XPT_RS_Santa Cruz do Sul_02,Santa Cruz do Sul,RS
+XPT-LRS-94,XPT,XPT_RS_Ijuí_02,Ijuí,RS
+XPT-LRS-95,XPT,XPT_RS_Gramado,Gramado,RS
+XPT-LRS-96,XPT,XPT_RS_Frederico Westphalen,Frederico Westphalen,RS
+XPT-LRS-97,XPT,XPT_RS_Erechim_03,Erechim,RS
+XPT-LRS-98,XPT,XPT_RS_Bagé,Bagé,RS
+XPT-LRS-99,XPT,XPT_RS_Nova Prata - Guaporé,Nova Prata - Guaporé,RS
+XPT-LSC-87,XPT,XPT_SC_Xanxerê_02,Xanxerê,SC
+XPT-LSC-88,XPT,XPT_SC_Lages,Lages,SC
+XPT-LSC-89,XPT,XPT_SC_Xanxerê,Xanxerê,SC
+XPT-LSC-90,XPT,XPT_SC_Videira,Videira,SC
+XPT-LSC-91,XPT,XPT_SC_Caçador,Caçador,SC
+XPT-LSC-92,XPT,XPT_SC_Rio do Sul,Rio do Sul,SC
+XPT-LSC-93,XPT,XPT_SC_Concórdia,Concórdia,SC
+XPT-LSC-94,XPT,XPT_SC_São Miguel do Oeste_02,São Miguel do Oeste,SC
+XPT-LSC-96,XPT,XPT_SC_Modelo,Modelo,SC
+XPT-LSC-97,XPT,XPT_SC_Joaçaba - Herval d'Oeste,Joaçaba - Herval d'Oeste,SC
+XPT-LSC-98,XPT,XPT_SC_Mafra,Mafra,SC
+XPT-LSC-99,XPT,XPT_SC_São Bento do Sul,São Bento do Sul,SC
+XPT-LSE-89,XPT,XPT_SE_Itabaiana,Itabaiana,SE
+XPT-LSE-90,XPT,XPT_SE_Lagarto,Lagarto,SE
+XPT-LSE-91,XPT,XPT_SE_Estância,Estância,SE
+XPT-LSP-102,XPT,XPT_SP_Catanduva_02,Catanduva,SP
+XPT-LSP-108,XPT,XPT_SP_Jales,Jales,SP
+XPT-LSP-109,XPT,XPT_SP_Adamantina - Lucélia,Adamantina - Lucélia,SP
+XPT-LSP-124,XPT,XPT_SP_Mococa,Mococa,SP
+XPT-LSP-151,XPT,XPT_SP_Dracena,Dracena,SP
+XPT-LSP-152,XPT,XPT_SP_Lins_02,Lins,SP
+XPT-LSP-153,XPT,XPT_SP_Teodoro Sampaio,Teodoro Sampaio,SP
+XPT-LSP-85,XPT,XPT_SP_São João da Boa Vista,São João da Boa Vista,SP
+XPT-LSP-89,XPT,XPT_SP_Ubatuba,Ubatuba,SP
+XPT-LSP-90,XPT,XPT_SP_Caraguatatuba,Caraguatatuba,SP
+XPT-LSP-98,XPT,XPT_SP_Caraguatatuba_02,Caraguatatuba,SP
+XPT-LSP-99,XPT,XPT_SP_Grajaú,Grajaú,SP
+XPT-LSU-01,XPT,XPT_PR_Laranjeiras do Sul,Laranjeiras do Sul,PR
+XPT-LTO-01,XPT,XPT_SE_Lagarto,Lagarto,SE
+XPT-LVE-01,XPT,XPT_RS_Lagoa Vermelha,Lagoa Vermelha,RS
+XPT-LZA-01,XPT,XPT_GO_Luziânia,Luziânia,GO
+XPT-MAF-01,XPT,XPT_SC_Mafra,Mafra,SC
+XPT-MAG-01,XPT,XPT_RJ_Magé,Magé,RJ
+XPT-MCA-01,XPT,XPT_AP_Macapá,Macapá,AP
+XPT-MCA-02,XPT,XPT_AP_Macapá_02,Macapá,AP
+XPT-MCR-01,XPT,XPT_PR_Marechal Cândido Rondon,Marechal Cândido Rondon,PR
+XPT-MGG-01,XPT,XPT_SP_Mogi Guaçu,Mogi Guaçu,SP
+XPT-MGG-02,XPT,XPT_SP_Mogi Guaçu_02,Mogi Guaçu,SP
+XPT-MGO-01,XPT,XPT_AL_Maragogi,Maragogi,AL
+XPT-MLC-01,XPT,XPT_MG_Malacacheta,Malacacheta,MG
+XPT-MLC-02,XPT,XPT_MG_Malacacheta_02,Malacacheta,MG
+XPT-MNA-01,XPT,XPT_GO_Minaçu,Minaçu,GO
+XPT-MNM-01,XPT,XPT_MG_Morada Nova de Minas,Morada Nova de Minas,MG
+XPT-MNM-02,XPT,XPT_MG_Morada Nova de Minas_02,Morada Nova de Minas,MG
+XPT-MNT-01,XPT,XPT_TO_Miranorte,Miranorte,TO
+XPT-MOC-01,XPT,XPT_MG_Montes Claros,Montes Claros,MG
+XPT-MOD-01,XPT,XPT_SC_Modelo,Modelo,SC
+XPT-MOO-01,XPT,XPT_SP_Mococa,Mococa,SP
+XPT-MPR-01,XPT,XPT_AM_Manacapuru,Manacapuru,AM
+XPT-MRA-01,XPT,XPT_PA_Marabá,Marabá,PA
+XPT-MRC-01,XPT,XPT_RJ_Maricá,Maricá,RJ
+XPT-MRX-01,XPT,XPT_MA_Maracaçumé,Maracaçumé,MA
+XPT-MSJ-01,XPT,XPT_BA_Mata de São João,Mata de São João,BA
+XPT-MTN-01,XPT,XPT_MG_Mantena,Mantena,MG
+XPT-MUR-01,XPT,XPT_MG_Muriaé,Muriaé,MG
+XPT-MUR-02,XPT,XPT_MG_Muriaé_02,Muriaé,MG
+XPT-MVF-01,XPT,XPT_RN_Mossoró,Mossoró,RN
+XPT-NAD-01,XPT,XPT_MS_Nova Andradina,Nova Andradina,MS
+XPT-NAV-01,XPT,XPT_MS_Naviraí - Mundo Novo,Naviraí - Mundo Novo,MS
+XPT-NDP-01,XPT,XPT_MT_Campo Novo do Parecis,Campo Novo do Parecis,MT
+XPT-NDP-02,XPT,XPT_MT_Campo Novo do Parecis_02,Campo Novo do Parecis,MT
+XPT-NEO-01,XPT,XPT_SE_Neópolis,Neópolis,SE
+XPT-NFU-01,XPT,XPT_RJ_Nova Friburgo,Nova Friburgo,RJ
+XPT-NHZ-01,XPT,XPT_BA_Novo Horizonte,Novo Horizonte,BA
+XPT-NNU-01,XPT,XPT_MG_Nanuque,Nanuque,MG
+XPT-NPR-01,XPT,XPT_RS_Nova Prata - Guaporé,Nova Prata - Guaporé,RS
+XPT-NSG-01,XPT,XPT_SE_Itabaiana,Itabaiana,SE
+XPT-NVC-01,XPT,XPT_ES_Nova Venécia,Nova Venécia,ES
+XPT-OAL-01,XPT,XPT_RO_Cacoal,Cacoal,RO
+XPT-OLA-01,XPT,XPT_PE_Paulista (Olinda),Paulista (Olinda),PE
+XPT-OPO-01,XPT,XPT_MG_Ouro Preto,Ouro Preto,MG
+XPT-OPO-02,XPT,XPT_MG_Ouro Preto_02,Ouro Preto,MG
+XPT-OPS-01,XPT,XPT_MT_Sinop,Sinop,MT
+XPT-OPS-02,XPT,XPT_MT_Sinop_02,Sinop,MT
+XPT-OSO-01,XPT,XPT_RS_Tramandaí - Osório,Tramandaí - Osório,RS
+XPT-OUI-01,XPT,XPT_PE_Ouricuri,Ouricuri,PE
+XPT-OUS-01,XPT,XPT_SP_Ourinhos,Ourinhos,SP
+XPT-OUS-02,XPT,XPT_SP_Ourinhos_02,Ourinhos,SP
+XPT-PAB-01,XPT,XPT_PA_Parauapebas,Parauapebas,PA
+XPT-PAB-02,XPT,XPT_PA_Parauapebas_02,Parauapebas,PA
+XPT-PAD-01,XPT,XPT_MG_Padre Paraíso,Padre Paraíso,MG
+XPT-PAR-01,XPT,XPT_MG_Pouso Alegre,Pouso Alegre,MG
+XPT-PAR-02,XPT,XPT_MG_Pouso Alegre_02,Pouso Alegre,MG
+XPT-PAV-01,XPT,XPT_BA_Paulo Afonso,Paulo Afonso,BA
+XPT-PAZ-01,XPT,XPT_MG_Pedra Azul,Pedra Azul,MG
+XPT-PBB-01,XPT,XPT_MS_Paranaíba,Paranaíba,MS
+XPT-PCO-01,XPT,XPT_MG_Patrocínio,Patrocínio,MG
+XPT-PCS-01,XPT,XPT_PI_Picos,Picos,PI
+XPT-PCT-01,XPT,XPT_MG_Paracatu,Paracatu,MG
+XPT-PDF-01,XPT,XPT_SE_Porto da Folha,Porto da Folha,SE
+XPT-PDR-01,XPT,XPT_MA_Presidente Dutra,Presidente Dutra,MA
+XPT-PDR-02,XPT,XPT_MA_Presidente Dutra_02,Presidente Dutra,MA
+XPT-PDR-03,XPT,XPT_MA_Presidente Dutra_03,Presidente Dutra,MA
+XPT-PEL-01,XPT,XPT_MT_Pontes e Lacerda,Pontes e Lacerda,MT
+XPT-PEL-02,XPT,XPT_MT_Pontes e Lacerda_02,Pontes e Lacerda,MT
+XPT-PEN-01,XPT,XPT_AL_Penedo,Penedo,AL
+XPT-PET-01,XPT,XPT_RS_Pelotas,Pelotas,RS
+XPT-PET-02-X,XPT,XPT_RS_Pelotas_02,Pelotas,RS
+XPT-PFB-01,XPT,XPT_RS_Passo Fundo,Passo Fundo,RS
+XPT-PFB-02,XPT,XPT_RS_Passo Fundo_02,Passo Fundo,RS
+XPT-PGO-01,XPT,XPT_GO_Palmeiras de Goiás,Palmeiras de Goiás,GO
+XPT-PGZ-01,XPT,XPT_PR_Ponta Grossa,Ponta Grossa,PR
+XPT-PHB-01,XPT,XPT_PI_Parnaíba,Parnaíba,PI
+XPT-PHI-01,XPT,XPT_MG_Piumhi,Piumhi,MG
+XPT-PIL-01,XPT,XPT_MT_Primavera do Leste,Primavera do Leste,MT
+XPT-PIL-02,XPT,XPT_MT_Primavera do Leste_02,Primavera do Leste,MT
+XPT-PIO-01,XPT,XPT_MA_Pinheiro,Pinheiro,MA
+XPT-PIP-01,XPT,XPT_PI_Piripiri,Piripiri,PI
+XPT-PIV-01,XPT,XPT_MG_Pirapora,Pirapora,MG
+XPT-PIX-01,XPT,XPT_BA_Piatã,Piatã,BA
+XPT-PLA-01,XPT,XPT_PR_Palotina,Palotina,PR
+XPT-PLX-01,XPT,XPT_PI_Paulistana,Paulistana,PI
+XPT-PME-01,XPT,XPT_RS_Palmeira das Missões,Palmeira das Missões,RS
+XPT-PMG-01,XPT,XPT_MS_Ponta Porã,Ponta Porã,MS
+XPT-PMG-02,XPT,XPT_MS_Ponta Porã_02,Ponta Porã,MS
+XPT-PMS-01,XPT,XPT_PE_Palmares,Palmares,PE
+XPT-PMS-02,XPT,XPT_PE_Palmares_02,Palmares,PE
+XPT-PNB-01,XPT,XPT_TO_Porto Nacional,Porto Nacional,TO
+XPT-PNG-01,XPT,XPT_PR_Paranaguá,Paranaguá,PR
+XPT-PNO-01,XPT,XPT_MG_Ponte Nova,Ponte Nova,MG
+XPT-PNT-01,XPT,XPT_GO_Pontalina,Pontalina,GO
+XPT-POB-01,XPT,XPT_PB_Pombal,Pombal,PB
+XPT-POO-01,XPT,XPT_MG_Poços de Caldas,Poços de Caldas,MG
+XPT-POO-02,XPT,XPT_MG_Poços de Caldas_02,Poços de Caldas,MG
+XPT-POO-03,XPT,XPT_MG_Poços de Caldas_03,Poços de Caldas,MG
+XPT-POR-01,XPT,XPT_GO_Porangatu,Porangatu,GO
+XPT-POR-02,XPT,XPT_GO_Porangatu_02,Porangatu,GO
+XPT-PPE-01,XPT,XPT_SP_Presidente Prudente,Presidente Prudente,SP
+XPT-PSF-01,XPT,XPT_RN_Pau dos Ferros,Pau dos Ferros,RN
+XPT-PSR-01,XPT,XPT_GO_Pires do Rio,Pires do Rio,GO
+XPT-PSS-01,XPT,XPT_GO_Posse,Posse,GO
+XPT-PSW-01,XPT,XPT_MG_Passos,Passos,MG
+XPT-PSW-02,XPT,XPT_MG_Passos_02,Passos,MG
+XPT-PSW-03,XPT,XPT_MG_Passos_03,Passos,MG
+XPT-PTG-01,XPT,XPT_MT_Paranatinga,Paranatinga,MT
+XPT-PTI-01,XPT,XPT_TO_Paraíso do Tocantins,Paraíso do Tocantins,TO
+XPT-PTO-01,XPT,XPT_PR_Pato Branco,Pato Branco,PR
+XPT-PTS-01,XPT,XPT_PB_Patos,Patos,PB
+XPT-PVI-01,XPT,XPT_PR_Paranavaí,Paranavaí,PR
+XPT-QBR-01,XPT,XPT_CE_Barro,Barro,CE
+XPT-QBX-01,XPT,XPT_CE_Sobral,Sobral,CE
+XPT-QBX-02,XPT,XPT_CE_Sobral_02,Sobral,CE
+XPT-QCJ-01,XPT,XPT_SP_Botucatu,Botucatu,SP
+XPT-QCJ-02,XPT,XPT_SP_Botucatu_02,Botucatu,SP
+XPT-QDL-01,XPT,XPT_ES_Guarapari,Guarapari,ES
+XPT-QHB-01,XPT,XPT_SP_Piracicaba,Piracicaba,SP
+XPT-QHG-01,XPT,XPT_MG_Sete Lagoas,Sete Lagoas,MG
+XPT-QHT-01,XPT,XPT_RJ_Teresópolis,Teresópolis,RJ
+XPT-QLB-01,XPT,XPT_RS_Lajeado,Lajeado,RS
+XPT-QLB-02,XPT,XPT_RS_Lajeado_02,Lajeado,RS
+XPT-QPE-01,XPT,XPT_RJ_Petrópolis,Petrópolis,RJ
+XPT-QPO-01,XPT,XPT_GO_Quirinópolis,Quirinópolis,GO
+XPT-QRC-01,XPT,XPT_MT_Querência,Querência,MT
+XPT-QRP-01,XPT,XPT_RS_Gramado,Gramado,RS
+XPT-QRZ-01,XPT,XPT_RJ_Resende,Resende,RJ
+XPT-QXD-01,XPT,XPT_CE_Quixadá,Quixadá,CE
+XPT-RBO-01,XPT,XPT_RJ_Rio Bonito,Rio Bonito,RJ
+XPT-RDA-01,XPT,XPT_BA_Rio do Antônio,Rio do Antônio,BA
+XPT-RDR-01,XPT,XPT_MS_Ribas do Rio Pardo,Ribas do Rio Pardo,MS
+XPT-RDR-02,XPT,XPT_MS_Ribas do Rio Pardo_02,Ribas do Rio Pardo,MS
+XPT-RDR-03,XPT,XPT_MS_Ribas do Rio Pardo_03,Ribas do Rio Pardo,MS
+XPT-RED-01,XPT,XPT_CE_Redenção-Acarape,Redenção-Acarape,CE
+XPT-REO-01,XPT,XPT_PA_Redenção,Redenção,PA
+XPT-REO-02,XPT,XPT_PA_Redenção_02,Redenção,PA
+XPT-RGI-01,XPT,XPT_SP_Registro,Registro,SP
+XPT-RGI-02,XPT,XPT_SP_Registro_02,Registro,SP
+XPT-RJA-01,XPT,XPT_RJ_Rio - Bangu,Rio - Bangu,RJ
+XPT-RJB-01,XPT,XPT_RJ_Rio - Belford Roxo,Rio - Belford Roxo,RJ
+XPT-RJB-02,XPT,XPT_RJ_Rio - Belford Roxo_02,Rio - Belford Roxo,RJ
+XPT-RJB-03,XPT,XPT_RJ_Belford Roxo_03,Belford Roxo,RJ
+XPT-RJB-04,XPT,XPT_RJ_Belford Roxo_04,Belford Roxo,RJ
+XPT-RJC-01,XPT,XPT_RJ_Rio - São Cristovão,Rio - São Cristovão,RJ
+XPT-RJD-01,XPT,XPT_RJ_Rio - Duque de Caxias,Rio - Duque de Caxias,RJ
+XPT-RJD-02,XPT,XPT_RJ_Rio - Duque de Caxias_02,Rio - Duque de Caxias,RJ
+XPT-RJN-01,XPT,XPT_RJ_Rio - Nova Iguaçu,Rio - Nova Iguaçu,RJ
+XPT-RJN-02,XPT,XPT_RJ_Nova Iguaçu_02,Nova Iguaçu,RJ
+XPT-RJO-01,XPT,XPT_RJ_Rio - Bonsucesso,Rio - Bonsucesso,RJ
+XPT-RJO-02,XPT,XPT_RJ_Rio - Bonsucesso_02,Rio - Bonsucesso,RJ
+XPT-RJO-03,XPT,XPT_RJ_Rio - Bonsucesso_03,Rio - Bonsucesso,RJ
+XPT-RJP-01,XPT,XPT_RJ_Rio - Penha,Rio - Penha,RJ
+XPT-RJP-02,XPT,XPT_RJ_Rio - Penha_02,Rio - Penha,RJ
+XPT-RJQ-01,XPT,XPT_RJ_Rio - Queimados,Rio - Queimados,RJ
+XPT-RJQ-02,XPT,XPT_RJ_Queimados_02,Queimados,RJ
+XPT-RJS-01,XPT,XPT_RJ_Rio - São João do Meriti,Rio - São João do Meriti,RJ
+XPT-RJV-01,XPT,XPT_RJ_Rio - Pavuna,Rio - Pavuna,RJ
+XPT-RJV-02,XPT,XPT_RJ_Rio - Pavuna_02,Rio - Pavuna,RJ
+XPT-RJV-03,XPT,XPT_RJ_Rio - Pavuna_03,Rio - Pavuna,RJ
+XPT-RMA-01,XPT,XPT_BA_Remanso,Remanso,BA
+XPT-ROL-01,XPT,XPT_BA_Rio Real,Rio Real,BA
+XPT-ROO-01,XPT,XPT_MT_Rondonópolis,Rondonópolis,MT
+XPT-ROO-02,XPT,XPT_MT_Rondonópolis_02,Rondonópolis,MT
+XPT-RPM-01,XPT,XPT_BA_Ribeira do Pombal,Ribeira do Pombal,BA
+XPT-RSJ-02,XPT,XPT_RJ_São João de Meriti,São João de Meriti,RJ
+XPT-RSJ-03,XPT,XPT_RJ_São João de Meriti_03,São João de Meriti,RJ
+XPT-RSO-01,XPT,XPT_RS_Rosário do Sul,Rosário do Sul,RS
+XPT-RSS-01,XPT,XPT_MA_Rosário,Rosário,MA
+XPT-RSU-01,XPT,XPT_SC_Rio do Sul,Rio do Sul,SC
+XPT-RVD-01,XPT,XPT_GO_Rio Verde,Rio Verde,GO
+XPT-RVD-02,XPT,XPT_GO_Rio Verde_02,Rio Verde,GO
+XPT-RVD-03,XPT,XPT_GO_Rio Verde_03,Rio Verde,GO
+XPT-SAA-01,XPT,XPT_MG_Salinas,Salinas,MG
+XPT-SAZ-01,XPT,XPT_RN_São Gonçalo do Amarante,São Gonçalo do Amarante,RN
+XPT-SBE-01,XPT,XPT_CE_São Benedito,São Benedito,CE
+XPT-SBS-01,XPT,XPT_SC_São Bento do Sul,São Bento do Sul,SC
+XPT-SBV-01,XPT,XPT_SP_São João da Boa Vista,São João da Boa Vista,SP
+XPT-SDA-01,XPT,XPT_RS_Soledade,Soledade,RS
+XPT-SDM-01,XPT,XPT_AL_Santana do Ipanema,Santana do Ipanema,AL
+XPT-SDP-01,XPT,XPT_MG_São João da Ponte,São João da Ponte,MG
+XPT-SEB-01,XPT,XPT_BA_Seabra,Seabra,BA
+XPT-SEI-01,XPT,XPT_BA_Senhor do Bonfim,Senhor do Bonfim,BA
+XPT-SER-01,XPT,XPT_ES_Serra,Serra,ES
+XPT-SFA-01,XPT,XPT_RS_Santiago,Santiago,RS
+XPT-SFR-01,XPT,XPT_MG_São Francisco,São Francisco,MG
+XPT-SGA-01,XPT,XPT_RS_São Gabriel,São Gabriel,RS
+XPT-SGE-01,XPT,XPT_CE_São Gonçalo do Amarante,São Gonçalo do Amarante,CE
+XPT-SGO-01,XPT,XPT_MS_São Gabriel do Oeste,São Gabriel do Oeste,MS
+XPT-SGT-01,XPT,XPT_MG_São Gotardo,São Gotardo,MG
+XPT-SGU-01,XPT,XPT_PE_Salgueiro,Salgueiro,PE
+XPT-SHA-01,XPT,XPT_BA_Serrinha,Serrinha,BA
+XPT-SJI-01,XPT,XPT_MG_São João del Rei,São João del Rei,MG
+XPT-SJI-02,XPT,XPT_MG_São João del Rei_02,São João del Rei,MG
+XPT-SJP-01,XPT,XPT_SP_São José do Rio Preto,São José do Rio Preto,SP
+XPT-SJX-01,XPT,XPT_AL_São José da Tapera,São José da Tapera,AL
+XPT-SLC-01,XPT,XPT_MG_São Lourenço,São Lourenço,MG
+XPT-SLC-02,XPT,XPT_MG_São Lourenço_02,São Lourenço,MG
+XPT-SLZ-01,XPT,XPT_MA_São José de Ribamar,São José de Ribamar,MA
+XPT-SMB-01,XPT,XPT_GO_São Luís de Montes Belo,São Luís de Montes Belo,GO
+XPT-SMD-01,XPT,XPT_GO_São Miguel do Araguaia,São Miguel do Araguaia,GO
+XPT-SMO-01,XPT,XPT_SC_São Miguel do Oeste,São Miguel do Oeste,SC
+XPT-SMO-02,XPT,XPT_SC_São Miguel do Oeste_02,São Miguel do Oeste,SC
+XPT-SMT-01,XPT,XPT_ES_São Mateus,São Mateus,ES
+XPT-SMV-01,XPT,XPT_BA_Santa Maria da Vitória,Santa Maria da Vitória,BA
+XPT-SMX-01,XPT,XPT_PE_Santa Maria da Boa Vista,Santa Maria da Boa Vista,PE
+XPT-SMY-01,XPT,XPT_ES_Santa Maria de Jetibá,Santa Maria de Jetibá,ES
+XPT-SNZ-01,XPT,XPT_RN_Santa Cruz,Santa Cruz,RN
+XPT-SOB-01,XPT,XPT_RS_Sobradinho,Sobradinho,RS
+XPT-SOO-01,XPT,XPT_MT_Sorriso,Sorriso,MT
+XPT-SOO-02,XPT,XPT_MT_Sorriso_02,Sorriso,MT
+XPT-SPN-01,XPT,XPT_PR_Santo Antônio da Platina,Santo Antônio da Platina,PR
+XPT-SQR-01,XPT,XPT_RJ_Saquarema,Saquarema,RJ
+XPT-SRA-01,XPT,XPT_RS_Santa Rosa,Santa Rosa,RS
+XPT-SRG-01,XPT,XPT_GO_Santa Rita do Araguaia,Santa Rita do Araguaia,GO
+XPT-SRN-01,XPT,XPT_PI_São Raimundo Nonato,São Raimundo Nonato,PI
+XPT-STA-01,XPT,XPT_RJ_Santo Antônio de Pádua,Santo Antônio de Pádua,RJ
+XPT-STD-01,XPT,XPT_PE_Serra Talhada,Serra Talhada,PE
+XPT-STI-01,XPT,XPT_MA_Santa Inês,Santa Inês,MA
+XPT-STM-01,XPT,XPT_PA_Santarém,Santarém,PA
+XPT-STS-01,XPT,XPT_BA_Sento Sé,Sento Sé,BA
+XPT-SVP-01,XPT,XPT_RS_Santa Vitória do Palmar,Santa Vitória do Palmar,RS
+XPT-SXX-01,XPT,XPT_MA_São João dos Patos,São João dos Patos,MA
+XPT-SZG-01,XPT,XPT_RS_São Luiz Gonzaga,São Luiz Gonzaga,RS
+XPT-SZG-02,XPT,XPT_RS_São Luis Gonzaga_02,São Luis Gonzaga,RS
+XPT-TAT-01,XPT,XPT_SP_Tatuí,Tatuí,SP
+XPT-TAT-02,XPT,XPT_SP_Tatuí_02,Tatuí,SP
+XPT-TAU-01,XPT,XPT_CE_Tauá,Tauá,CE
+XPT-TBA-01,XPT,XPT_SP_,,SP
+XPT-TCO-01,XPT,XPT_BA_Trancoso,Trancoso,BA
+XPT-TEC-01,XPT,XPT_PR_Telêmaco Borba,Telêmaco Borba,PR
+XPT-TEM-01,XPT,XPT_MG_Monte Carmelo,Monte Carmelo,MG
+XPT-TGQ-01,XPT,XPT_MT_Tangará da Serra,Tangará da Serra,MT
+XPT-TGQ-02,XPT,XPT_MT_Tangará da Serra_02,Tangará da Serra,MT
+XPT-TLD-01,XPT,XPT_PA_Tailandia,Tailandia,PA
+XPT-TLG-01,XPT,XPT_MS_Três Lagoas,Três Lagoas,MS
+XPT-TLZ-01,XPT,XPT_GO_Catalão,Catalão,GO
+XPT-TOA-01,XPT,XPT_PB_Taperoá,Taperoá,PB
+XPT-TOR-01,XPT,XPT_RS_Torres,Torres,RS
+XPT-TOW-01,XPT,XPT_PR_Toledo,Toledo,PR
+XPT-TOX-01,XPT,XPT_PA_Tomé-Açu,Tomé-Açu,PA
+XPT-TPJ-01,XPT,XPT_RS_Tapejara,Tapejara,RS
+XPT-TPS-01,XPT,XPT_RS_Três Passos,Três Passos,RS
+XPT-TRS-01,XPT,XPT_RJ_Três Rios,Três Rios,RJ
+XPT-TSO-01,XPT,XPT_SP_Teodoro Sampaio,Teodoro Sampaio,SP
+XPT-TUB-01,XPT,XPT_SC_Tubarão,Tubarão,SC
+XPT-TUB-02,XPT,XPT_SC_Tubarão_02,Tubarão,SC
+XPT-TUB-03,XPT,XPT_SC_Tubarão_03,Tubarão,SC
+XPT-TUP-01,XPT,XPT_SP_Tupã,Tupã,SP
+XPT-TXF-01,XPT,XPT_BA_Teixeira de Freitas,Teixeira de Freitas,BA
+XPT-TXF-02,XPT,XPT_BA_Teixeira de Freitas_02,Teixeira de Freitas,BA
+XPT-TXF-03,XPT,XPT_BA_Teixeira de Freitas_03,Teixeira de Freitas,BA
+XPT-UAU-01,XPT,XPT_BA_Uauá,Uauá,BA
+XPT-UBA-01,XPT,XPT_MG_Ubá,Ubá,MG
+XPT-UBQ-02,XPT,XPT_MG_Ubá_02,Ubá,MG
+XPT-UDI-01,XPT,XPT_MG_Uberlândia,Uberlândia,MG
+XPT-UNI-01,XPT,XPT_MG_Unaí,Unaí,MG
+XPT-UNI-02,XPT,XPT_MG_Unaí_02,Unaí,MG
+XPT-UNV-01,XPT,XPT_PR_União da Vitória,União da Vitória,PR
+XPT-UPA-01,XPT,XPT_AL_União dos Palmares,União dos Palmares,AL
+XPT-URC-01,XPT,XPT_MG_Urucuia,Urucuia,MG
+XPT-URG-01,XPT,XPT_RS_Uruguaiana,Uruguaiana,RS
+XPT-URU-01,XPT,XPT_GO_Uruaçu - Niquelândia,Uruaçu - Niquelândia,GO
+XPT-URX-01,XPT,XPT_PI_Uruçuí,Uruçuí,PI
+XPT-VAC-01,XPT,XPT_RS_Vacaria,Vacaria,RS
+XPT-VAL-01,XPT,XPT_BA_Valença-BA,Valença-BA,BA
+XPT-VAL-02,XPT,XPT_BA_Valença_02,Valença,BA
+XPT-VDP-01,XPT,XPT_PI_Valença do Piauí,Valença do Piauí,PI
+XPT-VDS-01,XPT,XPT_PE_Vitória de Santo Antão,Vitória de Santo Antão,PE
+XPT-VIA-01-X,XPT,XPT_SC_Videira,Videira,SC
+XPT-VIS-01,XPT,XPT_MG_Viçosa,Viçosa,MG
+XPT-VIS-02,XPT,XPT_MG_Viçosa_02,Viçosa,MG
+XPT-VLA-01,XPT,XPT_RJ_Valença-RJ,Valença-RJ,RJ
+XPT-VLA-02,XPT,XPT_RJ_Valença-RJ_02,Valença-RJ,RJ
+XPT-VNA-01,XPT,XPT_MA_Viana,Viana,MA
+XPT-VOT-01,XPT,XPT_SP_Votuporanga,Votuporanga,SP
+XPT-XAX-01,XPT,XPT_SC_Xanxerê,Xanxerê,SC
+XPT-XQI-01,XPT,XPT_BA_Xique-Xique,Xique-Xique,BA
+XPT-YPU-01,XPT,XPT_BA_Ipupiara,Ipupiara,BA
+XPT-YTP-01,XPT,XPT_PB_Itaporanga,Itaporanga,PB
+XPT-ZDC-01,XPT,XPT_MA_Zé Doca,Zé Doca,MA
+XPT-ZHO-01,XPT,XPT_RS_Carazinho,Carazinho,RS
+XPT-ZHO-02,XPT,XPT_RS_Carazinho_02,Carazinho,RS
+XPT-ZHO-03,XPT,XPT_RS_Carazinho_03,Carazinho,RS

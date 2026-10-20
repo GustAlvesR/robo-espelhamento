@@ -13,6 +13,8 @@ Princípios:
 - Qualquer falha aqui NÃO derruba o ciclo do robô.
 """
 
+import csv
+import functools
 import json
 import logging
 import math
@@ -379,6 +381,28 @@ def sincronizar_estacoes(geo: GeoTomTom, spreadsheet, nomes_por_codigo: dict) ->
     return coords
 
 
+ARQUIVO_CADASTRO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dados", "estacoes_shopee.csv")
+
+
+@functools.lru_cache(maxsize=1)
+def cadastro_estacoes() -> dict:
+    """{codigo: (nome, cidade, uf)} da planilha de endereços da Shopee
+    (gerado por importar_estacoes.py)."""
+    try:
+        with open(ARQUIVO_CADASTRO, encoding="utf-8", newline="") as f:
+            return {l["codigo"].strip().upper(): (l["nome"].strip(), l["cidade"].strip(), l["uf"].strip())
+                    for l in csv.DictReader(f) if l["codigo"].strip()}
+    except OSError:
+        logging.warning("Cadastro de estações %s não encontrado; siglas sem cidade.", ARQUIVO_CADASTRO)
+        return {}
+
+
+def local_estacao(codigo) -> str:
+    """'Betim/MG' para SOC-MG2; vazio se a sigla não estiver no cadastro."""
+    _nome, cidade, uf = cadastro_estacoes().get(str(codigo or "").strip().upper(), ("", "", ""))
+    return f"{cidade}/{uf}" if cidade and uf else cidade or uf
+
+
 def tipo_estacao(codigo: str) -> str:
     return {"HUB": "HUB", "FMH": "FM HUB", "SOC": "SOC"}.get(codigo.split("-", 1)[0], "Outros")
 
@@ -398,8 +422,9 @@ def ler_estacoes_mapa(spreadsheet) -> list:
 
 
 def estacoes_para_mapa(coords: dict, nomes: dict) -> list:
-    return [{"codigo": c, "nome": nomes.get(c, ""), "tipo": tipo_estacao(c),
-             "lat": round(lat, 6), "lon": round(lon, 6)}
+    cadastro = cadastro_estacoes()
+    return [{"codigo": c, "nome": nomes.get(c) or cadastro.get(c, ("",))[0], "local": local_estacao(c),
+             "tipo": tipo_estacao(c), "lat": round(lat, 6), "lon": round(lon, 6)}
             for c, (lat, lon) in sorted(coords.items())]
 
 
