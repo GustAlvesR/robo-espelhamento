@@ -1104,19 +1104,23 @@ def write_results(client: gspread.Client, resultados: list) -> None:
     ws.update(values=linhas, range_name="A1")
 
 
-def _preparar_cabecalho(ws, cabecalho: list) -> None:
-    garantir_colunas(ws, len(cabecalho))
-    atual = ws.row_values(1)
+def _preparar_cabecalho(ws, cabecalho: list) -> list:
+    """Devolve o cabeçalho com que as linhas devem ser gravadas: o que já está na
+    aba, com as colunas que faltam no fim. As linhas são montadas por nome de
+    coluna, então a ordem em que o robô monta o resultado não importa."""
+    atual = [c for c in ws.row_values(1)]
+    while atual and not atual[-1].strip():
+        atual.pop()
     if not atual:
+        garantir_colunas(ws, len(cabecalho))
         ws.append_row(cabecalho, value_input_option="USER_ENTERED")
-    elif atual != cabecalho:
-        if cabecalho[:len(atual)] == atual:
-            # Cabeçalho antigo (menos colunas): completa. Linhas antigas ficam
-            # com as colunas novas em branco.
-            ws.update(values=[cabecalho], range_name="A1")
-        else:
-            logging.warning("Cabeçalho da aba '%s' diferente do esperado; não foi alterado. "
-                            "Esperado: %s", ws.title, cabecalho)
+        return list(cabecalho)
+    final = atual + [c for c in cabecalho if c not in atual]
+    if final != atual:
+        garantir_colunas(ws, len(final))
+        ws.update(values=[final], range_name="A1")
+        logging.info("Aba '%s': coluna(s) nova(s) no fim: %s", ws.title, final[len(atual):])
+    return final
 
 
 def _texto(v):
@@ -1146,21 +1150,21 @@ def append_events(client: gspread.Client, eventos: list) -> None:
                          if c != "Trip Number" and c not in titulos_extra]
     cabecalho = (["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"]
                  + titulos_extra + colunas_resultado)
-    _preparar_cabecalho(ws, cabecalho)
+    cabecalho = _preparar_cabecalho(ws, cabecalho)
 
     linhas = []
     for ev in eventos:
         duracao = ev["duracao_segundos"]
-        duracao_fmt = seconds_to_hhmm(duracao) if duracao != "" else ""
         snap = ev.get("resultado") or {}
-        linhas.append([
-            _fmt(_parse_iso(ev["timestamp_deteccao"])),
-            ev["trip_number"],
-            ev["evento"],
-            duracao_fmt,
-            *[_texto(ev.get(titulo)) for titulo in titulos_extra],
-            *[_texto(snap.get(c, "")) for c in colunas_resultado],
-        ])
+        valores = {
+            **{c: snap.get(c, "") for c in colunas_resultado},
+            **{titulo: ev.get(titulo) for titulo in titulos_extra},
+            "Data/Hora Detecção": _fmt(_parse_iso(ev["timestamp_deteccao"])),
+            "Trip Number": ev["trip_number"],
+            "Evento": ev["evento"],
+            "Duração da Queda": seconds_to_hhmm(duracao) if duracao != "" else "",
+        }
+        linhas.append([_texto(valores.get(c, "")) for c in cabecalho])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
 
 
@@ -1201,7 +1205,10 @@ def fechar_rotas(state: dict, resultados: list, finalizados: list, now: datetime
         visto = _parse_iso(dados.get("last_seen"))
         if (trip not in ativos and not dados.get("fechada_em") and dados.get("ultimo_resultado")
                 and visto and visto < limite):
-            fechadas.append(_fechar(dados, finais.get(trip) or dados["ultimo_resultado"], now, "Saiu da Telemetria"))
+            # O último retrato tem as colunas de rastreamento e TomTom; o finalizado,
+            # a janela fechada na chegada. Vale o finalizado por cima do retrato.
+            retrato = {**dados["ultimo_resultado"], **finais.get(trip, {})}
+            fechadas.append(_fechar(dados, retrato, now, "Saiu da Telemetria"))
     return [f for f in fechadas if f]
 
 
@@ -1213,7 +1220,7 @@ def append_fechamentos(client: gspread.Client, fechadas: list) -> None:
     cabecalho = list(fechadas[0].keys())
     for f in fechadas[1:]:
         cabecalho += [c for c in f if c not in cabecalho]
-    _preparar_cabecalho(ws, cabecalho)
+    cabecalho = _preparar_cabecalho(ws, cabecalho)
     ws.append_rows([[_texto(f.get(c, "")) for c in cabecalho] for f in fechadas],
                    value_input_option="USER_ENTERED")
 
