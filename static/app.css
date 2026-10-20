@@ -64,7 +64,7 @@ button, input, select { font: inherit; color: inherit; }
 .painel { display: grid; grid-template-columns: 380px 1fr; flex: 1; min-height: 0; }
 .lateral { border-right: 1px solid var(--linha); background: var(--painel); display: flex; flex-direction: column; min-height: 0; }
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; border-bottom: 1px solid var(--linha); }
-.filtros input { grid-column: 1 / -1; }
+.filtros input, .filtros #fTrecho { grid-column: 1 / -1; }
 .filtros input, .filtros select { padding: 7px 9px; border: 1px solid var(--linha); border-radius: 6px; background: var(--painel); width: 100%; }
 .acoes { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;
   border-bottom: 1px solid var(--linha); color: var(--suave); font-size: 12px; background: var(--painel-2); }

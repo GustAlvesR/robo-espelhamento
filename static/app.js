@@ -16,7 +16,6 @@ const fundo = L.tileLayer(urlTiles(), {
   maxZoom: 18, attribution: "© TomTom",
 }).addTo(mapa);
 
-const camadaRotas = L.layerGroup().addTo(mapa);
 const camadaVeiculos = L.layerGroup().addTo(mapa);
 const camadaSel = L.layerGroup().addTo(mapa);
 
@@ -137,7 +136,7 @@ function desenharEstacoes() {
       pane: "estacoes", keyboard: false,
       icon: L.divIcon({ className: `estacao ${CLASSE_ESTACAO[e.tipo] || "outra"}`, html: "<span></span>",
         iconSize: [14, 14], iconAnchor: [7, 7] }),
-    }).bindTooltip(escHtml(e.nome ? `${e.codigo} · ${e.nome}` : e.codigo)).addTo(camadaEstacoes);
+    }).bindTooltip(escHtml([e.codigo, e.local || e.nome].filter(Boolean).join(" · "))).addTo(camadaEstacoes);
   }
 }
 
@@ -207,16 +206,52 @@ function idade(min) {
   return h < 48 ? `${h}h${String(min % 60).padStart(2, "0")}` : `${Math.floor(h / 24)} dias`;
 }
 
+const trechoDe = (r) => `${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`;
+const estacaoComLocal = (codigo, local) => (local ? `${codigo || "?"} (${local})` : codigo || "?");
+
+function rotuloTrecho(r) {
+  const o = r._origem_local, d = r._destino_local;
+  return o || d ? `${o || r["Origin Station Code"] || "?"} → ${d || r["Destination Station Code"] || "?"} · ${trechoDe(r)}`
+    : trechoDe(r);
+}
+
+// Opções de trecho saem das rotas carregadas. Só remonta quando o conjunto muda,
+// para não fechar a lista aberta a cada atualização.
+let assinaturaTrechos = "";
+let trechoPendente = "";
+function desenharTrechos() {
+  const sel = document.getElementById("fTrecho");
+  const cont = new Map();
+  for (const r of dados) {
+    const k = trechoDe(r);
+    if (!cont.has(k)) cont.set(k, { rotulo: rotuloTrecho(r), n: 0 });
+    cont.get(k).n += 1;
+  }
+  const itens = [...cont.entries()].sort((a, b) => a[1].rotulo.localeCompare(b[1].rotulo, "pt-BR"));
+  const assinatura = itens.map(([k, v]) => `${k}:${v.n}`).join("|");
+  const desejado = trechoPendente || sel.value;
+  trechoPendente = "";
+  if (assinatura !== assinaturaTrechos) {
+    assinaturaTrechos = assinatura;
+    sel.replaceChildren(el("option", { value: "" }, "Trecho: todos"),
+      ...itens.map(([k, v]) => el("option", { value: k }, `${v.rotulo} (${v.n})`)));
+  }
+  sel.value = cont.has(desejado) ? desejado : "";
+}
+
 function filtrar() {
   const q = document.getElementById("busca").value.trim().toUpperCase();
   const fs = document.getElementById("fStatus").value;
   const fr = document.getElementById("fRisco").value;
+  const ft = document.getElementById("fTrecho").value;
   return dados.filter((r) => {
     if (semSinal && (r["Espelhamento Atual"] !== "NOK" || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
+    if (ft && trechoDe(r) !== ft) return false;
     if (!q) return true;
-    return ["Trip Number", "Placa", "Placa 2", "Origin Station Code", "Destination Station Code", "Cidade/UF"]
+    return ["Trip Number", "Placa", "Placa 2", "Origin Station Code", "Destination Station Code", "Cidade/UF",
+      "_origem_local", "_destino_local"]
       .some((c) => String(r[c] || "").toUpperCase().includes(q));
   }).sort((a, b) => gravidade(a) - gravidade(b));
 }
@@ -271,9 +306,9 @@ function desenharLista(lista) {
   }));
 }
 
-// Com uma rota selecionada, só ela fica no mapa.
+// Com uma rota selecionada, só ela fica no mapa. O trajeto só aparece na rota
+// selecionada: desenhado para todas, os trechos repetidos viravam uma faixa.
 function desenharMapa(lista) {
-  camadaRotas.clearLayers();
   camadaVeiculos.clearLayers();
   document.getElementById("verTodos").hidden = !selecionada;
   const visiveis = selecionada ? dados.filter((r) => r["Trip Number"] === selecionada)
@@ -282,12 +317,6 @@ function desenharMapa(lista) {
   for (const r of visiveis) {
     const g = r._geo || {};
     const cor = corCss(COR[statusDe(r)] || COR.Pendente);
-    if (!selecionada && g.pontos && g.pontos.length) {
-      L.polyline(g.pontos, {
-        color: cor, weight: 2, opacity: 0.35, dashArray: aguardandoInicio(r) ? "4 6" : null,
-        bubblingMouseEvents: false,
-      }).addTo(camadaRotas).on("click", () => selecionar(r["Trip Number"]));
-    }
     const ponto = g.veiculo || g.origem;
     if (!ponto) continue;
     limites.push(ponto);
@@ -339,7 +368,8 @@ function desenharDetalhe() {
       ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
       ...linha("Cancelamento", r["Cancelamento"]),
       ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
-      ...linha("Trecho", `${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`),
+      ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
+      ...linha("Destino", estacaoComLocal(r["Destination Station Code"], r._destino_local)),
       ...linha("Início previsto", r["Início Previsto"]),
       ...linha("Fim previsto", r["Fim Previsto"]),
     ),
@@ -461,6 +491,7 @@ function exportarCsv() {
 }
 
 function render() {
+  desenharTrechos();
   const lista = filtrar();
   desenharKpis();
   desenharLista(lista);
@@ -513,6 +544,7 @@ function salvarVisao() {
       busca: document.getElementById("busca").value,
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
+      fTrecho: document.getElementById("fTrecho").value,
       estacoes: [...tiposLigados],
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
@@ -528,6 +560,7 @@ function restaurarVisao() {
     semSinal = !!v.semSinal;
     for (const id of ["busca", "fStatus", "fRisco"]) document.getElementById(id).value = v[id] || "";
     for (const t of v.estacoes || []) if (CLASSE_ESTACAO[t]) tiposLigados.add(t);
+    trechoPendente = v.fTrecho || "";
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -576,7 +609,7 @@ seletorTema.addEventListener("change", () => {
   aplicarTema();
 });
 
-for (const id of ["busca", "fStatus", "fRisco"]) {
+for (const id of ["busca", "fStatus", "fRisco", "fTrecho"]) {
   document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });
 }
 restaurarVisao();

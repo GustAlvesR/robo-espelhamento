@@ -84,13 +84,21 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 
 ## Uso do mapa
 
-- Clicar num caminhão, numa rota ou num item da lista isola aquela rota. Para voltar:
+- O trajeto previsto só aparece na rota selecionada. Clicar num caminhão ou num item da
+  lista isola aquela rota e mostra o trajeto. Para voltar:
   botão "Ver todos", clique numa área vazia do mapa ou tecla Esc.
 - Rota isolada: tracejado = viagem não iniciada; cinza = trecho já percorrido; azul =
   falta percorrer. O "percorrido" é o trajeto previsto cortado no ponto mais próximo do
   caminhão (não há histórico de posições); com o caminhão a mais de 30 km do trajeto,
   o corte não é feito.
 - A lista vem por gravidade: sem sinal agora, NOK, atraso provável e o resto.
+- Filtro "Trecho": lista os pares origem → destino das rotas carregadas, com a cidade
+  de cada sigla (ex.: Betim/MG → Recife/PE · SOC-MG2 → SOC-PE4) e quantas rotas há em
+  cada um. A busca também aceita o nome da cidade.
+- As cidades vêm de `dados/estacoes_shopee.csv`, gerado da planilha de endereços da
+  Shopee. Quando a planilha mudar: `pip install openpyxl`, depois
+  `python importar_estacoes.py "Endereços e CNPJ.xlsx"` e commit do CSV. Endereço e
+  CNPJ não entram no arquivo.
 - Botão "Estações" no canto do mapa: mostra os HUBs (last mile, códigos `HUB-`),
   FM HUBs (`FMH-`), SOCs (`SOC-`) e as outras estações da aba `Estacoes` que têm
   latitude e longitude. Começa tudo desligado. A lista vem dentro da página, como
