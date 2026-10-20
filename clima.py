@@ -9,7 +9,9 @@ começam nas próximas horas). Falha aqui nunca derruba o ciclo do robô."""
 import logging
 import os
 import threading
+import time
 import unicodedata
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -20,6 +22,10 @@ INMET_ATUALIZAR_MIN = int(os.getenv("INMET_ATUALIZAR_MIN", "30"))
 # Aviso que começa dentro disto já é mostrado (a rota pode chegar lá nesse período).
 INMET_ANTECEDENCIA_H = int(os.getenv("INMET_ANTECEDENCIA_H", "12"))
 EVENTOS_CHUVA = ("CHUVA", "TEMPESTADE", "TEMPORAL")
+# Feed que falha (conexão derrubada pelo servidor do INMET, por exemplo) é tentado
+# de novo no mesmo ciclo e, se continuar falhando, no ciclo seguinte.
+INMET_RETENTATIVA_MIN = int(os.getenv("INMET_RETENTATIVA_MIN", "5"))
+ESPERAS_RETENTATIVA_S = (2, 6)
 # Avisos novos lidos por ciclo: o resto fica para o próximo (o primeiro ciclo não trava).
 INMET_MAX_NOVOS_POR_CICLO = int(os.getenv("INMET_MAX_NOVOS_POR_CICLO", "40"))
 MAX_VERTICES = 150
@@ -143,13 +149,28 @@ def _dentro(lat, lon, poli) -> bool:
 
 
 class AlertasInmet:
-    def __init__(self, http_get=None):
+    def __init__(self, http_get=None, dormir=time.sleep):
         self._http_get = http_get or self._http_get_real
+        self._dormir = dormir
         self._lock = threading.Lock()
         self._caps = {}          # link -> avisos já lidos (aviso publicado não muda)
-        self._atualizado_em = None
+        self._proxima = None     # próxima leitura do feed
         self.avisos = []         # avisos de chuva vigentes, com polígono e caixa
+        self.lido_em = None      # última leitura do feed que deu certo
         self.ultimo_erro = ""
+
+    def _baixar(self, url: str, esperas=ESPERAS_RETENTATIVA_S) -> str:
+        """Tenta de novo em falha de rede e erro 5xx/429; outro erro HTTP não adianta repetir."""
+        for espera in (*esperas, None):
+            try:
+                return self._http_get(url)
+            except urllib.error.HTTPError as e:
+                if e.code != 429 and e.code < 500 or espera is None:
+                    raise
+            except (OSError, TimeoutError):
+                if espera is None:
+                    raise
+            self._dormir(espera)
 
     @staticmethod
     def _http_get_real(url: str) -> str:
@@ -159,15 +180,18 @@ class AlertasInmet:
             return r.read().decode("utf-8", errors="replace")
 
     def atualizar(self, now: datetime) -> list:
-        if self._atualizado_em and now - self._atualizado_em < timedelta(minutes=INMET_ATUALIZAR_MIN):
+        # Com o feed fora do ar, continua valendo a última leitura, menos o que já venceu.
+        self.avisos = [a for a in self.avisos if not a["fim"] or a["fim"] >= now]
+        if self._proxima and now < self._proxima:
             return self.avisos
         with self._lock:
             try:
-                itens = ler_rss(self._http_get(INMET_RSS_URL))
+                itens = ler_rss(self._baixar(INMET_RSS_URL))
             except Exception as e:
-                self.ultimo_erro = f"RSS do INMET: {type(e).__name__}: {e}"[:200]
-                logging.warning("INMET: falha ao ler o feed (%s).", self.ultimo_erro)
-                self._atualizado_em = now  # não insiste a cada ciclo
+                self.ultimo_erro = f"{type(e).__name__}: {e}"[:200]
+                logging.warning("INMET: falha ao ler o feed (%s); segue a leitura de %s, nova tentativa em %s min.",
+                                self.ultimo_erro, _fmt(self.lido_em) or "nenhuma", INMET_RETENTATIVA_MIN)
+                self._proxima = now + timedelta(minutes=INMET_RETENTATIVA_MIN)
                 return self.avisos
             vigentes, falhas, novos = [], 0, 0
             for titulo, link in itens:
@@ -179,7 +203,7 @@ class AlertasInmet:
                         continue
                     novos += 1
                     try:
-                        self._caps[link] = ler_cap(self._http_get(link))
+                        self._caps[link] = ler_cap(self._baixar(link, esperas=(2,)))
                     except Exception as e:
                         falhas += 1
                         if falhas <= 2:
@@ -199,7 +223,8 @@ class AlertasInmet:
                                          "caixa": (min(lats), max(lats), min(lons), max(lons))})
             ativos = {link for _t, link in itens}
             self._caps = {k: v for k, v in self._caps.items() if k in ativos}
-            self.avisos, self._atualizado_em, self.ultimo_erro = vigentes, now, ""
+            self.avisos, self.lido_em, self.ultimo_erro = vigentes, now, ""
+            self._proxima = now + timedelta(minutes=INMET_ATUALIZAR_MIN)
             logging.info("INMET: %s aviso(s) no feed, %s área(s) de chuva vigente(s), %s não lido(s).",
                          len(itens), len(vigentes), falhas)
             return vigentes

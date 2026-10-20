@@ -156,5 +156,9 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   Se aparecer `INMET: falha ao ler o feed`, o motivo vem junto (alguns serviços do governo
   bloqueiam acessos de fora do Brasil, e o Render não tem servidor no Brasil). O resto do
   robô segue funcionando.
+- Falha momentânea do INMET (conexão derrubada, servidor fora do ar): o robô tenta de
+  novo na hora (2 e 6 segundos depois) e, se continuar falhando, a cada 5 minutos
+  (`INMET_RETENTATIVA_MIN`). Enquanto isso, valem os alertas da última leitura boa,
+  menos os que já venceram. A camada do mapa mostra de quando é a leitura.
 - Variáveis opcionais: `INMET_ATIVO=0` desliga; `INMET_ATUALIZAR_MIN` (30),
   `INMET_ANTECEDENCIA_H` (12), `INMET_MAX_NOVOS_POR_CICLO` (40), `INMET_RSS_URL`.

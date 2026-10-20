@@ -1370,6 +1370,7 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
         "geo": geo_por_trip,
         "clima": CLIMA.para_mapa() if INMET_ATIVO else [],
         "clima_erro": CLIMA.ultimo_erro if INMET_ATIVO else "",
+        "clima_lido_em": _fmt(CLIMA.lido_em) if INMET_ATIVO else "",
         "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
     }
 

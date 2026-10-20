@@ -154,15 +154,18 @@ mapa.createPane("clima").style.zIndex = 380;
 const camadaClima = L.layerGroup().addTo(mapa);
 let alertasClima = [];
 let erroClima = "";
+let climaLidoEm = "";
 let climaLigado = false;
 
 function desenharClima() {
   camadaClima.clearLayers();
   const aviso = document.getElementById("avisoClima");
   if (aviso) {
+    const lido = climaLidoEm ? ` Leitura do INMET de ${climaLidoEm.slice(0, 16)}.` : "";
     aviso.textContent = !climaLigado ? ""
-      : erroClima ? `INMET indisponível agora (${erroClima}).`
-      : alertasClima.length ? "" : "Nenhum alerta de chuva vigente.";
+      : erroClima && climaLidoEm ? `A última consulta ao INMET falhou; mostrando a leitura de ${climaLidoEm.slice(0, 16)}. Nova tentativa em poucos minutos.`
+      : erroClima ? `O INMET não respondeu (${erroClima}). Nova tentativa em poucos minutos.`
+      : alertasClima.length ? lido.trim() : `Nenhum alerta de chuva vigente.${lido}`;
   }
   if (!climaLigado) return;
   const estilo = getComputedStyle(document.documentElement);
@@ -601,6 +604,7 @@ function aplicarDados(j) {
   dados = j.rotas || [];
   alertasClima = j.clima || [];
   erroClima = j.clima_erro || "";
+  climaLidoEm = j.clima_lido_em || "";
   desenharClima();
   if (selecionada && !dados.some((r) => r["Trip Number"] === selecionada)) selecionada = null;
   const tt = j.tomtom || {};
