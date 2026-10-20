@@ -87,10 +87,20 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - O trajeto previsto só aparece na rota selecionada. Clicar num caminhão ou num item da
   lista isola aquela rota e mostra o trajeto. Para voltar:
   botão "Ver todos", clique numa área vazia do mapa ou tecla Esc.
-- Rota isolada: tracejado = viagem não iniciada; cinza = trecho já percorrido; azul =
-  falta percorrer. O "percorrido" é o trajeto previsto cortado no ponto mais próximo do
-  caminhão (não há histórico de posições); com o caminhão a mais de 30 km do trajeto,
-  o corte não é feito.
+- Rota isolada:
+  - tracejado azul = viagem não iniciada (trajeto planejado);
+  - cinza com pontos = já percorrido. Cada ponto é uma posição recebida da Angellira
+    desde o início da viagem (o robô guarda até 300 por rota, no estado); entre um
+    ponto e outro a linha é reta, porque não há o caminho real. A posição vem do texto
+    da Angellira (cidade ou ponto de referência), não de GPS;
+  - azul = melhor caminho agora: rota mais rápida da TomTom, para caminhão e com o
+    trânsito do momento, da última posição até o destino. É recalculada quando chega
+    posição nova ou a cada 30 minutos, na mesma chamada que já fazia a previsão de
+    chegada (não gasta cota a mais). O detalhe mostra a distância, a hora do cálculo
+    e o atraso por trânsito;
+  - pontilhado cinza = trajeto planejado origem → destino, para comparar.
+  Sem posições ainda, vale o jeito antigo: trajeto planejado cortado no ponto mais
+  próximo do caminhão (sem corte se ele estiver a mais de 30 km do trajeto).
 - A lista vem por gravidade: sem sinal agora, NOK, atraso provável e o resto.
 - Filtro "Trecho": lista os pares origem → destino das rotas carregadas, com a cidade
   de cada sigla (ex.: Betim/MG → Recife/PE · SOC-MG2 → SOC-PE4) e quantas rotas há em
