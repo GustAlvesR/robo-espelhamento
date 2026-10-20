@@ -148,14 +148,43 @@ function alternarTipoEstacao(tipo, ligar) {
   desenharEstacoes();
 }
 
-const ControleEstacoes = L.Control.extend({
+// Alertas de chuva do INMET (vêm com as rotas a cada atualização), desligados por padrão.
+const NIVEL_CLIMA = { 1: "amarelo", 2: "laranja", 3: "vermelho" };
+mapa.createPane("clima").style.zIndex = 380;
+const camadaClima = L.layerGroup().addTo(mapa);
+let alertasClima = [];
+let erroClima = "";
+let climaLigado = false;
+
+function desenharClima() {
+  camadaClima.clearLayers();
+  const aviso = document.getElementById("avisoClima");
+  if (aviso) {
+    aviso.textContent = !climaLigado ? ""
+      : erroClima ? `INMET indisponível agora (${erroClima}).`
+      : alertasClima.length ? "" : "Nenhum alerta de chuva vigente.";
+  }
+  if (!climaLigado) return;
+  const estilo = getComputedStyle(document.documentElement);
+  for (const a of alertasClima) {
+    const cor = estilo.getPropertyValue(`--clima-${NIVEL_CLIMA[a.nivel] || "amarelo"}`).trim();
+    const dica = [`${a.rotulo} · ${a.evento}`, a.inicio && `de ${a.inicio}`, a.fim && `até ${a.fim}`]
+      .filter(Boolean).join(" ");
+    L.polygon(a.poligono, { pane: "clima", color: cor, weight: 1, fillColor: cor, fillOpacity: 0.18,
+      bubblingMouseEvents: false, interactive: true })
+      .bindTooltip(escHtml(a.area ? `${dica}\n${a.area}` : dica), { sticky: true, className: "dica-clima" })
+      .addTo(camadaClima);
+  }
+}
+
+const ControleCamadas = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
     const box = el("details", { class: "leaflet-bar controle-estacoes" },
-      el("summary", { title: "Mostrar estações da Shopee no mapa" }, "Estações"));
+      el("summary", { title: "Mostrar estações da Shopee e alertas de chuva no mapa" }, "Camadas"));
     L.DomEvent.disableClickPropagation(box);
     L.DomEvent.disableScrollPropagation(box);
-    const opcoes = el("div", { class: "opcoes" });
+    const opcoes = el("div", { class: "opcoes" }, el("b", { class: "grupo" }, "Estações da Shopee"));
     for (const [tipo, rotulo, cls] of TIPOS_ESTACAO) {
       const cb = el("input", { type: "checkbox" });
       cb.checked = tiposLigados.has(tipo);
@@ -163,11 +192,19 @@ const ControleEstacoes = L.Control.extend({
       opcoes.append(el("label", {}, cb, el("i", { class: `estacao amostra ${cls}` }, el("span")), rotulo));
     }
     opcoes.append(el("span", { class: "aviso", id: "avisoEstacoes", "aria-live": "polite" }));
+    const cbClima = el("input", { type: "checkbox" });
+    cbClima.checked = climaLigado;
+    cbClima.addEventListener("change", () => { climaLigado = cbClima.checked; desenharClima(); });
+    opcoes.append(el("b", { class: "grupo" }, "Clima"),
+      el("label", {}, cbClima, el("i", { class: "amostra-clima" }), "Alertas de chuva (INMET)"),
+      el("span", { class: "aviso", id: "avisoClima", "aria-live": "polite" }));
     box.append(opcoes);
-    if (tiposLigados.size) box.open = true;
+    if (tiposLigados.size || climaLigado) box.open = true;
     return box;
   },
 });
+const chuvaNoCaminho = (r) => ((r._geo || {}).clima || []).length > 0;
+let soChuva = false;
 
 const statusDe = (r) => r["Status Geral"] || "Pendente";
 const classeStatus = (r) => ({ OK: "ok", NOK: "nok", Cancelada: "canc" }[statusDe(r)] || "pend");
@@ -246,6 +283,7 @@ function filtrar() {
   const ft = document.getElementById("fTrecho").value;
   return dados.filter((r) => {
     if (semSinal && (r["Espelhamento Atual"] !== "NOK" || cancelada(r))) return false;
+    if (soChuva && (!chuvaNoCaminho(r) || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
@@ -268,6 +306,8 @@ function desenharKpis() {
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
       () => aplicarFiltro(null, null, true)],
   ];
+  const nChuva = cont(chuvaNoCaminho);
+  if (nChuva) kpis.push(["Chuva no caminho", nChuva, "alerta", () => aplicarFiltro(null, null, false, true)]);
   const nCanc = dados.length - validas.length;
   if (nCanc) kpis.push(["Canceladas", nCanc, "canc", () => aplicarFiltro("fStatus", "Cancelada")]);
   const alvo = document.getElementById("kpis");
@@ -275,12 +315,21 @@ function desenharKpis() {
     el("button", { class: `kpi ${cls}`, onclick: fn }, el("b", {}, String(n)), rot)));
 }
 
-function aplicarFiltro(id, valor, sinal = false) {
+function aplicarFiltro(id, valor, sinal = false, chuva = false) {
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
+  soChuva = chuva;
   if (selecionada) selecionar(null);
   else render();
+}
+
+function tagChuva(r) {
+  const avisos = (r._geo || {}).clima || [];
+  if (!avisos.length || cancelada(r)) return null;
+  const a = avisos[0];
+  return el("span", { class: `tag chuva ${NIVEL_CLIMA[a.nivel] || "amarelo"}`,
+    title: avisos.map((x) => `${x.rotulo}: ${x.evento}${x.fim ? ` até ${x.fim}` : ""}`).join("\n") }, "Chuva");
 }
 
 function desenharLista(lista) {
@@ -298,7 +347,8 @@ function desenharLista(lista) {
       class: `${classeStatus(r)} ${selecionada === r["Trip Number"] ? "sel" : ""}`,
       onclick: () => selecionar(r["Trip Number"]),
     },
-      el("div", { class: "l1" }, el("span", {}, r["Trip Number"]), tag),
+      el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
+        el("span", { class: "tags" }, tagChuva(r), tag)),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -395,6 +445,11 @@ function desenharDetalhe() {
       ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
+    ...(g.clima && g.clima.length ? [
+      el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
+      el("dl", {}, ...g.clima.flatMap((a) => linha(a.rotulo,
+        [a.evento, a.inicio && `de ${a.inicio}`, a.fim && `até ${a.fim}`].filter(Boolean).join(" ")))),
+    ] : []),
     el("div", { class: "sec" }, "Previsão TomTom"),
     el("dl", {},
       ...linha("Risco", r["Risco de Atraso"]),
@@ -544,6 +599,9 @@ function mostrarAngellira(texto) {
 function aplicarDados(j) {
   const aviso = document.getElementById("atualizado");
   dados = j.rotas || [];
+  alertasClima = j.clima || [];
+  erroClima = j.clima_erro || "";
+  desenharClima();
   if (selecionada && !dados.some((r) => r["Trip Number"] === selecionada)) selecionada = null;
   const tt = j.tomtom || {};
   const idadeCiclo = minutosDesde(j.atualizado_em);
@@ -572,7 +630,7 @@ function salvarVisao() {
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
       fTrecho: document.getElementById("fTrecho").value,
-      estacoes: [...tiposLigados],
+      estacoes: [...tiposLigados], clima: climaLigado, soChuva,
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -588,6 +646,8 @@ function restaurarVisao() {
     for (const id of ["busca", "fStatus", "fRisco"]) document.getElementById(id).value = v[id] || "";
     for (const t of v.estacoes || []) if (CLASSE_ESTACAO[t]) tiposLigados.add(t);
     trechoPendente = v.fTrecho || "";
+    climaLigado = !!v.clima;
+    soChuva = !!v.soChuva;
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -621,6 +681,7 @@ document.getElementById("exportar").addEventListener("click", exportarCsv);
 function aplicarTema() {
   fundo.setUrl(urlTiles());
   render();
+  desenharClima();
 }
 sistemaEscuro.addEventListener("change", aplicarTema);
 const seletorTema = document.getElementById("tema");
@@ -637,10 +698,13 @@ seletorTema.addEventListener("change", () => {
 });
 
 for (const id of ["busca", "fStatus", "fRisco", "fTrecho"]) {
-  document.getElementById(id).addEventListener("input", () => { if (id !== "busca") semSinal = false; render(); });
+  document.getElementById(id).addEventListener("input", () => {
+    if (id !== "busca") semSinal = soChuva = false;
+    render();
+  });
 }
 restaurarVisao();
-new ControleEstacoes().addTo(mapa);
+new ControleCamadas().addTo(mapa);
 if (tiposLigados.size) alternarTipoEstacao([...tiposLigados][0], true);
 try {
   aplicarDados(JSON.parse(document.getElementById("dados-iniciais").textContent));
