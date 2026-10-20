@@ -20,6 +20,8 @@ from flask import (Flask, Response, abort, jsonify, redirect, render_template,
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash
 
+import geo_tomtom
+
 USUARIOS_WORKSHEET_NAME = os.getenv("USUARIOS_WORKSHEET_NAME", "Usuarios_Site")
 TOMTOM_TILE_URL = os.getenv(
     "TOMTOM_TILE_URL",
@@ -58,6 +60,7 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     )
 
     usuarios_cache = {"em": 0.0, "dados": {}}
+    estacoes_cache = {"em": 0.0, "dados": []}
     falhas = defaultdict(list)
     tiles = OrderedDict()
 
@@ -77,6 +80,18 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         except Exception:
             logging.exception("Não foi possível ler a aba %s.", USUARIOS_WORKSHEET_NAME)
         return usuarios_cache["dados"]
+
+    def carregar_estacoes():
+        # Lidas direto da aba, e não do ciclo do robô: depois de um reinício o
+        # primeiro ciclo (com a TomTom) leva minutos para terminar.
+        if estacoes_cache["dados"] and time.time() - estacoes_cache["em"] < 600:
+            return estacoes_cache["dados"]
+        try:
+            dados = geo_tomtom.ler_estacoes_mapa(get_client().open_by_key(results_spreadsheet_id))
+            estacoes_cache.update(em=time.time(), dados=dados)
+        except Exception:
+            logging.exception("Não foi possível ler a aba %s.", geo_tomtom.ESTACOES_WORKSHEET_NAME)
+        return estacoes_cache["dados"]
 
     def exige_login(f):
         @wraps(f)
@@ -159,7 +174,13 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     @exige_login
     def api_estacoes():
         # Separado de /api/rotas: só é pedido quando alguém liga a camada no mapa.
-        resp = jsonify((get_snapshot() or {}).get("estacoes", []))
+        dados = carregar_estacoes()
+        if not dados:
+            resp = jsonify(erro=f"Aba {geo_tomtom.ESTACOES_WORKSHEET_NAME} vazia ou sem acesso")
+            resp.status_code = 503
+            resp.headers["Cache-Control"] = "no-store"
+            return resp
+        resp = jsonify(dados)
         resp.headers["Cache-Control"] = "private, max-age=300"
         return resp
 

@@ -133,7 +133,6 @@ class GeoTomTom:
         self.dia = date.today()
         self.chamadas_hoje = 0
         self.ultimo_erro = ""
-        self.estacoes_mapa = []     # todas as estações com coordenada, para a camada do site
 
     # ------------------------------------------------------------------ HTTP
     @staticmethod
@@ -339,15 +338,12 @@ def sincronizar_estacoes(geo: GeoTomTom, spreadsheet, nomes_por_codigo: dict) ->
         linhas = [CABECALHO_ESTACOES]
 
     coords, existentes, atualizacoes = {}, {}, []
-    nomes = dict(nomes_por_codigo)
     for n, l in enumerate(linhas[1:], start=2):
         l = (l + [""] * 5)[:5]
         codigo = l[0].strip().upper()
         if not codigo:
             continue
         existentes[codigo] = n
-        if l[1].strip():
-            nomes[codigo] = l[1].strip()
         lat, lon = _num(l[2]), _num(l[3])
         if lat is not None and lon is not None:
             coords[codigo] = (lat, lon)
@@ -380,12 +376,25 @@ def sincronizar_estacoes(geo: GeoTomTom, spreadsheet, nomes_por_codigo: dict) ->
     if novas:
         ws.append_rows(novas, value_input_option="RAW")
         logging.info("Aba %s: %s estação(ões) nova(s).", ESTACOES_WORKSHEET_NAME, len(novas))
-    geo.estacoes_mapa = estacoes_para_mapa(coords, nomes)
     return coords
 
 
 def tipo_estacao(codigo: str) -> str:
     return {"HUB": "HUB", "FMH": "FM HUB", "SOC": "SOC"}.get(codigo.split("-", 1)[0], "Outros")
+
+
+def ler_estacoes_mapa(spreadsheet) -> list:
+    """Todas as estações da aba Estacoes com latitude e longitude válidas."""
+    coords, nomes = {}, {}
+    for l in spreadsheet.worksheet(ESTACOES_WORKSHEET_NAME).get_all_values()[1:]:
+        l = (l + [""] * 5)[:5]
+        codigo = l[0].strip().upper()
+        lat, lon = _num(l[2]), _num(l[3])
+        if codigo and lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180:
+            coords[codigo] = (lat, lon)
+            if l[1].strip():
+                nomes[codigo] = l[1].strip()
+    return estacoes_para_mapa(coords, nomes)
 
 
 def estacoes_para_mapa(coords: dict, nomes: dict) -> list:
