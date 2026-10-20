@@ -80,25 +80,33 @@ function abrirConfig(mostrar = true) {
   for (const el of raiz.querySelectorAll('[data-campo]')) el.value = cfg[el.dataset.campo];
 }
 
+function erroConfig(novo) {
+  if (novo.webhookUrl && !/^https:\/\//.test(novo.webhookUrl)) return 'A URL do webhook deve começar com https://';
+  if (!(novo.intervaloS >= 30)) return 'Intervalo mínimo: 30 s';
+  if (!/^\d{2}:\d{2}$/.test(novo.heartbeatHora)) return 'Horário no formato HH:MM';
+  const linhasWa = novo.whatsappDestinos.split('\n').filter(l => l.trim()).length;
+  if (linhasWa !== destinosWhatsApp(novo.whatsappDestinos).length)
+    return 'WhatsApp: cada linha deve ter telefone,apikey (ex.: +5511999998888,123456)';
+  if (novo.telegramToken && !lista(novo.telegramChatIds).length) return 'Telegram: informe o chat id';
+  if (novo.emailUrl && !/^https:\/\/script\.google\.com\/.+\/exec(\?.*)?$/.test(novo.emailUrl))
+    return 'E-mail: a URL deve ser do script.google.com e terminar em /exec (não use a de teste, que termina em /dev)';
+  if (novo.emailUrl && !novo.emailToken) return 'E-mail: informe o token';
+  if (novo.emailToken && !novo.emailUrl) return 'E-mail: informe a URL do app da web';
+  return null;
+}
+
+// Salva o formulário; devolve a mensagem de erro (ou null se salvou).
 function salvarConfig() {
   const novo = {};
   for (const el of raiz.querySelectorAll('[data-campo]')) novo[el.dataset.campo] = el.value.trim();
   for (const c of ['intervaloS', 'etaMinimaMin']) novo[c] = Number(novo[c]);
-  if (novo.webhookUrl && !/^https:\/\//.test(novo.webhookUrl)) return $('msgcfg').textContent = 'A URL do webhook deve começar com https://';
-  if (!(novo.intervaloS >= 30)) return $('msgcfg').textContent = 'Intervalo mínimo: 30 s';
-  if (!/^\d{2}:\d{2}$/.test(novo.heartbeatHora)) return $('msgcfg').textContent = 'Horário no formato HH:MM';
-  const linhasWa = novo.whatsappDestinos.split('\n').filter(l => l.trim()).length;
-  if (linhasWa !== destinosWhatsApp(novo.whatsappDestinos).length)
-    return $('msgcfg').textContent = 'WhatsApp: cada linha deve ter telefone,apikey (ex.: +5511999998888,123456)';
-  if (novo.telegramToken && !lista(novo.telegramChatIds).length)
-    return $('msgcfg').textContent = 'Telegram: informe o chat id';
-  if (novo.emailUrl && !/^https:\/\/script\.google\.com\/.+\/exec$/.test(novo.emailUrl))
-    return $('msgcfg').textContent = 'E-mail: a URL deve ser do script.google.com e terminar em /exec';
-  if (novo.emailUrl && !novo.emailToken) return $('msgcfg').textContent = 'E-mail: informe o token';
+  const erro = erroConfig(novo);
+  $('msgcfg').textContent = erro || 'Salvo.';
+  if (erro) return erro;
   Object.assign(cfg, novo);
   salvar();
-  $('msgcfg').textContent = 'Salvo.';
   agendar();
+  return null;
 }
 
 // ---------------- envio ----------------
@@ -158,19 +166,57 @@ async function enviarTelegram(chatId, texto) {
   }
 }
 
+// Registra bloqueios da política de segurança (CSP) da página, para explicar falhas de envio.
+let ultimaViolacao = '';
+document.addEventListener('securitypolicyviolation', e => {
+  ultimaViolacao = `política de segurança do AppSheet (${e.violatedDirective}) bloqueou ${e.blockedURI}`;
+});
+
+// Envio alternativo: formulário POST para um iframe oculto. Não passa pela regra que bloqueia fetch,
+// mas a resposta não pode ser lida (sem confirmação).
+function enviarPorFormulario(url, dados) {
+  return new Promise(resolve => {
+    const nome = `mre-envio-${Date.now()}`;
+    const alvo = Object.assign(document.createElement('iframe'), {name: nome});
+    const form = Object.assign(document.createElement('form'), {method: 'POST', action: url, target: nome});
+    const campo = Object.assign(document.createElement('input'), {type: 'hidden', name: 'dados', value: dados});
+    alvo.style.display = form.style.display = 'none';
+    form.appendChild(campo);
+    document.body.append(alvo, form);
+    const limpar = () => setTimeout(() => { alvo.remove(); form.remove(); }, 2000);
+    const limite = setTimeout(() => { limpar(); resolve(false); }, 20000);
+    alvo.onload = () => { clearTimeout(limite); limpar(); resolve(true); };
+    form.submit();
+  });
+}
+
 // Apps Script: corpo como text/plain (sem preflight de CORS); a resposta JSON confirma o envio.
 // Uma tentativa por ciclo: se a resposta se perder, o e-mail pode já ter saído e repetir duplicaria.
 async function enviarEmail(msg) {
-  const corpo = JSON.stringify({token: cfg.emailToken, assunto: msg.titulo, html: montarHtmlEmail(msg),
+  const corpo = JSON.stringify({token: cfg.emailToken.trim(), assunto: msg.titulo, html: montarHtmlEmail(msg),
     texto: montarTexto(msg, false)});
+  let r;
   try {
-    const r = await fetch(cfg.emailUrl, {method: 'POST', body: corpo, redirect: 'follow'});
-    const j = await r.json().catch(() => null);
-    if (j && j.ok) return {ok: true, detalhe: `ok (cota restante hoje: ${j.cotaRestante})`};
-    return {ok: false, detalhe: j ? j.erro : `HTTP ${r.status} (resposta inesperada; confira a implantação e o acesso "Qualquer pessoa")`};
+    ultimaViolacao = '';
+    r = await fetch(cfg.emailUrl, {method: 'POST', body: corpo, redirect: 'follow'});
   } catch (e) {
-    return {ok: false, detalhe: `bloqueado ou sem conexão (${e})`};
+    // fetch bloqueado (política da página ou rede): tenta pelo formulário.
+    await esperarMs(200);  // o evento securitypolicyviolation chega logo depois da falha do fetch
+    const motivo = ultimaViolacao || String(e);
+    if (await enviarPorFormulario(cfg.emailUrl, corpo)) {
+      return {ok: true, detalhe: `enviado por formulário, sem confirmação (fetch falhou: ${motivo})`};
+    }
+    return {ok: false, detalhe: `bloqueado: ${ultimaViolacao || motivo}`};
   }
+  const texto = await r.text().catch(() => '');
+  let j = null;
+  try { j = JSON.parse(texto); } catch (e) { /* resposta não é JSON */ }
+  if (j && j.ok) return {ok: true, detalhe: `ok (cota restante hoje: ${j.cotaRestante})`};
+  if (j) return {ok: false, detalhe: `${j.erro} (confira TOKEN/DESTINATARIOS no script)`};
+  const login = /accounts\.google\.com|ServiceLogin|Sign in|Fazer login/i.test(texto);
+  return {ok: false, detalhe: `HTTP ${r.status}: ` + (login
+    ? 'o script pediu login. Na implantação, "Quem pode acessar" precisa ser "Qualquer pessoa"'
+    : 'resposta inesperada. Confira se a URL é a da implantação (termina em /exec) e se o código foi reimplantado')};
 }
 
 // Envia para todos os canais configurados; ok se pelo menos um aceitou.
@@ -184,7 +230,10 @@ async function enviar(msg) {
     for (const chat of lista(cfg.telegramChatIds)) canais.push([`Telegram ${chat}`, () => enviarTelegram(chat, montarTexto(msg, false))]);
   }
   if (cfg.emailUrl && cfg.emailToken) canais.push(['E-mail', () => enviarEmail(msg)]);
-  if (!canais.length) return {ok: false, detalhe: 'nenhum canal configurado'};
+  if (!canais.length) {
+    return {ok: false, detalhe: 'nenhum canal salvo. Abra "Configurar", preencha o canal '
+      + '(e-mail precisa da URL /exec e do token) e clique em Salvar'};
+  }
   let algum = false;
   const partes = [];
   for (const [nome, fn] of canais) {
@@ -389,7 +438,14 @@ raiz.addEventListener('click', async e => {
   if (acao === 'ler') ciclo();
   else if (acao === 'config') abrirConfig($('config').style.display === 'none');
   else if (acao === 'salvar') salvarConfig();
-  else if (acao === 'teste') testarEnvio();
+  else if (acao === 'teste') {
+    // Se o formulário está aberto, salva antes de testar (testar sem salvar usava a configuração antiga).
+    if ($('config').style.display !== 'none') {
+      const erro = salvarConfig();
+      if (erro) { alert(`Não salvei: ${erro}`); return; }
+    }
+    testarEnvio();
+  }
   else if (acao === 'alerta' && 'Notification' in window) {
     const p = await Notification.requestPermission();
     evento(p === 'granted' ? 'Alerta no PC ativado' : 'Alerta no PC não permitido pelo navegador');

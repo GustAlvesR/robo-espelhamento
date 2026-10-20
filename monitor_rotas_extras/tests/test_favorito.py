@@ -177,3 +177,59 @@ def test_favorito_recusa_url_de_email_errada(pagina):
     page.fill('[data-campo="emailToken"]', "x")
     page.click('[data-acao="salvar"]')
     assert "script.google.com" in page.inner_text('[data-id="msgcfg"]')
+
+
+def test_testar_envio_salva_o_formulario_antes(pagina):
+    page, _ = pagina
+    page.evaluate(_codigo_do_html())
+    page.fill('[data-campo="emailUrl"]', "https://script.google.com/macros/s/ABC123/exec")
+    page.fill('[data-campo="emailToken"]', "segredo")
+    page.click('[data-acao="teste"]')  # sem clicar em Salvar
+    assert _esperar(page, lambda: "cota restante hoje: 97" in page.inner_text('[data-id="eventos"]'), 20)
+
+
+def test_aviso_quando_implantacao_pede_login(navegador):
+    ctx = navegador.new_context()
+    html_app = (FIX / "rotas.html").read_text(encoding="utf-8")
+    ctx.route("https://www.appsheet.com/**", lambda r: r.fulfill(status=200, content_type="text/html", body=html_app))
+    ctx.route("https://script.google.com/**", lambda r: r.fulfill(
+        status=200, headers={"Access-Control-Allow-Origin": "*"}, content_type="text/html",
+        body="<html><title>Fazer login nas Contas do Google</title>accounts.google.com/ServiceLogin</html>"))
+    page = ctx.new_page()
+    page.on("dialog", lambda d: d.accept())
+    page.goto(URL_APP)
+    page.evaluate(_codigo_do_html())
+    page.fill('[data-campo="emailUrl"]', "https://script.google.com/macros/s/ABC123/exec")
+    page.fill('[data-campo="emailToken"]', "segredo")
+    page.click('[data-acao="teste"]')
+    assert _esperar(page, lambda: "Qualquer pessoa" in page.inner_text('[data-id="eventos"]'), 20)
+    ctx.close()
+
+
+def test_pagina_que_bloqueia_fetch_usa_formulario(navegador):
+    """Simula o AppSheet com CSP connect-src 'self': o fetch é barrado e o envio sai por formulário."""
+    ctx = navegador.new_context()
+    html_app = (FIX / "rotas.html").read_text(encoding="utf-8")
+    ctx.route("https://www.appsheet.com/**", lambda r: r.fulfill(
+        status=200, content_type="text/html", body=html_app,
+        headers={"Content-Security-Policy": "connect-src 'self'"}))
+    formularios = []
+
+    def script(route):
+        formularios.append((route.request.method, route.request.post_data or ""))
+        route.fulfill(status=200, content_type="application/json", body='{"ok": true}')
+
+    ctx.route("https://script.google.com/**", script)
+    page = ctx.new_page()
+    page.on("dialog", lambda d: d.accept())
+    page.goto(URL_APP)
+    page.evaluate(_codigo_do_html())
+    page.fill('[data-campo="emailUrl"]', "https://script.google.com/macros/s/ABC123/exec")
+    page.fill('[data-campo="emailToken"]', "segredo")
+    page.click('[data-acao="teste"]')
+    assert _esperar(page, lambda: "enviado por formulário" in page.inner_text('[data-id="eventos"]'), 30)
+    assert "connect-src" in page.inner_text('[data-id="eventos"]')
+    metodo, corpo = next(f for f in formularios if f[1])
+    dados = json.loads(unquote(corpo.split("dados=", 1)[1].replace("+", " ")))
+    assert metodo == "POST" and dados["token"] == "segredo"
+    ctx.close()

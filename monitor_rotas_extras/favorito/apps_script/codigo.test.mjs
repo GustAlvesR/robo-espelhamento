@@ -36,3 +36,11 @@ test('recusa token errado, corpo inválido, sem destinatários e cota esgotada',
   assert.match(ctx.doPost(post({token: 's'})).erro, /cota/);
   assert.equal(enviados.length, 0);
 });
+
+test('aceita o envio alternativo por formulário e token com espaços', () => {
+  const {ctx, enviados} = carregar({TOKEN: ' segredo ', DESTINATARIOS: 'a@x.com'});
+  const dados = JSON.stringify({token: 'segredo  ', assunto: 'Rota', html: '', texto: 'oi'});
+  const r = ctx.doPost({parameter: {dados}, postData: {contents: 'dados=' + encodeURIComponent(dados)}});
+  assert.equal(r.ok, true);
+  assert.equal(enviados.length, 1);
+});

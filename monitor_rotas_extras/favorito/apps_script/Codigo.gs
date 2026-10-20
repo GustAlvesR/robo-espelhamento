@@ -12,15 +12,16 @@
 const LIMITE_ASSUNTO = 250;
 
 function doPost(e) {
+  // Aceita JSON no corpo (fetch) ou no campo "dados" de um formulário (envio alternativo do favorito).
   let dados;
   try {
-    dados = JSON.parse(e.postData.contents);
+    dados = JSON.parse(e.parameter && e.parameter.dados ? e.parameter.dados : e.postData.contents);
   } catch (erro) {
     return responder_({ok: false, erro: 'corpo inválido'});
   }
   const props = PropertiesService.getScriptProperties();
-  const token = props.getProperty('TOKEN');
-  if (!token || dados.token !== token) return responder_({ok: false, erro: 'token inválido'});
+  const token = (props.getProperty('TOKEN') || '').trim();
+  if (!token || String(dados.token || '').trim() !== token) return responder_({ok: false, erro: 'token inválido'});
 
   const destinatarios = (props.getProperty('DESTINATARIOS') || '').split(/[,;\s]+/).filter(String).join(',');
   if (!destinatarios) return responder_({ok: false, erro: 'propriedade DESTINATARIOS vazia'});
