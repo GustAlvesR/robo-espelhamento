@@ -163,26 +163,14 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         # Os dados já vão dentro da página: em redes que bloqueiam as chamadas em
         # segundo plano (fetch), o site funciona recarregando a página inteira.
         dados = dados_json().replace("<", "\\u003c")
-        return render_template("index.html", nome=session.get("nome", ""), dados_iniciais=dados)
+        estacoes = json.dumps(carregar_estacoes(), ensure_ascii=False).replace("<", "\\u003c")
+        return render_template("index.html", nome=session.get("nome", ""), dados_iniciais=dados,
+                               estacoes_iniciais=estacoes)
 
     @app.get("/api/rotas")
     @exige_login
     def api_rotas():
         return Response(dados_json(), mimetype="application/json")
-
-    @app.get("/api/estacoes")
-    @exige_login
-    def api_estacoes():
-        # Separado de /api/rotas: só é pedido quando alguém liga a camada no mapa.
-        dados = carregar_estacoes()
-        if not dados:
-            resp = jsonify(erro=f"Aba {geo_tomtom.ESTACOES_WORKSHEET_NAME} vazia ou sem acesso")
-            resp.status_code = 503
-            resp.headers["Cache-Control"] = "no-store"
-            return resp
-        resp = jsonify(dados)
-        resp.headers["Cache-Control"] = "private, max-age=300"
-        return resp
 
     def dados_json() -> str:
         snap = get_snapshot() or {}

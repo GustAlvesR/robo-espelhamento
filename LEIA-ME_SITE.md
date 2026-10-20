@@ -93,8 +93,9 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - A lista vem por gravidade: sem sinal agora, NOK, atraso provável e o resto.
 - Botão "Estações" no canto do mapa: mostra os HUBs (last mile, códigos `HUB-`),
   FM HUBs (`FMH-`), SOCs (`SOC-`) e as outras estações da aba `Estacoes` que têm
-  latitude e longitude. Começa tudo desligado, e as coordenadas só são lidas da aba
-  quando você liga um tipo. A escolha não fica salva: ao abrir o site de novo,
+  latitude e longitude. Começa tudo desligado. A lista vem dentro da página, como
+  as rotas (a aba é relida a cada 10 minutos), porque há redes que bloqueiam as
+  chamadas em segundo plano. A escolha não fica salva: ao abrir o site de novo,
   as estações voltam escondidas. Passe o mouse no losango para ver o código e o nome.
 - "Angellira: há X min" no topo é a posição mais recente do último relatório importado;
   fica vermelho acima de 1 hora.

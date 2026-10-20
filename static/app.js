@@ -110,7 +110,8 @@ function el(tag, attrs = {}, ...filhos) {
 }
 
 // Estações da Shopee (aba Estacoes): nada aparece até alguém ligar um tipo no
-// controle do mapa, e só então a lista é pedida ao servidor.
+// controle do mapa. A lista vem dentro da página, como as rotas, porque há
+// redes que bloqueiam as chamadas em segundo plano (fetch).
 const TIPOS_ESTACAO = [
   ["HUB", "HUBs (last mile)", "hub"],
   ["FM HUB", "FM HUBs", "fmh"],
@@ -121,19 +122,15 @@ const CLASSE_ESTACAO = Object.fromEntries(TIPOS_ESTACAO.map(([t, , c]) => [t, c]
 mapa.createPane("estacoes").style.zIndex = 390;
 const camadaEstacoes = L.layerGroup().addTo(mapa);
 const tiposLigados = new Set();
-let estacoes = null;
-
-async function carregarEstacoes() {
-  const resp = await fetch("/api/estacoes", { credentials: "same-origin" });
-  if (resp.status === 401) { location.href = "/login"; return; }
-  const corpo = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw new Error(corpo.erro || `HTTP ${resp.status}`);
-  estacoes = corpo;
+let estacoes = [];
+try {
+  estacoes = JSON.parse(document.getElementById("estacoes-iniciais").textContent) || [];
+} catch (e) {
+  console.error(e);
 }
 
 function desenharEstacoes() {
   camadaEstacoes.clearLayers();
-  if (!estacoes) return;
   for (const e of estacoes) {
     if (!tiposLigados.has(e.tipo)) continue;
     L.marker([e.lat, e.lon], {
@@ -144,21 +141,11 @@ function desenharEstacoes() {
   }
 }
 
-async function alternarTipoEstacao(tipo, ligar) {
+function alternarTipoEstacao(tipo, ligar) {
   if (ligar) tiposLigados.add(tipo);
   else tiposLigados.delete(tipo);
-  const aviso = document.getElementById("avisoEstacoes");
-  aviso.textContent = "";
-  if (tiposLigados.size && !estacoes) {
-    aviso.textContent = "Carregando…";
-    try {
-      await carregarEstacoes();
-      aviso.textContent = "";
-    } catch (e) {
-      console.error(e);
-      aviso.textContent = `Não foi possível carregar as estações (${e.message}). Desmarque e marque de novo para tentar outra vez.`;
-    }
-  }
+  document.getElementById("avisoEstacoes").textContent = tiposLigados.size && !estacoes.length
+    ? "A planilha de estações não respondeu. Recarregue a página em alguns minutos." : "";
   desenharEstacoes();
 }
 
