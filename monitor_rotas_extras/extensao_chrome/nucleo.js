@@ -18,6 +18,9 @@ export const CONFIG_PADRAO = {
   whatsappDestinos: '',
   telegramToken: '',
   telegramChatIds: '',
+  // E-mail via Google Apps Script publicado como app da web (ver favorito/apps_script/Codigo.gs).
+  emailUrl: '',
+  emailToken: '',
 };
 
 export function normalizar(s) {
@@ -236,6 +239,23 @@ export function montarTexto(msg, negrito = true) {
     for (const [k, v] of fatos) linhas.push(`${k}: ${v || '-'}`);
   }
   return linhas.join('\n').trim();
+}
+
+const escapar = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
+export function montarHtmlEmail(msg) {
+  const partes = [`<h2 style="margin:0 0 4px">${escapar(msg.titulo)}</h2><p style="margin:0 0 10px">${escapar(msg.resumo)}</p>`];
+  if (msg.alertas && msg.alertas.length) {
+    partes.push('<div style="background:#fde7e9;padding:8px 10px;border-left:4px solid #c50f1f;margin-bottom:10px">'
+      + '<b>Alertas</b><ul style="margin:4px 0">' + msg.alertas.map(a => `<li>${escapar(a)}</li>`).join('') + '</ul></div>');
+  }
+  for (const [titulo, fatos] of msg.secoes || []) {
+    if (titulo) partes.push(`<h3 style="margin:10px 0 4px">${escapar(titulo)}</h3>`);
+    partes.push('<table style="border-collapse:collapse;font-size:13px">' + fatos.map(([k, v]) =>
+      `<tr><td style="padding:2px 14px 2px 0;color:#555">${escapar(k)}</td><td>${escapar(v || '-')}</td></tr>`).join('') + '</table>');
+  }
+  if (msg.link) partes.push(`<p><a href="${escapar(msg.link)}">Abrir no AppSheet</a></p>`);
+  return `<div style="font-family:Segoe UI,Arial,sans-serif">${partes.join('')}</div>`;
 }
 
 export function destinosWhatsApp(texto) {

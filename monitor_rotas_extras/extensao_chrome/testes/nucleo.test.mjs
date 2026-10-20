@@ -114,3 +114,13 @@ test('texto para WhatsApp/Telegram e destinos do CallMeBot', () => {
   const url = N.urlCallMeBot('+5511999998888', '123456', 'Olá & tchau');
   assert.equal(url, 'https://api.callmebot.com/whatsapp.php?phone=%2B5511999998888&text=Ol%C3%A1%20%26%20tchau&apikey=123456');
 });
+
+test('HTML do e-mail escapa o conteúdo', () => {
+  const r = N.parseCard(bruto());
+  const msg = N.mensagemRota(r, N.avaliar(r, AGORA, CFG), AGORA, AGORA, CFG);
+  const html = N.montarHtmlEmail({...msg, alertas: ['<script>x</script>']});
+  assert.ok(html.includes('Rota extra ofertada'));
+  assert.ok(html.includes('1 - TOCO'));
+  assert.ok(html.includes('&lt;script&gt;') && !html.includes('<script>'));
+  assert.ok(html.includes(`href="${CFG.urlRotas}"`));
+});

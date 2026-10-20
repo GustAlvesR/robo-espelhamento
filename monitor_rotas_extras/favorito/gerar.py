@@ -62,7 +62,27 @@ Adicione o bot ao grupo do time e mande qualquer mensagem no grupo. Para descobr
 <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> e procure <code>"chat":{{"id":-100...}}</code>.
 Funciona com grupos.</li>
 <li><b>Teams</b>: URL de webhook do Workflows (se a política da empresa permitir).</li>
+<li><b>E-mail</b>: enviado pela sua conta Google, através de um Google Apps Script. Passo a passo abaixo.</li>
 </ul>
+
+<h2>E-mail pelo Google Apps Script (uma vez)</h2>
+<ol>
+<li>Logado na conta Google que vai <b>enviar</b> os e-mails, abra <code>https://script.google.com</code> e clique em
+"Novo projeto". Dê um nome, por exemplo <code>Monitor Rotas Extras</code>.</li>
+<li>Apague o que estiver no editor, cole todo o código abaixo e salve (Ctrl+S).
+<textarea readonly onclick="this.select()" style="height:180px">{codigo_gs}</textarea></li>
+<li>Clique na engrenagem "Configurações do projeto", role até "Propriedades do script" e adicione:
+<code>TOKEN</code> = uma senha longa que você inventar; <code>DESTINATARIOS</code> = e-mails separados por vírgula.</li>
+<li>Volte ao editor, escolha a função <code>testarEnvio</code> no topo e clique em "Executar". Autorize o acesso
+(se aparecer "app não verificado": Avançado, Acessar). Deve chegar um e-mail de teste aos destinatários.</li>
+<li>Clique em "Implantar", "Nova implantação", engrenagem "Selecionar tipo", "App da Web".
+"Executar como": <b>Eu</b>. "Quem pode acessar": <b>Qualquer pessoa</b>. Clique em Implantar e copie a URL que termina em <code>/exec</code>.</li>
+<li>No favorito, em "Configurar": cole essa URL em "E-mail: URL do app da web" e o mesmo TOKEN em "E-mail: token".
+Salve e clique em "Testar envio".</li>
+</ol>
+<p>Observações: conta Gmail comum envia até cerca de 100 destinatários por dia pelo Apps Script (cada e-mail para 3 pessoas conta 3);
+o teste mostra a cota restante. E-mails vindos de uma conta externa podem cair no spam/quarentena do e-mail corporativo:
+marque como "não é spam" ou crie uma regra. Se mudar o código do script, faça "Gerenciar implantações", editar, "Nova versão".</p>
 
 <h2>3. Cuidados</h2>
 <ul>
@@ -82,8 +102,10 @@ AppSheet. Use um bot do Telegram exclusivo para isso.</li>
 
 def main() -> None:
     url = montar_url(montar_codigo())
+    codigo_gs = (AQUI / "apps_script" / "Codigo.gs").read_text(encoding="utf-8")
     destino = AQUI / "instalar_favorito.html"
-    destino.write_text(PAGINA.format(url=html.escape(url, quote=True), url_texto=html.escape(url)), encoding="utf-8")
+    destino.write_text(PAGINA.format(url=html.escape(url, quote=True), url_texto=html.escape(url),
+                                     codigo_gs=html.escape(codigo_gs)), encoding="utf-8")
     print(f"Gerado {destino} ({len(url) // 1024} KB)")
 
 

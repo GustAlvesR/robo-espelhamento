@@ -52,6 +52,12 @@ def pagina(navegador):
         route.fulfill(status=200, headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json",
                       body='{"ok": true}')
 
+    def email(route):
+        outros.append(("email", route.request.post_data))
+        route.fulfill(status=200, headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json",
+                      body='{"ok": true, "cotaRestante": 97}')
+
+    ctx.route("https://script.google.com/**", email)
     ctx.route("https://api.callmebot.com/**", whatsapp)
     ctx.route("https://api.telegram.org/**", telegram)
     page = ctx.new_page()
@@ -141,3 +147,33 @@ def test_favorito_envia_para_whatsapp_e_telegram_sem_teams(pagina):
     assert not recebidos
     estado = page.evaluate("() => JSON.parse(localStorage.getItem('monitorRotasExtras.v1')).estado")
     assert [r["status"] for r in estado["rotas"].values()].count("notificada") == 2
+
+
+def test_favorito_envia_por_email_via_apps_script(pagina):
+    page, recebidos = pagina
+    page.evaluate(_codigo_do_html())
+    page.fill('[data-campo="emailUrl"]', "https://script.google.com/macros/s/ABC123/exec")
+    page.fill('[data-campo="emailToken"]', "segredo-longo")
+    page.fill('[data-campo="veiculos"]', "TOCO")
+    page.fill('[data-campo="origens"]', "BRSP21")
+    page.click('[data-acao="salvar"]')
+    assert page.inner_text('[data-id="msgcfg"]') == "Salvo."
+    page.click('[data-acao="teste"]')
+    assert _esperar(page, lambda: "cota restante hoje: 97" in page.inner_text('[data-id="eventos"]'), 20), page.outros
+
+    page.evaluate("() => window.__monitorRotasFavorito.ciclo()")
+    assert _esperar(page, lambda: sum(c == "email" for c, _ in page.outros) >= 3), page.outros
+    corpos = [json.loads(b) for c, b in page.outros if c == "email"]
+    assert all(c["token"] == "segredo-longo" for c in corpos)
+    rota = next(c for c in corpos if "BRSP21-BRSP11-SSP34.SOW.VEN" in c["assunto"])
+    assert "1 - TOCO" in rota["html"] and "Veículo: 1 - TOCO" in rota["texto"]
+    assert "to" not in rota
+
+
+def test_favorito_recusa_url_de_email_errada(pagina):
+    page, _ = pagina
+    page.evaluate(_codigo_do_html())
+    page.fill('[data-campo="emailUrl"]', "https://exemplo.com/qualquer")
+    page.fill('[data-campo="emailToken"]', "x")
+    page.click('[data-acao="salvar"]')
+    assert "script.google.com" in page.inner_text('[data-id="msgcfg"]')

@@ -12,8 +12,9 @@ Há três formas de rodar, da mais simples para o PC da empresa à mais completa
 - Favorito do Chrome (`favorito/`, recomendada no PC corporativo): abra `favorito/instalar_favorito.html`,
   arraste o botão para a barra de favoritos e clique nele com a tela ROTA EXTRA aberta. Roda na aba em que
   você já está logado; não precisa de Python, extensão, modo desenvolvedor nem login novo. Para se a aba
-  for recarregada ou fechada (é só clicar de novo). Avisa por Teams, WhatsApp (via CallMeBot) e/ou
-  Telegram; instruções de cada canal na própria página de instalação.
+  for recarregada ou fechada (é só clicar de novo). Avisa por e-mail (Google Apps Script, código em
+  `favorito/apps_script/Codigo.gs`), Teams, WhatsApp (via CallMeBot) e/ou Telegram; instruções de cada
+  canal na própria página de instalação.
 - Extensão do Chrome (`extensao_chrome/`): mais robusta que o favorito, mas exige "Modo do desenvolvedor",
   que muitas empresas bloqueiam.
 - Robô Python (o resto desta pasta): faz tudo, inclusive o cruzamento com a tabela de endereço, mas precisa

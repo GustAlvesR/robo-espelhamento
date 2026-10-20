@@ -43,6 +43,8 @@ raiz.innerHTML = `
         <textarea data-campo="whatsappDestinos" rows="3" style="width:100%" placeholder="+5511999998888,123456"></textarea></label>
       <label>Telegram: token do bot<br><input data-campo="telegramToken" style="width:100%"></label>
       <label>Telegram: chat id(s), separados por vírgula<br><input data-campo="telegramChatIds" style="width:100%"></label>
+      <label>E-mail: URL do app da web (Apps Script, termina em /exec)<br><input data-campo="emailUrl" style="width:100%"></label>
+      <label>E-mail: token (o mesmo da propriedade TOKEN do script)<br><input data-campo="emailToken" style="width:100%"></label>
       <label>Intervalo (s, mín. 30)<br><input data-campo="intervaloS" type="number" min="30" style="width:100%"></label>
       <label>Veículos permitidos (vazio = todos)<br><input data-campo="veiculos" style="width:100%"></label>
       <label>Origens permitidas (prefixos)<br><input data-campo="origens" style="width:100%"></label>
@@ -90,6 +92,9 @@ function salvarConfig() {
     return $('msgcfg').textContent = 'WhatsApp: cada linha deve ter telefone,apikey (ex.: +5511999998888,123456)';
   if (novo.telegramToken && !lista(novo.telegramChatIds).length)
     return $('msgcfg').textContent = 'Telegram: informe o chat id';
+  if (novo.emailUrl && !/^https:\/\/script\.google\.com\/.+\/exec$/.test(novo.emailUrl))
+    return $('msgcfg').textContent = 'E-mail: a URL deve ser do script.google.com e terminar em /exec';
+  if (novo.emailUrl && !novo.emailToken) return $('msgcfg').textContent = 'E-mail: informe o token';
   Object.assign(cfg, novo);
   salvar();
   $('msgcfg').textContent = 'Salvo.';
@@ -99,7 +104,7 @@ function salvarConfig() {
 // ---------------- envio ----------------
 
 const temCanal = () => Boolean(cfg.webhookUrl || destinosWhatsApp(cfg.whatsappDestinos).length
-  || (cfg.telegramToken && lista(cfg.telegramChatIds).length));
+  || (cfg.telegramToken && lista(cfg.telegramChatIds).length) || (cfg.emailUrl && cfg.emailToken));
 const esperarMs = ms => new Promise(res => setTimeout(res, ms));
 const mascarar = tel => tel.slice(0, -4).replace(/\d/g, '•') + tel.slice(-4);
 
@@ -153,6 +158,21 @@ async function enviarTelegram(chatId, texto) {
   }
 }
 
+// Apps Script: corpo como text/plain (sem preflight de CORS); a resposta JSON confirma o envio.
+// Uma tentativa por ciclo: se a resposta se perder, o e-mail pode já ter saído e repetir duplicaria.
+async function enviarEmail(msg) {
+  const corpo = JSON.stringify({token: cfg.emailToken, assunto: msg.titulo, html: montarHtmlEmail(msg),
+    texto: montarTexto(msg, false)});
+  try {
+    const r = await fetch(cfg.emailUrl, {method: 'POST', body: corpo, redirect: 'follow'});
+    const j = await r.json().catch(() => null);
+    if (j && j.ok) return {ok: true, detalhe: `ok (cota restante hoje: ${j.cotaRestante})`};
+    return {ok: false, detalhe: j ? j.erro : `HTTP ${r.status} (resposta inesperada; confira a implantação e o acesso "Qualquer pessoa")`};
+  } catch (e) {
+    return {ok: false, detalhe: `bloqueado ou sem conexão (${e})`};
+  }
+}
+
 // Envia para todos os canais configurados; ok se pelo menos um aceitou.
 async function enviar(msg) {
   const canais = [];
@@ -163,6 +183,7 @@ async function enviar(msg) {
   if (cfg.telegramToken) {
     for (const chat of lista(cfg.telegramChatIds)) canais.push([`Telegram ${chat}`, () => enviarTelegram(chat, montarTexto(msg, false))]);
   }
+  if (cfg.emailUrl && cfg.emailToken) canais.push(['E-mail', () => enviarEmail(msg)]);
   if (!canais.length) return {ok: false, detalhe: 'nenhum canal configurado'};
   let algum = false;
   const partes = [];
@@ -386,7 +407,7 @@ desenharEventos();
 evento('Monitor iniciado nesta aba');
 if (!temCanal()) {
   abrirConfig(true);
-  status('configure pelo menos um canal (Teams, WhatsApp ou Telegram) e clique em Salvar');
+  status('configure pelo menos um canal (e-mail, Teams, WhatsApp ou Telegram) e clique em Salvar');
 }
 agendar();
 ciclo();
