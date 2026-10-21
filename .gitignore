@@ -225,3 +225,5 @@ state_espelhamento.json*
 # Rotogramas originais têm nome e CPF do motorista: só o JSON gerado vai para o Git.
 *.pdf
 *.PDF
+# Chromium baixado pelo Playwright no build do Render.
+.pw-browsers/

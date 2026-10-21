@@ -6,3 +6,5 @@ schedule>=1.2.0
 tzdata
 flask>=3.0,<4.0
 waitress>=3.0
+playwright==1.48.0
+openpyxl>=3.1
