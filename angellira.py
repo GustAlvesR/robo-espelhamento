@@ -123,7 +123,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             pagina.goto(URL_TRACKING, wait_until="domcontentloaded")
             if _aguardar_tela(pagina) == "login":
                 passo = "fazendo login"
-                _login(pagina, usuario, senha)
+                pagina = _login(pagina, usuario, senha)
                 passo = "abrindo o Tracking depois do login"
                 _abrir_tracking(pagina)
 
@@ -172,6 +172,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
 
 def _login(pagina, usuario: str, senha: str):
+    """Preenche usuário e senha e devolve a página que chegou ao sistema."""
     if _host(pagina.url) != HOST_AUTH:
         pagina.goto(URL_LOGIN, wait_until="domcontentloaded")
     _fechar_avisos(pagina)
@@ -188,17 +189,49 @@ def _login(pagina, usuario: str, senha: str):
         senha_campo.first.wait_for(state="visible")
         senha_campo.first.fill(senha)
         _continuar(pagina, senha_campo.first)
-    try:
-        pagina.wait_for_url(lambda url: _host(url) == HOST_SISTEMA, timeout=TIMEOUT_MS)
-    except Exception:
-        raise ErroAngellira(f"login não saiu da tela de autenticação (página: {_url_sem_parametros(pagina.url)}; "
-                            f"tela: {_texto_da_tela(pagina)!r}; {_raio_x_login(pagina)})") from None
+    return _concluir_login(pagina)
+
+
+PASSA_ETAPA = re.compile(r"^\s*(continuar|autorizar|permitir|acessar|entrar|prosseguir|confirmar|avan[cç]ar)", re.I)
+
+
+def _concluir_login(pagina):
+    """Depois da senha a Angellira passa por auth.../grant antes do sistema, que pode
+    abrir na mesma aba ou em outra. Espera a ida sozinha (a pessoa vê uns 10 s) e,
+    se não acontecer, fecha o aviso de cookies e clica no botão de seguir."""
+    inicio = time.monotonic()
+    fim, cliques = inicio + TIMEOUT_MS / 1000, 0
+    while time.monotonic() < fim:
+        for aba in pagina.context.pages:
+            if _host(aba.url) == HOST_SISTEMA:
+                if aba is not pagina:
+                    pagina.close()
+                    aba.set_default_timeout(TIMEOUT_MS)
+                return aba
+        if time.monotonic() - inicio > 12 and cliques < 3 and not pagina.locator("input[type='password']:visible").count():
+            _fechar_avisos(pagina)
+            botao = pagina.locator("button:visible, [role='button']:visible, a:visible").filter(has_text=PASSA_ETAPA)
+            if not botao.count():
+                botao = pagina.locator("img[alt*='tracking' i]:visible, img[alt*='liralog' i]:visible")
+            if botao.count():
+                try:
+                    rotulo = (botao.first.inner_text(timeout=2000) or botao.first.get_attribute("alt") or "").strip()[:30]
+                    caminho = urlparse(pagina.url).path
+                    botao.first.click(timeout=5000)
+                    cliques += 1
+                    logging.info("Angellira: cliquei em %r em %s.", rotulo, caminho)
+                except Exception:
+                    pass
+        pagina.wait_for_timeout(2000)
+    raise ErroAngellira(f"login não saiu da tela de autenticação (página: {_url_sem_parametros(pagina.url)}; "
+                        f"{_raio_x_login(pagina)}; abas: {len(pagina.context.pages)}; "
+                        f"tela: {_texto_da_tela(pagina)!r})")
 
 
 def _fechar_avisos(pagina):
     """Aviso de cookies ou LGPD por cima do formulário impede o clique em Continuar."""
     avisos = pagina.locator("button:visible, a:visible").filter(
-        has_text=re.compile(r"^\s*(aceitar|aceito|concordo|entendi|ok|permitir)", re.I))
+        has_text=re.compile(r"^\s*(aceitar|aceito|concordo|entendi|ok|fechar|prosseguir)", re.I))
     for i in range(min(avisos.count(), 3)):
         try:
             avisos.nth(i).click(timeout=2000)
@@ -236,7 +269,10 @@ def _raio_x_login(pagina) -> str:
                 .slice(0, 6).map(b => `${(b.innerText || b.value || '').trim().slice(0, 25) || '?'}` +
                     `${b.disabled || b.getAttribute('aria-disabled') === 'true' ? ' (desabilitado)' : ''}`);
             const captcha = !!document.querySelector("iframe[src*='captcha'], iframe[src*='turnstile'], .g-recaptcha, .h-captcha, .cf-turnstile");
-            return `botões: ${botoes.join(', ') || 'nenhum'}; captcha: ${captcha ? 'sim' : 'não'}`;
+            const outros = [...document.querySelectorAll('a, img[alt]')].filter(vis).slice(0, 6)
+                .map(e => (e.tagName === 'IMG' ? 'img:' + e.alt : (e.innerText || '').trim()).slice(0, 25)).filter(Boolean);
+            return `botões: ${botoes.join(', ') || 'nenhum'}; links: ${outros.join(', ') || 'nenhum'}; ` +
+                `captcha: ${captcha ? 'sim' : 'não'}`;
         }""")
     except Exception:
         return "botões: não foi possível ler"
@@ -389,7 +425,7 @@ class AtualizadorAngellira:
             try:
                 self.atualizar()
             except Exception as e:
-                self.ultimo_erro = str(e)[:300]
+                self.ultimo_erro = str(e)[:700]
                 logging.warning("Angellira: %s. Nova tentativa em %s min.", self.ultimo_erro, INTERVALO_MIN)
             time.sleep(INTERVALO_MIN * 60)
 
