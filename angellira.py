@@ -54,6 +54,44 @@ def _url_sem_parametros(url: str) -> str:
 # Navegador
 # =============================================================================
 
+def _host(url) -> str:
+    return urlparse(str(url or "")).netloc
+
+
+def _no_tracking(url) -> bool:
+    # Compara host e caminho: a tela de login traz o endereço de retorno nos parâmetros.
+    u = urlparse(str(url or ""))
+    return u.netloc == HOST_SISTEMA and u.path.startswith("/tracking")
+
+
+SELETOR_EXPORTAR = "svg[data-testid='FileDownloadOutlinedIcon']"
+
+
+def _aguardar_tela(pagina, timeout_ms=None) -> str:
+    """'tracking', 'login' ou 'desconhecida'. O Tracking pode mandar para o login só
+    depois de carregar o JavaScript, e no caminho passa por redirecionamentos sem
+    formulário; por isso espera até aparecer o botão de exportar ou um campo de login."""
+    fim = time.monotonic() + (timeout_ms or TIMEOUT_MS) / 1000
+    while time.monotonic() < fim:
+        try:
+            if pagina.locator(f"{SELETOR_EXPORTAR}:visible").count():
+                return "tracking"
+            if pagina.locator("input[type='password']:visible").count() or (
+                    _host(pagina.url) == HOST_AUTH and pagina.locator("input:visible").count()):
+                return "login"
+        except Exception:
+            pass  # página trocando no meio da consulta
+        pagina.wait_for_timeout(500)
+    return "desconhecida"
+
+
+def _texto_da_tela(pagina) -> str:
+    try:
+        return " ".join(pagina.locator("body").inner_text(timeout=3000).split())[:200]
+    except Exception:
+        return ""
+
+
 def _esperar(pagina, segundos=5):
     """Espera a página sossegar. A tela do Tracking atualiza sozinha e pode nunca ficar
     sem tráfego, então o limite é curto e estourar não é erro."""
@@ -83,8 +121,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
             passo = "abrindo o Tracking"
             pagina.goto(URL_TRACKING, wait_until="domcontentloaded")
-            _esperar(pagina)
-            if HOST_AUTH in pagina.url or pagina.locator("input[type='password']").count():
+            if _aguardar_tela(pagina) == "login":
                 passo = "fazendo login"
                 _login(pagina, usuario, senha)
                 passo = "abrindo o Tracking depois do login"
@@ -92,12 +129,15 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
             passo = "atualizando a página do Tracking"
             pagina.reload(wait_until="domcontentloaded")
-            _esperar(pagina)
+            tela = _aguardar_tela(pagina)
+            if tela != "tracking":
+                motivo = "voltou para a tela de login" if tela == "login" else "o botão de exportar não apareceu"
+                raise ErroAngellira(f"o Tracking não abriu: {motivo} (página: {_url_sem_parametros(pagina.url)}; "
+                                    f"tela: {_texto_da_tela(pagina)!r})")
 
             passo = "clicando em exportar colunas"
-            icone = pagina.locator("svg[data-testid='FileDownloadOutlinedIcon']").first
-            icone.wait_for(state="visible")
-            botao = pagina.locator("button:has(svg[data-testid='FileDownloadOutlinedIcon'])")
+            icone = pagina.locator(SELETOR_EXPORTAR).first
+            botao = pagina.locator(f"button:has({SELETOR_EXPORTAR})")
             (botao.first if botao.count() else icone).click()
 
             passo = "marcando 'Todas as colunas'"
@@ -119,6 +159,8 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             caminho = os.path.join(pasta, re.sub(r"[^\w.-]", "_", nome))
             download.save_as(caminho)
             return caminho, contexto.storage_state()
+        except ErroAngellira:
+            raise
         except Exception as e:
             url = _url_sem_parametros(pagina.url) if pagina else ""
             detalhe = str(e).splitlines()[0][:300] if str(e) else ""
@@ -128,9 +170,9 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
 
 def _login(pagina, usuario: str, senha: str):
-    if HOST_AUTH not in pagina.url:
+    if _host(pagina.url) != HOST_AUTH:
         pagina.goto(URL_LOGIN, wait_until="domcontentloaded")
-    campo_usuario = pagina.locator("input:not([type='password']):not([type='hidden']):not([type='checkbox'])").first
+    campo_usuario = pagina.locator("input:not([type='password']):not([type='hidden']):not([type='checkbox']):visible").first
     campo_usuario.wait_for(state="visible")
     campo_usuario.fill(usuario)
     senha_campo = pagina.locator("input[type='password']")
@@ -144,11 +186,10 @@ def _login(pagina, usuario: str, senha: str):
         senha_campo.first.fill(senha)
         _continuar(pagina)
     try:
-        pagina.wait_for_url(lambda url: HOST_SISTEMA in url, timeout=TIMEOUT_MS)
+        pagina.wait_for_url(lambda url: _host(url) == HOST_SISTEMA, timeout=TIMEOUT_MS)
     except Exception:
-        erro = pagina.locator("[role='alert'], .mdc-text-field-helper-text, .error, .alert").first
-        texto = erro.inner_text().strip()[:200] if erro.count() else ""
-        raise ErroAngellira(f"login não saiu da tela de autenticação{f' ({texto})' if texto else ''}") from None
+        raise ErroAngellira(f"login não saiu da tela de autenticação (página: {_url_sem_parametros(pagina.url)}; "
+                            f"tela: {_texto_da_tela(pagina)!r})") from None
 
 
 def _continuar(pagina):
@@ -163,9 +204,11 @@ def _abrir_tracking(pagina):
     clica no ícone TRACKING (que pode abrir em outra aba)."""
     _esperar(pagina)
     pagina.goto(URL_TRACKING, wait_until="domcontentloaded")
-    _esperar(pagina)
-    if "/tracking" in pagina.url and not pagina.locator("input[type='password']").count():
+    tela = _aguardar_tela(pagina, 30000)
+    if tela == "tracking":
         return
+    if tela == "login":
+        raise ErroAngellira(f"depois do login o Tracking pediu login de novo (tela: {_texto_da_tela(pagina)!r})")
     pagina.goto(URL_HOME, wait_until="domcontentloaded")
     icone = pagina.locator("img[alt='TRACKING']").first
     icone.wait_for(state="attached")
@@ -177,7 +220,7 @@ def _abrir_tracking(pagina):
         pagina.goto(aba.url, wait_until="domcontentloaded")
         aba.close()
     except Exception:
-        pagina.wait_for_url(re.compile(r".*/tracking.*"), timeout=TIMEOUT_MS)
+        pagina.wait_for_url(_no_tracking, timeout=TIMEOUT_MS)
 
 
 # =============================================================================
