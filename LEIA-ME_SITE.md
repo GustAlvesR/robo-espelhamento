@@ -198,3 +198,45 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   uma prova. As margens são ajustáveis: `ROTOGRAMA_DESVIO_KM`,
   `ROTOGRAMA_DESVIO_CIDADE_KM`, `ROTOGRAMA_RAIO_RISCO_KM`, `ROTOGRAMA_RAIO_PONTO_KM`.
 
+## Relatório da Angellira automático
+
+O robô baixa sozinho o relatório do Tracking da Angellira a cada 15 minutos
+(`angellira.py`) e grava na aba `Rastreamento_Angellira`. Ele faz no navegador
+(Chromium sem janela) o mesmo caminho da pessoa: login, Tracking, atualiza a página,
+Exportar colunas, "Todas as colunas", Exportar.
+
+- A gravação põe o relatório novo por cima e depois apaga o que sobrou do anterior
+  (linhas abaixo e colunas à direita). O resultado é o mesmo de limpar e colar, mas
+  a aba nunca fica vazia no meio de um ciclo.
+- Relatório sem as colunas que o robô usa (PROCEDIMENTO DE EMBARQUE, VEÍCULO,
+  DATA POSIÇÃO) não é gravado: a aba fica como estava e o motivo vai para o log.
+- Falha em qualquer passo vai para o log com o nome do passo, por exemplo
+  `Angellira: falhou clicando em exportar colunas (página: ...)`. A próxima tentativa
+  é 15 minutos depois. O robô e o site seguem funcionando.
+
+### Configuração no Render (uma vez)
+
+1. Environment:
+   - `ANGELLIRA_USUARIO` e `ANGELLIRA_SENHA`: o login de monitoramento. Ficam só no
+     Render, nunca no código nem na planilha.
+   - `PLAYWRIGHT_BROWSERS_PATH` = `/opt/render/project/src/.pw-browsers` (o Chromium
+     fica dentro da pasta do projeto, que é a que passa do build para o serviço).
+2. Settings, Build Command:
+   `pip install -r requirements.txt && python -m playwright install chromium`
+3. Salve e faça o deploy. No log devem aparecer
+   `Angellira: atualização automática ligada, a cada 15 min.` e, cerca de 1 minuto
+   depois, `Angellira: relatório com N linha(s) e 45 coluna(s) gravado ...`.
+
+Opcionais: `ANGELLIRA_INTERVALO_MIN` (15), `ANGELLIRA_TIMEOUT_S` (60),
+`ANGELLIRA_ATIVO=0` (desliga e volta ao relatório colado à mão).
+
+### Rodar no PC (teste ou alternativa)
+
+```powershell
+pip install -r requirements.txt
+python -m playwright install chromium
+$env:ANGELLIRA_USUARIO="..."; $env:ANGELLIRA_SENHA="..."
+python angellira.py --uma-vez --visivel   # abre o navegador para acompanhar os passos
+python angellira.py                       # fica rodando a cada 15 min
+```
+

@@ -1577,6 +1577,9 @@ def main():
     logging.info("TomTom: %s.", f"chave carregada (termina em ...{GEO.key[-4:]})" if GEO.key else "SEM CHAVE")
 
     threading.Thread(target=vigia, daemon=True).start()
+    # Relatório da Angellira baixado sozinho, numa thread própria (o ciclo não espera por ele).
+    import angellira
+    angellira.iniciar_em_segundo_plano(get_gspread_client, TRACKING_SPREADSHEET_ID)
     if SELF_PING_URL:
         # Fora da fila dos ciclos: um ciclo demorado não deixa o serviço hibernar.
         threading.Thread(target=_loop_self_ping, daemon=True).start()
