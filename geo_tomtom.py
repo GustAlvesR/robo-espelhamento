@@ -37,6 +37,7 @@ TOLERANCIA_ATRASO_MIN = int(os.getenv("TOLERANCIA_ATRASO_MIN", "30"))
 # Ponto de referência da Angellira só é aceito se cair a até X km do centro da cidade.
 RAIO_REFERENCIA_KM = float(os.getenv("RAIO_REFERENCIA_KM", "30"))
 MAX_PONTOS_ROTA = 300
+PENDENTE = "pendente"  # localização que falhou na API (ou estourou a cota): tentar de novo depois
 # Caminho recalculado da posição atual: vai para todas as rotas dentro da página.
 MAX_PONTOS_ROTA_ATUAL = 150
 
@@ -222,7 +223,37 @@ class GeoTomTom:
                 return (ponto[0], ponto[1], "referência")
         return (centro[0], centro[1], "cidade")
 
+    def localizar_lugar(self, nome: str, cidade: str, uf: str):
+        """Posto, restaurante etc. pelo nome, perto do centro da cidade.
+        Devolve (lat, lon, 'referência'|'cidade'), None se a cidade não existe, ou
+        PENDENTE se a API falhou (nada foi guardado no cache)."""
+        consulta = f"{cidade}, {uf}"
+        centro = self.geocodificar(consulta)
+        if centro is None:
+            return None if _sem_acento(consulta) in self.geocache else PENDENTE
+        ref = _sem_acento(nome)
+        if len(ref) < 4 or ref.replace(" ", "").isdigit():
+            return (centro[0], centro[1], "cidade")
+        ponto = self.buscar_referencia(nome, centro)
+        if ponto:
+            return (ponto[0], ponto[1], "referência")
+        chave = f"POI|{ref}|{centro[0]:.3f},{centro[1]:.3f}"
+        return (centro[0], centro[1], "cidade") if chave in self.geocache else PENDENTE
+
     # -------------------------------------------------------------- Routing
+    def rota_por_pontos(self, pontos: list, max_pontos: int = MAX_PONTOS_ROTA):
+        """Rota de caminhão passando pelos pontos, na ordem. Sem trânsito: serve para o
+        desenho. Traz também o tamanho de cada trecho entre dois pontos."""
+        locs = ":".join(f"{p[0]},{p[1]}" for p in pontos)
+        dados = self._chamar(f"/routing/1/calculateRoute/{locs}/json",
+                             {"travelMode": "truck", "routeType": "fastest", "vehicleCommercial": "true",
+                              "traffic": "false", "language": "pt-BR"})
+        if not dados or not dados.get("routes"):
+            return None
+        r = self._ler_rota(dados["routes"][0], True, max_pontos)
+        r["trechos_m"] = [leg.get("summary", {}).get("lengthInMeters") for leg in dados["routes"][0].get("legs", [])]
+        return r
+
     def _rota(self, origem, destino, depart_at: datetime, com_pontos: bool, max_pontos: int = MAX_PONTOS_ROTA):
         params = {"travelMode": "truck", "traffic": "true", "routeType": "fastest",
                   "vehicleCommercial": "true", "language": "pt-BR",
@@ -233,7 +264,10 @@ class GeoTomTom:
         dados = self._chamar(f"/routing/1/calculateRoute/{locs}/json", params)
         if not dados or not dados.get("routes"):
             return None
-        rota = dados["routes"][0]
+        return self._ler_rota(dados["routes"][0], com_pontos, max_pontos)
+
+    @staticmethod
+    def _ler_rota(rota: dict, com_pontos: bool, max_pontos: int) -> dict:
         resumo = rota.get("summary", {})
         pontos = []
         if com_pontos:
@@ -292,7 +326,7 @@ def carregar_geocache(geo: GeoTomTom, spreadsheet):
     try:
         ws = spreadsheet.worksheet(GEO_CACHE_WORKSHEET_NAME)
         texto = "".join(r[0] for r in ws.get_all_values() if r).strip()
-        geo.geocache = json.loads(texto) if texto else {}
+        geo.geocache = json.JSONDecoder().raw_decode(texto)[0] if texto else {}
     except Exception as e:
         if type(e).__name__ != "WorksheetNotFound":
             logging.warning("Cache de geocodificação ilegível (%s); começando vazio.", e)
@@ -314,8 +348,9 @@ def salvar_geocache(geo: GeoTomTom, spreadsheet):
                 pass
         texto = json.dumps(geo.geocache, ensure_ascii=False)
         pedacos = [[texto[i:i + 40000]] for i in range(0, len(texto), 40000)] or [[""]]
-        ws.clear()
+        # Grava antes de limpar as sobras: o cache nunca fica vazio no meio do caminho.
         ws.update(values=pedacos, range_name="A1", raw=True)
+        ws.batch_clear([f"A{len(pedacos) + 1}:A"])
         geo.geocache_alterado = False
     except Exception:
         logging.exception("Falha ao gravar o cache de geocodificação.")

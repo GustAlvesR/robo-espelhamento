@@ -1,0 +1,1677 @@
+{
+ "origem": "SOC-PE2",
+ "destino": "SOC-MG2",
+ "sm": "39637055",
+ "origem_nome": "SOC_PE_JABOATÃO DOS GUARARAPES",
+ "destino_nome": "SOC_MG_BETIM",
+ "distancia_km": 2088.25,
+ "pontos": [
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "SÃO CRISTOVÃO II (ESCADA)",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR COTEGY ESCADA",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY I",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY II",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PICHILAU",
+   "cidade": "XEXEU",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FISCAL DE XEXÉU",
+   "cidade": "XEXEU",
+   "uf": "PE",
+   "rodovia": "BR 101 - KM 138",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FISCAL",
+   "cidade": "XEXEU",
+   "uf": "PE",
+   "rodovia": "BR 101 - KM 138",
+   "motivo": ""
+  },
+  {
+   "nome": "PICHILAU",
+   "cidade": "RIO LARGO",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PIONEIRO",
+   "cidade": "RIO LARGO",
+   "uf": "AL",
+   "rodovia": "BR 104",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORCO 6/AL",
+   "cidade": "RIO LARGO",
+   "uf": "AL",
+   "rodovia": "BR 101 - KM 78",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORÇO 6",
+   "cidade": "RIO LARGO",
+   "uf": "AL",
+   "rodovia": "BR 101 - KM 78",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TERRA NOVA",
+   "cidade": "PILAR",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO VIA SUL",
+   "cidade": "SAO MIGUEL DOS CAMPOS",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IPIRANGA JUNQUEIRO",
+   "cidade": "JUNQUEIRO",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO NOVA VIDA",
+   "cidade": "JUNQUEIRO",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO NOVA VIDA (LUHEMA)",
+   "cidade": "JUNQUEIRO",
+   "uf": "AL",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO RANCHO ALEGRE",
+   "cidade": "SAO SEBASTIAO",
+   "uf": "AL",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IRMAO",
+   "cidade": "MALHADA DOS BOIS",
+   "uf": "SE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IRMAOS",
+   "cidade": "MALHADA DOS BOIS",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IRMÃOS",
+   "cidade": "MURIBECA",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO R.S. SILVA",
+   "cidade": "MARUIM",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ELITE (R. S. SILVA)",
+   "cidade": "MARUIM",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IBURA",
+   "cidade": "NOSSA SENHORA DO SOCORRO",
+   "uf": "SE",
+   "rodovia": "BR 101 - KM 95",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAJU",
+   "cidade": "SAO CRISTOVAO",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ATALAIA",
+   "cidade": "SANTA LUZIA DO ITANHY",
+   "uf": "SE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORCO II",
+   "cidade": "UMBAUBA",
+   "uf": "SE",
+   "rodovia": "BR 101 - KM 179.5",
+   "motivo": ""
+  },
+  {
+   "nome": "REFORÇO II",
+   "cidade": "UMBAUBA",
+   "uf": "SE",
+   "rodovia": "BR 101 - KM 179,5",
+   "motivo": ""
+  },
+  {
+   "nome": "FISCALIZACAO",
+   "cidade": "CRISTINAPOLIS",
+   "uf": "SE",
+   "rodovia": "BR 101 - KM 203",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAPEBI",
+   "cidade": "ENTRE RIOS",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "LUBRIJÁ",
+   "cidade": "ALAGOINHAS",
+   "uf": "BA",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO LUBRIJÁ",
+   "cidade": "ALAGOINHAS",
+   "uf": "BA",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CENTRAL",
+   "cidade": "ALAGOINHAS",
+   "uf": "BA",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "EUCALIPTO",
+   "cidade": "CONCEICAO DO JACUIPE",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "MEGA POSTO EUCALIPTO",
+   "cidade": "CONCEICAO DO JACUIPE",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SAO GONCALO",
+   "cidade": "FEIRA DE SANTANA",
+   "uf": "BA",
+   "rodovia": "BR 324",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SÃO GONÇALO 4",
+   "cidade": "FEIRA DE SANTANA",
+   "uf": "BA",
+   "rodovia": "BR 324",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SÃO GONÇALO 1",
+   "cidade": "FEIRA DE SANTANA",
+   "uf": "BA",
+   "rodovia": "BR 324",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAO DO OURO",
+   "cidade": "ANTONIO CARDOSO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRÃO DE OURO",
+   "cidade": "ANTONIO CARDOSO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "FISCALIZACAO",
+   "cidade": "ANTONIO CARDOSO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "PAU DE VELA",
+   "cidade": "SANTO ESTEVAO",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PETROBRAS",
+   "cidade": "SANTO ESTEVAO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BRASIL II",
+   "cidade": "SANTO ESTEVAO",
+   "uf": "BA",
+   "rodovia": "BR-116",
+   "motivo": ""
+  },
+  {
+   "nome": "TREVO I (RAFAEL JAMEIRO)",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "TREVO I RAFAEL JAMEIRO/BA",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TREVO IV",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "P. MACAUBENSE 04",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MACAUBENSE 04",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR",
+   "cidade": "RAFAEL JAMBEIRO",
+   "uf": "BA",
+   "rodovia": "BR-116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORCO 4",
+   "cidade": "ITATIM",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 517",
+   "motivo": ""
+  },
+  {
+   "nome": "P. REFORÇO 4",
+   "cidade": "ITATIM",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 517",
+   "motivo": ""
+  },
+  {
+   "nome": "PARQUE DOS COQUEIROS",
+   "cidade": "ITATIM",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 530",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PARQUE DOS COQUEIROS",
+   "cidade": "ITATIM",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 530",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IRMAO CAMINHONEIRO",
+   "cidade": "ITATIM",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ANDORINHAS",
+   "cidade": "MILAGRES",
+   "uf": "BA",
+   "rodovia": "BR-116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERRA DAS ANDORINHA",
+   "cidade": "MILAGRES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERRANA",
+   "cidade": "BREJOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO NOVO PONTO (REDE HG)",
+   "cidade": "BREJOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GUERREIRO DAS ESTRADAS",
+   "cidade": "NOVA ITARANA",
+   "uf": "BA",
+   "rodovia": "R. MILAGRES, 250",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ENCONTRO DOS AMIGOS",
+   "cidade": "NOVA ITARANA",
+   "uf": "BA",
+   "rodovia": "R. MILAGRES, 250",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SCHEEL",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BA 250",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BA 250",
+   "motivo": ""
+  },
+  {
+   "nome": "PARÁNA",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PARÁNA",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERRA",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DO MUTUM",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERRA DO MUTUM",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "JAGUAQUARA",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 684",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CARVALHO",
+   "cidade": "JEQUIE",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ARIZONA",
+   "cidade": "JEQUIE",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM698",
+   "motivo": ""
+  },
+  {
+   "nome": "ESTRADÃO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 716",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IPIRANGA - ESTRADAO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 716",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ESTRADÃO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116 - KM 716",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PITUBA",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "REFORÇO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO APACHE",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORÇO 01",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REFORÇO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "ROD.BR 116 KM 768",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO EXPERS",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JORGINHO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GARDELIN",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "JORGINHO",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COOPERCEG 2",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COOPERCEG 02",
+   "cidade": "POCOES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ULTRA",
+   "cidade": "PLANALTO",
+   "uf": "BA",
+   "rodovia": "BA 262",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ULTRA - DEGRADE (REDE HG)",
+   "cidade": "PLANALTO",
+   "uf": "BA",
+   "rodovia": "BA 262",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TURBO",
+   "cidade": "PLANALTO",
+   "uf": "BA",
+   "rodovia": "BA 262",
+   "motivo": ""
+  },
+  {
+   "nome": "SÃO JORGE",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SAO JORGE",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BA 262",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ROBINSON NUNES",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BA 262",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MACAUBENSE 06",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO NOVO PARAISO",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BA 263 - KM 839",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO HG ANEL VIARIO",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "SÃO MARCOS",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SÃO MARCOS",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TABOLEIRO DA BAIANA",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TABOLEIRO",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO OMEGA",
+   "cidade": "CANDIDO SALES",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "CAXIAS DO SUL",
+   "cidade": "ENCRUZILHADA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "ENCRUZILHADA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAXIAS DO SUL",
+   "cidade": "ENCRUZILHADA",
+   "uf": "BA",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO UNIAO",
+   "cidade": "DIVISA ALEGRE",
+   "uf": "MG",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "DIVISA ALEGRE",
+   "uf": "MG",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "FISCALIZACAO",
+   "cidade": "DIVISA ALEGRE",
+   "uf": "MG",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "FAISÃO III (SEN. NORTE)",
+   "cidade": "AGUAS VERMELHAS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "FAISÃO IV (SEN. SUL)",
+   "cidade": "PEDRA AZUL",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FAISÃO 02 (SENTIDO SUL)",
+   "cidade": "PEDRA AZUL",
+   "uf": "MG",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FAISÃO SUL",
+   "cidade": "PEDRA AZUL",
+   "uf": "MG",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "DOM PEDRO VI (TAMBURIL)",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "JENIPAPO",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JENIPAPO",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "RESTAURANTE SABOR DE MINAS",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO E RESTAURANTE SABOR DE MINAS",
+   "cidade": "SALINAS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "CICI",
+   "cidade": "FRANCISCO SA",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IPIRANGA",
+   "cidade": "FRANCISCO SA",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CHIMBA",
+   "cidade": "FRANCISCO SA",
+   "uf": "MG",
+   "rodovia": "BR 251 - KM 509.2",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JETFOX II",
+   "cidade": "FRANCISCO SA",
+   "uf": "MG",
+   "rodovia": "BR 251 - KM 505",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MACAUBENSE III",
+   "cidade": "FRANCISCO SA",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "FISCALIZACAO",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "BR 251",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DANGELIS",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "BR 251- KM 514.7",
+   "motivo": ""
+  },
+  {
+   "nome": "DANGELIS",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "D ANGELIS",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "BR 251 - KM 516,2",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO D ANGELIS II",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "BR 251 - KM 516,2",
+   "motivo": ""
+  },
+  {
+   "nome": "TREVO OITO",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "AC. ANEL RODOVIÁRIO",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TREVO OITO",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "AC. ANEL RODOVIÁRIO",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO POUSADA BOI ANEL",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO OPCAO",
+   "cidade": "MONTES CLAROS",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BOA VISTA",
+   "cidade": "BOCAIUVA",
+   "uf": "MG",
+   "rodovia": "BR 135 - KM 410",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO NAVARRO",
+   "cidade": "ENGENHEIRO NAVARRO",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO LAMPARINA",
+   "cidade": "BUENOPOLIS",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CRISTALINA",
+   "cidade": "BUENOPOLIS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BOA VISTA VII",
+   "cidade": "BUENOPOLIS",
+   "uf": "MG",
+   "rodovia": "BR 135 - KM 512",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BOA VISTA",
+   "cidade": "BUENOPOLIS",
+   "uf": "MG",
+   "rodovia": "BR 135 - KM 512",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERRA DO CABRAL",
+   "cidade": "AUGUSTO DE LIMA",
+   "uf": "MG",
+   "rodovia": "BR 135 - KM 535",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CARREDAO",
+   "cidade": "CORINTO",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CERRADAO",
+   "cidade": "CORINTO",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "DENISE",
+   "cidade": "CURVELO",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DENISE II",
+   "cidade": "CURVELO",
+   "uf": "MG",
+   "rodovia": "BR 135 - KM 10",
+   "motivo": ""
+  },
+  {
+   "nome": "DENISE II",
+   "cidade": "CURVELO",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FAISAO V",
+   "cidade": "CURVELO",
+   "uf": "MG",
+   "rodovia": "BR 040",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JR FAISÃO V",
+   "cidade": "CURVELO",
+   "uf": "MG",
+   "rodovia": "ROD BR 040 KM423",
+   "motivo": ""
+  },
+  {
+   "nome": "DOM PEDRO VIII",
+   "cidade": "PARAOPEBA",
+   "uf": "MG",
+   "rodovia": "BR 040",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO VIII",
+   "cidade": "PARAOPEBA",
+   "uf": "MG",
+   "rodovia": "BR 040",
+   "motivo": ""
+  },
+  {
+   "nome": "FISCALIZACAO",
+   "cidade": "SETE LAGOAS",
+   "uf": "MG",
+   "rodovia": "BR 135",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTOS VILA",
+   "cidade": "ESMERALDAS",
+   "uf": "MG",
+   "rodovia": "BR 040",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO VILA",
+   "cidade": "ESMERALDAS",
+   "uf": "MG",
+   "rodovia": "BR 040",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CTF",
+   "cidade": "RIBEIRAO DAS NEVES",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "PARADA PROIBIDA",
+   "cidade": "FEIRA DE SANTANA",
+   "uf": "BA",
+   "obs": "QUADRANTE"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO SERRANA",
+   "cidade": "BREJOES",
+   "uf": "BA",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO SERRANA",
+   "cidade": "BREJOES",
+   "uf": "BA",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO SERRANA",
+   "cidade": "BREJOES",
+   "uf": "BA",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "PARADA PROIBIDA",
+   "cidade": "JEQUIE",
+   "uf": "BA",
+   "obs": "QUADRANTE"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "PARADA PROIBIDA",
+   "cidade": "VITORIA DA CONQUISTA",
+   "uf": "BA",
+   "obs": "QUADRANTE"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "PARADA PROIBIDA",
+   "cidade": "DIVISA ALEGRE",
+   "uf": "MG",
+   "obs": "QUADRANTE"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO CAMPINHO",
+   "cidade": "PARAOPEBA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO CAMPINHO",
+   "cidade": "PARAOPEBA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPINHO",
+   "cidade": "PARAOPEBA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "P. DOM PEDRO 99",
+   "cidade": "CAETANOPOLIS",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 99",
+   "cidade": "CAETANOPOLIS",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "FRIGORIFICO",
+   "nome": "POSTO CANECÃO",
+   "cidade": "SETE LAGOAS",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO CANECÃO",
+   "cidade": "SETE LAGOAS",
+   "uf": "MG",
+   "obs": "FRIGORIFICADA"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CANECÃO",
+   "cidade": "SETE LAGOAS",
+   "uf": "MG",
+   "obs": "FRIGORIFICADA"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Continue para Av. Conde da Boa Vista",
+   "km": 1.36
+  },
+  {
+   "instrucao": "Continue para Antiga Estrada Rodovia",
+   "km": 1.46
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Antiga Estrada Rodovia",
+   "km": 1.3
+  },
+  {
+   "instrucao": "Vire à direita na R. do Caionco",
+   "km": 0.42
+  },
+  {
+   "instrucao": "Continue para Rua Governador Miguel Arraes de Acencar",
+   "km": 0.35
+  },
+  {
+   "instrucao": "Continue para Rua Governador Miguel",
+   "km": 1.0
+  },
+  {
+   "instrucao": "Vire à esquerda para chegar a BR-101",
+   "km": 123.12
+  },
+  {
+   "instrucao": "Continue para BR-101",
+   "km": 70.38
+  },
+  {
+   "instrucao": "Continue em frente",
+   "km": 3.1
+  },
+  {
+   "instrucao": "Pegue a BR-101/BR-104Continue na BR-101",
+   "km": 47.97
+  },
+  {
+   "instrucao": "Curva suave à direita para permanecer na BR-101",
+   "km": 12.04
+  },
+  {
+   "instrucao": "Continue para BR-101",
+   "km": 1.44
+  },
+  {
+   "instrucao": "Continue para BR-101",
+   "km": 54.0
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda",
+   "km": 4.08
+  },
+  {
+   "instrucao": "Continue para BR-101",
+   "km": 53.16
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na Rod. Prestes Maia/BR- 101Continue na Rod. Prestes Maia",
+   "km": 12.81
+  },
+  {
+   "instrucao": "Continue para BR-101",
+   "km": 0.43
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-101",
+   "km": 28.31
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-101",
+   "km": 16.8
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.26
+  },
+  {
+   "instrucao": "Curva suave à direita em direção à BR-101",
+   "km": 0.031
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na direção de BR-101",
+   "km": 0.046
+  },
+  {
+   "instrucao": "Vire à esquerda na BR-101",
+   "km": 35.57
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na Rod. Padre Pedro",
+   "km": 1.42
+  },
+  {
+   "instrucao": "Pegue a BR-101/BR-349Continue na BR-101Você verá Implementos Rodoviários (à direita em 1 km)",
+   "km": 150.13
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-101",
+   "km": 130.47
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a F. de Santana",
+   "km": 0.67
+  },
+  {
+   "instrucao": "Pegue a BR-324",
+   "km": 3.88
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-324",
+   "km": 7.74
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-324",
+   "km": 3.36
+  },
+  {
+   "instrucao": "Continue em frente",
+   "km": 0.18
+  },
+  {
+   "instrucao": "Continue para Av. Pres. Dutra",
+   "km": 0.072
+  },
+  {
+   "instrucao": "Vire à direita na rampa de acesso para V. Conquista/B. Horizonte/BR- 116",
+   "km": 0.14
+  },
+  {
+   "instrucao": "Pegue a Av. Eduardo Fróes da Mota",
+   "km": 7.23
+  },
+  {
+   "instrucao": "Vire à direita para pegar a ramp de acesso à Rio de Janeiro para Vitória da Conquista",
+   "km": 0.27
+  },
+  {
+   "instrucao": "Pegue a Rod. Santos Dumont/BR-116Continue na Rod. Santos Dumont",
+   "km": 22.09
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na Rod. Santos DumontEstrada com pedágio",
+   "km": 96.91
+  },
+  {
+   "instrucao": "Vire à direita na R. Antônio Carneiro",
+   "km": 0.11
+  },
+  {
+   "instrucao": "Continue em frente na BR-116",
+   "km": 18.14
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-116Estrada com pedágio",
+   "km": 68.79
+  },
+  {
+   "instrucao": "Vire à direita na BR-420",
+   "km": 0.7
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na Av. Pres. Médice",
+   "km": 0.61
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Av. Pres. Médice",
+   "km": 0.2
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-116Estrada com pedágio",
+   "km": 76.08
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-116Estrada com pedágio",
+   "km": 67.75
+  },
+  {
+   "instrucao": "Vire à direita em direção à Av. John Kenedy",
+   "km": 0.026
+  },
+  {
+   "instrucao": "Vire à esquerda na Av. John Kenedy",
+   "km": 0.35
+  },
+  {
+   "instrucao": "Vire à esquerda em direção à BR-116",
+   "km": 0.023
+  },
+  {
+   "instrucao": "Vire à direita na BR-116",
+   "km": 41.83
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Anagé/Brasília/R. Janeiro",
+   "km": 0.34
+  },
+  {
+   "instrucao": "Continue para Anel Rodoviário Jadiel Matos Oeste",
+   "km": 8.3
+  },
+  {
+   "instrucao": "Continue para Av. Anel de Contorno",
+   "km": 0.74
+  },
+  {
+   "instrucao": "Continue para Anel Rodoviário Jadiel Matos Oeste",
+   "km": 5.41
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a C. Sales/T. Otoni/R. Janeiro",
+   "km": 0.45
+  },
+  {
+   "instrucao": "Pegue a BR-116Estrada com pedágio",
+   "km": 45.32
+  },
+  {
+   "instrucao": "BR-116 faz uma curva suave à direita e se torna Rod. Santos DumontEstrada com pedágio",
+   "km": 68.5
+  },
+  {
+   "instrucao": "Continue para BR-116",
+   "km": 16.71
+  },
+  {
+   "instrucao": "Curva suave à direita em direção à BR-251",
+   "km": 0.063
+  },
+  {
+   "instrucao": "Curva suave à direita na BR-251",
+   "km": 116.17
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a BR-251/BR-342Continue na BR-251",
+   "km": 207.8
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída em direção a Belo Horizonte/Triángulo Mineiro",
+   "km": 2.35
+  },
+  {
+   "instrucao": "Continue para Anel Rodoviário Leste",
+   "km": 0.076
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a Av. Dr. Mario Tourinho",
+   "km": 2.79
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.92
+  },
+  {
+   "instrucao": "Continue para Anel Rodoviário Leste",
+   "km": 0.13
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída e mantenha-se na Anel Rodoviário Leste",
+   "km": 1.6
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída",
+   "km": 1.53
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a Rodoanel Leste",
+   "km": 0.78
+  },
+  {
+   "instrucao": "Rodoanel Leste faz uma curva suave à esquerda e se torna Av. Dr. Mário Tourinho",
+   "km": 1.9
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso para a BR-135",
+   "km": 25.07
+  },
+  {
+   "instrucao": "Continue para BR-135Estrada com pedágio",
+   "km": 16.37
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-135",
+   "km": 2.92
+  },
+  {
+   "instrucao": "Sair na Pista Marginal",
+   "km": 0.23
+  },
+  {
+   "instrucao": "Curva suave à direita",
+   "km": 0.77
+  },
+  {
+   "instrucao": "Pegue a BR-135Estrada com pedágio",
+   "km": 215.59
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-135Estrada com pedágio",
+   "km": 38.67
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-135",
+   "km": 1.09
+  },
+  {
+   "instrucao": "Pegue a BR-040/BR-135",
+   "km": 2.26
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-040/BR-135",
+   "km": 41.01
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-040/BR-135Estrada com pedágio",
+   "km": 59.65
+  },
+  {
+   "instrucao": "Pegue a saída 526 em direção a Betim/Estação Eldorado",
+   "km": 0.39
+  },
+  {
+   "instrucao": "Curva suave à direita na rampa de acesso a Betim/Estação Eldorado",
+   "km": 0.5
+  },
+  {
+   "instrucao": "Pegue a Av. Helena de Vasconcelos Costa",
+   "km": 1.8
+  },
+  {
+   "instrucao": "Pegue a Via Expressa de Contagem/Via Expressa Francisco Cleuton Lopes",
+   "km": 3.28
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na Via Expressa Francisco Cleuton Lopes",
+   "km": 0.38
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na Via Expressa Francisco Cleuton Lopes",
+   "km": 2.51
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na Via Expressa Francisco Cleuton Lopes",
+   "km": 3.06
+  },
+  {
+   "instrucao": "Continue para Via Expressa de Betim",
+   "km": 2.13
+  },
+  {
+   "instrucao": "Continue para Av. Adutora Várzea das Flores",
+   "km": 1.45
+  },
+  {
+   "instrucao": "Continue para Vila Expressa de Betim",
+   "km": 0.1
+  },
+  {
+   "instrucao": "Pegue a Av. Campo de Ourique",
+   "km": 0.36
+  },
+  {
+   "instrucao": "Pegue a BR-262/BR-381 pela rampa de acesso a Partage Shopping Betim/São PauloVocê verá Go Inn Betim (à direita em m)",
+   "km": 0.75
+  },
+  {
+   "instrucao": "Curva suave à esquerda na BR-262",
+   "km": 6.71
+  },
+  {
+   "instrucao": "Curva suave à direita para permanecer na BR-262 (placas para Bentim)",
+   "km": 2.92
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Dist. Industrial",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Pegar a rampa de acesso",
+   "km": 0.042
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída",
+   "km": 0.16
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 1.15
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída",
+   "km": 1.5
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída",
+   "km": 1.67
+  },
+  {
+   "instrucao": "Continue em frente na R. Jacaré",
+   "km": 0.057
+  },
+  {
+   "instrucao": "Vire à direita na Av. Parque B",
+   "km": 1.78
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.037
+  },
+  {
+   "instrucao": "Continue em frente",
+   "km": 0.2
+  }
+ ],
+ "importado_em": "21/10/2026 13:38"
+}

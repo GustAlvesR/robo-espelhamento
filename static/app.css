@@ -9,6 +9,7 @@
   --ok: #0ca30c; --nok: #d03b3b; --pend: #8a93ab; --alerta: #fab219; --alerta-texto: #7a4f00;
   --acento: #2a78d6;
   --est-hub: #7c4dff; --est-fmh: #0891b2; --est-soc: #051039; --est-outra: #c2417f;
+  --rotograma: #6d28d9;
   --clima-amarelo: #e8b300; --clima-laranja: #f07c00; --clima-vermelho: #d03b3b; --clima-laranja-texto: #9a4a00;
   --fonte: Arial, "Helvetica Neue", Helvetica, sans-serif;
   --mono: var(--fonte);
@@ -21,6 +22,7 @@
     --ok: #22b822; --nok: #e05a5a; --pend: #7d87a6; --alerta: #fab219; --alerta-texto: #fab219;
     --acento: #3987e5;
     --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
+    --rotograma: #a78bfa;
     --clima-amarelo: #f5c400; --clima-laranja: #ff8c1a; --clima-vermelho: #ef5a5a; --clima-laranja-texto: #ffb066;
     color-scheme: dark;
   }
@@ -31,6 +33,7 @@
   --ok: #22b822; --nok: #e05a5a; --pend: #7d87a6; --alerta: #fab219; --alerta-texto: #fab219;
   --acento: #3987e5;
   --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
+  --rotograma: #a78bfa;
   --clima-amarelo: #f5c400; --clima-laranja: #ff8c1a; --clima-vermelho: #ef5a5a; --clima-laranja-texto: #ffb066;
   color-scheme: dark;
 }
@@ -129,6 +132,15 @@ button, input, select { font: inherit; color: inherit; }
 .dica-clima { white-space: pre-line; max-width: 320px; }
 .lista .tags { display: flex; gap: 4px; }
 .tag.chuva { font-weight: 700; }
+.tag.rotograma { font-weight: 700; border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); }
+/* Área de risco do rotograma: círculo vermelho com "!" (posição só da cidade = tracejado). */
+.risco { display: grid; place-items: center; }
+.risco span { display: grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: var(--nok);
+  color: #fff; font: 700 11px/1 var(--fonte); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); }
+.risco.cidade span { background: color-mix(in srgb, var(--nok) 35%, transparent); border-style: dashed; }
+.tr.rotograma { border-top-color: var(--rotograma); }
+.pt.autorizado { background: var(--ok); width: 8px; height: 8px; }
+.pt.risco-leg { background: var(--nok); }
 .tag.chuva.amarelo { border-color: var(--clima-amarelo); color: var(--alerta-texto); background: color-mix(in srgb, var(--clima-amarelo) 18%, transparent); }
 .tag.chuva.laranja { border-color: var(--clima-laranja); color: var(--clima-laranja-texto); background: color-mix(in srgb, var(--clima-laranja) 16%, transparent); }
 .tag.chuva.vermelho { border-color: var(--clima-vermelho); color: var(--nok); background: color-mix(in srgb, var(--clima-vermelho) 14%, transparent); }

@@ -162,3 +162,35 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   menos os que já venceram. A camada do mapa mostra de quando é a leitura.
 - Variáveis opcionais: `INMET_ATIVO=0` desliga; `INMET_ATUALIZAR_MIN` (30),
   `INMET_ANTECEDENCIA_H` (12), `INMET_MAX_NOVOS_POR_CICLO` (40), `INMET_RSS_URL`.
+
+## Rotogramas (Angellira)
+
+- Ficam em `dados/rotogramas/ORIGEM__DESTINO.json`, um por trecho, gerados de cada PDF
+  com `python importar_rotograma.py SM39635748.PDF` (precisa de `pip install pdfplumber`).
+  Rotograma novo do mesmo trecho substitui o anterior. Do PDF só vai para o arquivo a
+  rota: SM, origem, destino, pontos autorizados, áreas de risco e rota detalhada.
+  Motorista, CPF, placas e telefones ficam de fora, e o `.gitignore` bloqueia os PDFs.
+- Trechos cadastrados: SOC-SP8 → SOC-MG4 (SBC x Contagem), SOC-PE2 → SOC-MG2
+  (Recife x Betim) e SOC-MG2 → SOC-PE4 (Betim x Recife).
+- O robô localiza cada ponto e cada área de risco pela TomTom (nome do posto perto do
+  centro da cidade; se não achar, fica a posição da cidade), no máximo 40 chamadas por
+  ciclo (`ROTOGRAMA_MAX_CHAMADAS_CICLO`), com cache. A primeira vez leva cerca de uma hora.
+- Rota do rotograma (linha roxa): rota de caminhão passando pelos postos autorizados, na
+  ordem, um a cada 40 km. O detalhe mostra o tamanho dela e o do rotograma, para conferir.
+- Pontos autorizados (verde) e áreas de risco (vermelho com "!") aparecem ao selecionar
+  uma rota do trecho. Contorno tracejado = posição só da cidade.
+- Alertas (coluna `Alerta Rotograma`, etiqueta "Rotograma" e KPI "Alerta rotograma"):
+  - `Fora da rota do rotograma (X km)`: caminhão a mais de 15 km da rota (30 km quando a
+    posição da Angellira é só da cidade);
+  - `Parado em local de roubo/local proibido: NOME`: parado (velocidade 0, ou ignição
+    desligada sem velocidade) a até 2 km da área de risco, ou com o texto da posição
+    citando o local;
+  - `Parado fora dos pontos autorizados há XhYY`: parado 30 min ou mais
+    (`ROTOGRAMA_PARADA_MIN`) longe dos pontos autorizados, da origem e do destino.
+    Só com posição no nível de ponto de referência.
+  Não geram alerta: viagem não iniciada, posição com mais de 90 min, rota no destino ou
+  encerrada, cancelada, e áreas do tipo FRIGORIFICO.
+- A posição da Angellira não é GPS: os alertas são um apoio para o GR olhar a rota, não
+  uma prova. As margens são ajustáveis: `ROTOGRAMA_DESVIO_KM`,
+  `ROTOGRAMA_DESVIO_CIDADE_KM`, `ROTOGRAMA_RAIO_RISCO_KM`, `ROTOGRAMA_RAIO_PONTO_KM`.
+

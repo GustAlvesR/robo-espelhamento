@@ -221,3 +221,7 @@ __marimo__/
 
 service_account.json
 state_espelhamento.json*
+
+# Rotogramas originais têm nome e CPF do motorista: só o JSON gerado vai para o Git.
+*.pdf
+*.PDF

@@ -207,6 +207,12 @@ const ControleCamadas = L.Control.extend({
   },
 });
 const chuvaNoCaminho = (r) => ((r._geo || {}).clima || []).length > 0;
+
+// Rotogramas da Angellira, por trecho "ORIGEM__DESTINO" (vêm com as rotas).
+let rotogramas = {};
+const chaveTrecho = (r) => `${String(r["Origin Station Code"] || "").toUpperCase()}__${String(r["Destination Station Code"] || "").toUpperCase()}`;
+const rotogramaDe = (r) => rotogramas[chaveTrecho(r)] || null;
+const alertasRotograma = (r) => (((r._geo || {}).rotograma || {}).alertas || []);
 let soChuva = false;
 
 const statusDe = (r) => r["Status Geral"] || "Pendente";
@@ -287,6 +293,7 @@ function filtrar() {
   return dados.filter((r) => {
     if (semSinal && (r["Espelhamento Atual"] !== "NOK" || cancelada(r))) return false;
     if (soChuva && (!chuvaNoCaminho(r) || cancelada(r))) return false;
+    if (soRotograma && (!alertasRotograma(r).length || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
@@ -309,6 +316,8 @@ function desenharKpis() {
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
       () => aplicarFiltro(null, null, true)],
   ];
+  const nRot = cont((r) => alertasRotograma(r).length > 0);
+  if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
   const nChuva = cont(chuvaNoCaminho);
   if (nChuva) kpis.push(["Chuva no caminho", nChuva, "alerta", () => aplicarFiltro(null, null, false, true)]);
   const nCanc = dados.length - validas.length;
@@ -318,13 +327,21 @@ function desenharKpis() {
     el("button", { class: `kpi ${cls}`, onclick: fn }, el("b", {}, String(n)), rot)));
 }
 
-function aplicarFiltro(id, valor, sinal = false, chuva = false) {
+let soRotograma = false;
+function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false) {
+  soRotograma = rot;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
   soChuva = chuva;
   if (selecionada) selecionar(null);
   else render();
+}
+
+function tagRotograma(r) {
+  const alertas = alertasRotograma(r);
+  if (!alertas.length || cancelada(r)) return null;
+  return el("span", { class: "tag rotograma", title: alertas.join("\n") }, "Rotograma");
 }
 
 function tagChuva(r) {
@@ -351,7 +368,7 @@ function desenharLista(lista) {
       onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
-        el("span", { class: "tags" }, tagChuva(r), tag)),
+        el("span", { class: "tags" }, tagRotograma(r), tagChuva(r), tag)),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -448,6 +465,7 @@ function desenharDetalhe() {
       ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
+    ...secaoRotograma(r, g),
     ...(g.clima && g.clima.length ? [
       el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
       el("dl", {}, ...g.clima.flatMap((a) => linha(a.rotulo,
@@ -471,7 +489,46 @@ function desenharDetalhe() {
 // (não há o caminho entre uma posição e outra). Falta percorrer = caminho mais
 // rápido da TomTom com o trânsito do momento, recalculado a cada 30 min. Sem
 // isso, cai no trajeto planejado cortado no ponto mais próximo do caminhão.
+function secaoRotograma(r, g) {
+  const rot = rotogramaDe(r);
+  if (!rot) return [];
+  const info = g.rotograma || {};
+  const km = rot.km_linha ? `${rot.km_linha} km no mapa` + (rot.km_rotograma ? ` (rotograma: ${Math.round(rot.km_rotograma)} km)` : "") : "";
+  const situacao = info.alertas && info.alertas.length ? info.alertas.join("; ")
+    : info.desvio_km !== null && info.desvio_km !== undefined ? `Na rota (a ${info.desvio_km} km)` : "";
+  return [
+    el("div", { class: "sec" }, `Rotograma${rot.sm ? ` (SM ${rot.sm})` : ""}`),
+    el("dl", {},
+      ...linha("Situação", situacao),
+      ...linha("Rota", km || (rot.localizando ? `localizando ${rot.localizando} ponto(s)` : "")),
+      ...linha("Pontos autorizados", rot.pontos.length || ""),
+      ...linha("Áreas de risco", rot.riscos.length || ""),
+    ),
+  ];
+}
+
+function desenharRotograma(rot) {
+  const verde = corCss("var(--ok)");
+  for (const [lat, lon, nome, cidade, rodovia, precisao] of rot.pontos || []) {
+    L.circleMarker([lat, lon], { radius: 3.5, color: verde, weight: 1.5, fillColor: verde,
+      fillOpacity: precisao === "referência" ? 0.9 : 0, dashArray: precisao === "referência" ? null : "2 2",
+      bubblingMouseEvents: false })
+      .bindTooltip(escHtml([`Ponto autorizado: ${nome}`, cidade, rodovia, precisao === "cidade" ? "(posição da cidade)" : ""]
+        .filter(Boolean).join(" · "))).addTo(camadaSel);
+  }
+  for (const [lat, lon, tipo, nome, cidade, obs, precisao] of rot.riscos || []) {
+    L.marker([lat, lon], { keyboard: false,
+      icon: L.divIcon({ className: `risco ${precisao === "referência" ? "" : "cidade"}`, html: "<span>!</span>",
+        iconSize: [16, 16], iconAnchor: [8, 8] }) })
+      .bindTooltip(escHtml([`${tipo}: ${nome}`, cidade, obs, precisao === "cidade" ? "(posição da cidade)" : ""]
+        .filter(Boolean).join(" · "))).addTo(camadaSel);
+  }
+}
+
 function desenharTrajeto(r, g) {
+  const rot = rotogramaDe(r);
+  if (rot) desenharRotograma(rot);
+  const linhaRot = rot && rot.linha && rot.linha.length >= 2 ? rot.linha : null;
   const pts = g.pontos || [];
   const trilha = g.trilha || [];
   const atual = g.rota_atual || [];
@@ -480,11 +537,16 @@ function desenharTrajeto(r, g) {
   const cinza = corCss("var(--pend)");
   const tracar = (trecho, estilo, dica) =>
     L.polyline(trecho, { ...base, ...estilo }).bindTooltip(escHtml(dica), { sticky: true }).addTo(camadaSel);
+  const violeta = corCss("var(--rotograma)");
+  const dicaRot = `Rota do rotograma${rot && rot.sm ? ` (SM ${rot.sm})` : ""}`;
   if (aguardandoInicio(r)) {
-    if (pts.length >= 2) tracar(pts, { color: acento, dashArray: "10 8" }, "Trajeto previsto (viagem não iniciada)");
+    if (linhaRot) tracar(linhaRot, { color: violeta, dashArray: "10 8" }, `${dicaRot}, viagem não iniciada`);
+    else if (pts.length >= 2) tracar(pts, { color: acento, dashArray: "10 8" }, "Trajeto previsto (viagem não iniciada)");
     return;
   }
-  if ((trilha.length || atual.length >= 2) && pts.length >= 2) {
+  if (linhaRot) {
+    tracar(linhaRot, { color: violeta, weight: 4, opacity: 0.55 }, dicaRot);
+  } else if ((trilha.length || atual.length >= 2) && pts.length >= 2) {
     tracar(pts, { color: cinza, weight: 3, opacity: 0.45, dashArray: "2 7" }, "Trajeto planejado (origem → destino)");
   }
   if (trilha.length) {
@@ -513,7 +575,9 @@ function desenharTrajeto(r, g) {
 function enquadrarSelecionada() {
   const r = dados.find((x) => x["Trip Number"] === selecionada);
   const g = (r && r._geo) || {};
+  const rot = r && rotogramaDe(r);
   const pts = [...(g.pontos || []), ...(g.rota_atual || []), ...(g.trilha || []).map((p) => [p[0], p[1]]),
+    ...((rot && rot.linha) || []),
     g.veiculo, g.origem, g.destino].filter(Boolean);
   if (!pts.length) return;
   // No computador o detalhe cobre a direita do mapa; no celular, a parte de baixo.
@@ -603,6 +667,7 @@ function aplicarDados(j) {
   const aviso = document.getElementById("atualizado");
   dados = j.rotas || [];
   alertasClima = j.clima || [];
+  rotogramas = j.rotogramas || {};
   erroClima = j.clima_erro || "";
   climaLidoEm = j.clima_lido_em || "";
   desenharClima();
@@ -634,7 +699,7 @@ function salvarVisao() {
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
       fTrecho: document.getElementById("fTrecho").value,
-      estacoes: [...tiposLigados], clima: climaLigado, soChuva,
+      estacoes: [...tiposLigados], clima: climaLigado, soChuva, soRotograma,
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -652,6 +717,7 @@ function restaurarVisao() {
     trechoPendente = v.fTrecho || "";
     climaLigado = !!v.clima;
     soChuva = !!v.soChuva;
+    soRotograma = !!v.soRotograma;
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -703,7 +769,7 @@ seletorTema.addEventListener("change", () => {
 
 for (const id of ["busca", "fStatus", "fRisco", "fTrecho"]) {
   document.getElementById(id).addEventListener("input", () => {
-    if (id !== "busca") semSinal = soChuva = false;
+    if (id !== "busca") semSinal = soChuva = soRotograma = false;
     render();
   });
 }
