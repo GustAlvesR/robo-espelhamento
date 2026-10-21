@@ -157,6 +157,17 @@ indicadores pela aba de Resultado deve filtrar `Status Geral` ≠ `Cancelada`.
 A decisão vale no fechamento: se o cancelamento for desfeito antes do fim
 previsto, a rota volta a contar normalmente.
 
+### Proteção contra travamento
+- Toda chamada ao Google Sheets tem tempo limite (15 s para conectar, 90 s para ler) e
+  nova tentativa em falha de conexão. Antes não havia limite, e uma conexão travada
+  parava o robô sem erro nenhum no log.
+- Um vigia confere o ciclo a cada 30 s. Se um ciclo passar de `CICLO_MAX_MINUTOS`
+  (padrão 20) ou se os ciclos pararem, ele registra `Robô travado (...). Reiniciando o
+  processo.` e encerra o processo; o Render sobe outro sozinho.
+- O ping contra a hibernação roda separado dos ciclos.
+- O estado é gravado antes de limpar as linhas que sobraram, então uma gravação
+  interrompida não apaga a memória do robô.
+
 ## 7. Como funciona a memória do robô (`state_espelhamento.json`)
 
 Esse arquivo é o que permite ao robô saber, a cada novo ciclo, "o que já
