@@ -190,11 +190,11 @@ function enviarPorFormulario(url, dados) {
   });
 }
 
-// Apps Script: corpo como text/plain (sem preflight de CORS); a resposta JSON confirma o envio.
-// Uma tentativa por ciclo: se a resposta se perder, o e-mail pode já ter saído e repetir duplicaria.
-async function enviarEmail(msg) {
-  const corpo = JSON.stringify({token: cfg.emailToken.trim(), assunto: msg.titulo, html: montarHtmlEmail(msg),
-    texto: montarTexto(msg, false)});
+// Apps Script: corpo como text/plain (sem preflight de CORS); a resposta JSON confirma o recebimento.
+// payload: {tipo: 'rota'|'alerta'|'ping', ...} entra na fila do resumo; sem tipo, o e-mail sai na hora.
+// Uma tentativa por ciclo: se a resposta se perder, o pedido pode já ter chegado e repetir duplicaria.
+async function enviarEmail(payload) {
+  const corpo = JSON.stringify({token: cfg.emailToken.trim(), ...payload});
   let r;
   try {
     ultimaViolacao = '';
@@ -204,6 +204,7 @@ async function enviarEmail(msg) {
     await esperarMs(200);  // o evento securitypolicyviolation chega logo depois da falha do fetch
     const motivo = ultimaViolacao || String(e);
     if (await enviarPorFormulario(cfg.emailUrl, corpo)) {
+      est.ultimoSinalEmail = Date.now();
       return {ok: true, detalhe: `enviado por formulário, sem confirmação (fetch falhou: ${motivo})`};
     }
     return {ok: false, detalhe: `bloqueado: ${ultimaViolacao || motivo}`};
@@ -211,7 +212,11 @@ async function enviarEmail(msg) {
   const texto = await r.text().catch(() => '');
   let j = null;
   try { j = JSON.parse(texto); } catch (e) { /* resposta não é JSON */ }
-  if (j && j.ok) return {ok: true, detalhe: `ok (cota restante hoje: ${j.cotaRestante})`};
+  if (j && j.ok) {
+    est.ultimoSinalEmail = Date.now();
+    if (j.naFila !== undefined) return {ok: true, detalhe: `na fila do e-mail (${j.naFila} item(ns); envio a cada ${j.intervaloMin} min)`};
+    return {ok: true, detalhe: j.cotaRestante !== undefined ? `ok (cota restante hoje: ${j.cotaRestante})` : 'ok'};
+  }
   if (j) return {ok: false, detalhe: `${j.erro} (confira TOKEN/DESTINATARIOS no script)`};
   const login = /accounts\.google\.com|ServiceLogin|Sign in|Fazer login/i.test(texto);
   return {ok: false, detalhe: `HTTP ${r.status}: ` + (login
@@ -219,8 +224,11 @@ async function enviarEmail(msg) {
     : 'resposta inesperada. Confira se a URL é a da implantação (termina em /exec) e se o código foi reimplantado')};
 }
 
+const emailImediato = msg => ({assunto: msg.titulo, html: montarHtmlEmail(msg), texto: montarTexto(msg, false)});
+
 // Envia para todos os canais configurados; ok se pelo menos um aceitou.
-async function enviar(msg) {
+// payloadEmail: o que vai para a fila do e-mail; se omitido, o e-mail sai na hora (usado no teste).
+async function enviar(msg, payloadEmail = null) {
   const canais = [];
   if (cfg.webhookUrl) canais.push(['Teams', () => enviarTeams(msg)]);
   for (const d of destinosWhatsApp(cfg.whatsappDestinos)) {
@@ -229,7 +237,7 @@ async function enviar(msg) {
   if (cfg.telegramToken) {
     for (const chat of lista(cfg.telegramChatIds)) canais.push([`Telegram ${chat}`, () => enviarTelegram(chat, montarTexto(msg, false))]);
   }
-  if (cfg.emailUrl && cfg.emailToken) canais.push(['E-mail', () => enviarEmail(msg)]);
+  if (cfg.emailUrl && cfg.emailToken) canais.push(['E-mail', () => enviarEmail(payloadEmail || emailImediato(msg))]);
   if (!canais.length) {
     return {ok: false, detalhe: 'nenhum canal salvo. Abra "Configurar", preencha o canal '
       + '(e-mail precisa da URL /exec e do token) e clique em Salvar'};
@@ -257,7 +265,7 @@ async function alertar(tipo, titulo, texto, cooldownMin = undefined, nivel = 'er
   const msg = {titulo: `⚙ Monitor de rotas extras: ${titulo}`, resumo: texto, nivel, secoes: [], alertas: [], link: urlApp};
   evento(`ALERTA ${titulo}: ${texto}`);
   notificarPC(msg);
-  if ((await enviar(msg)).ok || !temCanal()) est.alertas[tipo] = agora;
+  if ((await enviar(msg, {tipo: 'alerta', alerta: {titulo, texto, nivel}})).ok || !temCanal()) est.alertas[tipo] = agora;
 }
 
 async function testarEnvio() {
@@ -363,10 +371,10 @@ async function processar(dados) {
     if (falhou) continue;
     const msg = mensagemRota(rota, av, reg.primeiraVez, Date.now(), {...cfg, urlRotas: urlApp});
     if (reg.tentativas === 0) notificarPC(msg);
-    const r = await enviar(msg);
+    const r = await enviar(msg, {tipo: 'rota', rota: rotaParaEmail(rota, av, reg.primeiraVez)});
     if (r.ok) {
       reg.status = 'notificada'; reg.notificadaEm = Date.now(); est.stats.notificadas += 1;
-      evento(`Avisada no Teams: ${rota.nome} (ETA ${fmtData(rota.eta)})`);
+      evento(`Avisada: ${rota.nome} (ETA ${fmtData(rota.eta)}). ${r.detalhe}`);
     } else {
       reg.tentativas += 1; est.stats.falhasEnvio += 1; falhou = true;
       evento(`Falha ao avisar ${rota.nome} (${r.detalhe}); nova tentativa no próximo ciclo`);
@@ -374,6 +382,7 @@ async function processar(dados) {
   }
   esquecerAusentes(est, new Set(unicas.keys()), agora, Number(cfg.esquecerAposMin));
   est.ultimoCiclo = {em: agora, cards: dados.cards.length, unicas: unicas.size, novas: novas.length};
+  await sinalDeVida(agora, dados.cards.length);
   await heartbeat(agora);
   status(`última leitura ${fmtHora(agora)}: ${dados.cards.length} card(s), ${novas.length} nova(s)` +
     (modo === 'direto' ? ' (modo sem recarregar)' : '') + `. Próxima em ${cfg.intervaloS}s.`);
@@ -401,6 +410,14 @@ async function checarLayout(dados, rotas) {
   }
 }
 
+// Avisa o Apps Script que o monitor está lendo; sem sinal por muito tempo, ele manda "monitor parou".
+async function sinalDeVida(agora, cards) {
+  if (!cfg.emailUrl || !cfg.emailToken || agora - (est.ultimoSinalEmail || 0) < 5 * 60000) return;
+  const r = await enviarEmail({tipo: 'ping', estatisticas: {ultimaLeitura: fmtData(agora), cardsNaTela: cards,
+    leituras: est.stats.leituras}});
+  if (!r.ok) evento(`Sinal de vida para o e-mail falhou: ${r.detalhe}`);
+}
+
 async function heartbeat(agora) {
   const [h, m] = String(cfg.heartbeatHora || '08:00').split(':').map(Number);
   const d = new Date(agora);
@@ -413,7 +430,8 @@ async function heartbeat(agora) {
       ['Avisadas', String(s.notificadas)], ['Filtradas', String(s.filtradas)],
       ['Falhas de envio', String(s.falhasEnvio)], ['Última rota nova', s.ultimaRotaEm ? fmtData(s.ultimaRotaEm) : '-'],
     ]]]};
-  if ((await enviar(msg)).ok) {
+  const textoResumo = msg.secoes[0][1].map(([k, v]) => `${k}: ${v}`).join('; ');
+  if ((await enviar(msg, {tipo: 'alerta', alerta: {titulo: 'resumo diário', nivel: 'info', texto: textoResumo}})).ok) {
     est.heartbeatData = hoje;
     est.stats = {...statsZerados(), ultimaRotaEm: s.ultimaRotaEm};
   }

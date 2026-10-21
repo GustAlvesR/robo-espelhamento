@@ -258,6 +258,13 @@ export function montarHtmlEmail(msg) {
   return `<div style="font-family:Segoe UI,Arial,sans-serif">${partes.join('')}</div>`;
 }
 
+// Dados da rota para a fila de e-mail do Apps Script (que monta o resumo).
+export function rotaParaEmail(rota, av, primeiraVez) {
+  return {chave: chave(rota), nome: rota.nome, veiculo: rota.veiculoTexto || rota.veiculo, tipo: rota.tipo,
+    origem: rota.origem, eta: rota.eta, cpt: rota.cpt, etaTexto: rota.etaTexto, cptTexto: rota.cptTexto,
+    tempoLimite: rota.tempoLimiteTexto, secao: rota.secao, primeiraVez, alertas: av.alertas.slice(0, 10)};
+}
+
 export function destinosWhatsApp(texto) {
   // Telefone pode ter espaços e pontuação; a chave é o que vem depois da última vírgula/ponto e vírgula.
   return (texto || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {

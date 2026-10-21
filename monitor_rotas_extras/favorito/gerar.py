@@ -66,23 +66,32 @@ Funciona com grupos.</li>
 </ul>
 
 <h2>E-mail pelo Google Apps Script (uma vez)</h2>
+<p>As rotas novas entram numa fila no Google e saem num <b>único e-mail</b> a cada 15 minutos (ajustável). O mesmo
+script avisa por e-mail se o monitor parar de ler a tela (notebook desligado, aba fechada, sessão expirada).</p>
 <ol>
-<li>Logado na conta Google que vai <b>enviar</b> os e-mails, abra <code>https://script.google.com</code> e clique em
-"Novo projeto". Dê um nome, por exemplo <code>Monitor Rotas Extras</code>.</li>
+<li>Logado na conta Google que vai <b>enviar</b> os e-mails, abra <code>https://script.google.com</code> e o projeto
+(ou crie um "Novo projeto" chamado <code>Monitor Rotas Extras</code>).</li>
 <li>Apague o que estiver no editor, cole todo o código abaixo e salve (Ctrl+S).
 <textarea readonly onclick="this.select()" style="height:180px">{codigo_gs}</textarea></li>
-<li>Clique na engrenagem "Configurações do projeto", role até "Propriedades do script" e adicione:
-<code>TOKEN</code> = uma senha longa que você inventar; <code>DESTINATARIOS</code> = e-mails separados por vírgula.</li>
-<li>Volte ao editor, escolha a função <code>testarEnvio</code> no topo e clique em "Executar". Autorize o acesso
-(se aparecer "app não verificado": Avançado, Acessar). Deve chegar um e-mail de teste aos destinatários.</li>
-<li>Clique em "Implantar", "Nova implantação", engrenagem "Selecionar tipo", "App da Web".
-"Executar como": <b>Eu</b>. "Quem pode acessar": <b>Qualquer pessoa</b>. Clique em Implantar e copie a URL que termina em <code>/exec</code>.</li>
-<li>No favorito, em "Configurar": cole essa URL em "E-mail: URL do app da web" e o mesmo TOKEN em "E-mail: token".
-Salve e clique em "Testar envio".</li>
+<li>Engrenagem "Configurações do projeto" &gt; "Propriedades do script":
+<code>TOKEN</code> = uma senha longa; <code>DESTINATARIOS</code> = e-mails separados por vírgula.
+Opcionais: <code>INTERVALO_MIN</code> = 5, 10, 15 ou 30 (padrão 15); <code>LIMITE_SEM_SINAL_MIN</code> = minutos sem
+sinal para avisar que o monitor parou (padrão 20).</li>
+<li>No editor, escolha a função <code>instalarGatilhos</code> no topo e clique em "Executar". Autorize o acesso
+(se aparecer "app não verificado": Avançado, Acessar). Isso cria o envio automático a cada 15 minutos.
+Se mudar <code>INTERVALO_MIN</code> depois, rode <code>instalarGatilhos</code> de novo.</li>
+<li>Publique: <b>primeira vez</b>: "Implantar", "Nova implantação", tipo "App da Web", "Executar como: Eu",
+"Quem pode acessar: Qualquer pessoa", Implantar e copie a URL que termina em <code>/exec</code>.
+<b>Já tinha implantado</b>: "Implantar", "Gerenciar implantações", lápis, "Versão: Nova versão", Implantar
+(a URL continua a mesma).</li>
+<li>No favorito, em "Configurar": cole a URL e o mesmo TOKEN, salve e clique em "Testar envio" (o teste sai na hora,
+fora da fila).</li>
 </ol>
-<p>Observações: conta Gmail comum envia até cerca de 100 destinatários por dia pelo Apps Script (cada e-mail para 3 pessoas conta 3);
-o teste mostra a cota restante. E-mails vindos de uma conta externa podem cair no spam/quarentena do e-mail corporativo:
-marque como "não é spam" ou crie uma regra. Se mudar o código do script, faça "Gerenciar implantações", editar, "Nova versão".</p>
+<p>Observações: o e-mail só sai quando há rota nova ou aviso; com fila vazia, nada é enviado. Conta Gmail comum envia
+até cerca de 100 destinatários por dia (um e-mail para 3 pessoas conta 3). Abrir a URL <code>/exec</code> no navegador
+mostra quantas rotas estão na fila e o horário do último sinal do monitor. Com intervalo de 15 minutos, uma rota pode
+chegar com metade do tempo de oferta já passado; se isso estiver fazendo o time perder rotas, use 5 ou 10. E-mails
+vindos de conta externa podem cair no spam/quarentena do e-mail corporativo.</p>
 
 <h2>3. Cuidados</h2>
 <ul>

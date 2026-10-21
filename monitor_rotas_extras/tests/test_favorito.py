@@ -54,8 +54,10 @@ def pagina(navegador):
 
     def email(route):
         outros.append(("email", route.request.post_data))
+        tipo = json.loads(route.request.post_data or "{}").get("tipo")
+        resposta = {"ok": True, "naFila": 1, "intervaloMin": 15} if tipo in ("rota", "alerta") else {"ok": True, "cotaRestante": 97}
         route.fulfill(status=200, headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json",
-                      body='{"ok": true, "cotaRestante": 97}')
+                      body=json.dumps(resposta))
 
     ctx.route("https://script.google.com/**", email)
     ctx.route("https://api.callmebot.com/**", whatsapp)
@@ -162,12 +164,17 @@ def test_favorito_envia_por_email_via_apps_script(pagina):
     assert _esperar(page, lambda: "cota restante hoje: 97" in page.inner_text('[data-id="eventos"]'), 20), page.outros
 
     page.evaluate("() => window.__monitorRotasFavorito.ciclo()")
-    assert _esperar(page, lambda: sum(c == "email" for c, _ in page.outros) >= 3), page.outros
-    corpos = [json.loads(b) for c, b in page.outros if c == "email"]
-    assert all(c["token"] == "segredo-longo" for c in corpos)
-    rota = next(c for c in corpos if "BRSP21-BRSP11-SSP34.SOW.VEN" in c["assunto"])
-    assert "1 - TOCO" in rota["html"] and "Veículo: 1 - TOCO" in rota["texto"]
-    assert "to" not in rota
+    corpos = lambda: [json.loads(b) for c, b in page.outros if c == "email"]  # noqa: E731
+    assert _esperar(page, lambda: sum(c.get("tipo") == "rota" for c in corpos()) >= 2), page.outros
+    assert all(c["token"] == "segredo-longo" for c in corpos())
+    rotas = [c["rota"] for c in corpos() if c.get("tipo") == "rota"]
+    r = next(r for r in rotas if r["nome"] == "BRSP21-BRSP11-SSP34.SOW.VEN")
+    assert r["veiculo"] == "1 - TOCO" and r["origem"] == "BRSP21" and r["chave"].startswith("BRSP21")
+    assert isinstance(r["eta"], int) and isinstance(r["primeiraVez"], int)
+    assert all("to" not in c for c in corpos())
+    # o teste imediato já valeu como sinal de vida (menos de 5 min), então não sai ping extra
+    assert not any(c.get("tipo") == "ping" for c in corpos())
+    assert "na fila do e-mail" in page.inner_text('[data-id="eventos"]')
 
 
 def test_favorito_recusa_url_de_email_errada(pagina):
@@ -233,3 +240,16 @@ def test_pagina_que_bloqueia_fetch_usa_formulario(navegador):
     dados = json.loads(unquote(corpo.split("dados=", 1)[1].replace("+", " ")))
     assert metodo == "POST" and dados["token"] == "segredo"
     ctx.close()
+
+
+def test_favorito_manda_sinal_de_vida_sem_rotas_novas(pagina):
+    page, _ = pagina
+    page.evaluate("cfg => localStorage.setItem('monitorRotasExtras.v1', JSON.stringify({config: cfg}))", {
+        "emailUrl": "https://script.google.com/macros/s/ABC123/exec", "emailToken": "segredo", "intervaloS": 300,
+        "veiculos": "CARRETA", "heartbeatHora": "23:59"})  # filtro descarta todas as rotas da página de teste
+    page.evaluate(_codigo_do_html())
+    corpos = lambda: [json.loads(b) for c, b in page.outros if c == "email"]  # noqa: E731
+    assert _esperar(page, lambda: any(c.get("tipo") == "ping" for c in corpos())), page.outros
+    ping = next(c for c in corpos() if c.get("tipo") == "ping")
+    assert ping["estatisticas"]["cardsNaTela"] == 5
+    assert not any(c.get("tipo") == "rota" for c in corpos())
