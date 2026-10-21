@@ -18,7 +18,7 @@ from functools import wraps
 from flask import (Flask, Response, abort, jsonify, redirect, render_template,
                    request, session, url_for)
 from werkzeug.middleware.proxy_fix import ProxyFix
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import geo_tomtom
 
@@ -31,6 +31,8 @@ ESTILOS_MAPA = {"claro": "street-light", "escuro": "street-dark"}
 SESSAO_HORAS = int(os.getenv("SESSAO_HORAS", "12"))
 MAX_TILES_CACHE = 800
 MAX_FALHAS_LOGIN, JANELA_FALHAS_S = 5, 15 * 60
+SENHA_MIN = 10
+NAO = ("não", "nao", "n", "false", "0", "")
 
 
 def _limpar(v):
@@ -70,12 +72,14 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         try:
             ws = get_client().open_by_key(results_spreadsheet_id).worksheet(USUARIOS_WORKSHEET_NAME)
             dados = {}
-            for l in ws.get_all_values()[1:]:
-                l = (l + [""] * 4)[:4]
-                email = l[0].strip().lower()
-                ativo = l[3].strip().lower() not in ("não", "nao", "n", "false", "0")
-                if email and l[2].strip() and ativo:
-                    dados[email] = {"nome": l[1].strip() or email, "hash": l[2].strip()}
+            # Email ou usuário | Nome | Senha_Hash | Ativo | Trocar_Senha
+            for n, l in enumerate(ws.get_all_values()[1:], start=2):
+                l = (l + [""] * 5)[:5]
+                login = l[0].strip().lower()
+                ativo = l[3].strip().lower() not in NAO[:-1]
+                if login and l[2].strip() and ativo:
+                    dados[login] = {"nome": l[1].strip() or login, "hash": l[2].strip(), "linha": n,
+                                    "trocar": l[4].strip().lower() not in NAO}
             usuarios_cache.update(em=time.time(), dados=dados)
         except Exception:
             logging.exception("Não foi possível ler a aba %s.", USUARIOS_WORKSHEET_NAME)
@@ -93,15 +97,25 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
             logging.exception("Não foi possível ler a aba %s.", geo_tomtom.ESTACOES_WORKSHEET_NAME)
         return estacoes_cache["dados"]
 
+    def versao_senha(hash_senha: str) -> str:
+        # Vai no cookie de sessão (que é legível): uma assinatura do hash, nunca o hash.
+        return hmac.new(app.secret_key.encode(), hash_senha.encode(), "sha256").hexdigest()[:16]
+
     def exige_login(f):
+        """Sessão válida enquanto a senha não mudar. Com troca de senha pendente, só a
+        tela de troca abre."""
         @wraps(f)
         def wrapper(*a, **kw):
-            email = session.get("email")
-            if not email or email not in carregar_usuarios():
+            u = carregar_usuarios().get(session.get("email", ""))
+            if not u or not hmac.compare_digest(session.get("versao", ""), versao_senha(u["hash"])):
                 session.clear()
                 if request.path.startswith(("/api/", "/tiles/")):
                     abort(401)
                 return redirect(url_for("login"))
+            if u["trocar"] and request.endpoint != "trocar_senha":
+                if request.path.startswith(("/api/", "/tiles/")):
+                    abort(403)
+                return redirect(url_for("trocar_senha"))
             return f(*a, **kw)
         return wrapper
 
@@ -138,18 +152,71 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
             elif not csrf_ok():
                 erro = "Sessão expirada. Tente de novo."
             else:
-                email = request.form.get("email", "").strip().lower()
+                email = request.form.get("usuario", request.form.get("email", "")).strip().lower()
                 senha = request.form.get("senha", "")
                 u = carregar_usuarios(forcar=email not in usuarios_cache["dados"]).get(email)
                 if u and check_password_hash(u["hash"], senha):
                     session.clear()
                     session.permanent = True
                     session["email"], session["nome"] = email, u["nome"]
+                    session["versao"] = versao_senha(u["hash"])
                     falhas.pop(ip, None)
-                    return redirect(url_for("index"))
+                    return redirect(url_for("trocar_senha" if u["trocar"] else "index"))
                 falhas[ip].append(agora)
-                erro = "E-mail ou senha inválidos."
+                erro = "Usuário ou senha inválidos."
         return render_template("login.html", erro=erro)
+
+    def gravar_senha(login: str, novo_hash: str) -> None:
+        """Grava o hash novo e zera o Trocar_Senha na linha do usuário, conferindo antes
+        que a linha ainda é dele (alguém pode ter mexido na planilha)."""
+        ws = get_client().open_by_key(results_spreadsheet_id).worksheet(USUARIOS_WORKSHEET_NAME)
+        linhas = ws.get_all_values()
+        n = next((i for i, l in enumerate(linhas[1:], start=2) if l and l[0].strip().lower() == login), None)
+        if n is None:
+            raise LookupError(f"usuário {login} não está mais na aba {USUARIOS_WORKSHEET_NAME}")
+        if (linhas[0] + [""] * 5)[4].strip() != "Trocar_Senha":
+            ws.update(values=[["Trocar_Senha"]], range_name="E1")
+        ws.update(values=[[novo_hash, (linhas[n - 1] + [""] * 4)[3] or "Sim", "Não"]],
+                  range_name=f"C{n}:E{n}", raw=True)
+
+    @app.route("/trocar-senha", methods=["GET", "POST"])
+    @exige_login
+    def trocar_senha():
+        login = session["email"]
+        u = carregar_usuarios()[login]
+        erro = ""
+        if request.method == "POST":
+            ip = request.remote_addr or "?"
+            agora = time.time()
+            falhas[ip] = [t for t in falhas[ip] if agora - t < JANELA_FALHAS_S]
+            atual, nova = request.form.get("atual", ""), request.form.get("nova", "")
+            if len(falhas[ip]) >= MAX_FALHAS_LOGIN:
+                erro = "Muitas tentativas. Aguarde 15 minutos."
+            elif not csrf_ok():
+                erro = "Sessão expirada. Tente de novo."
+            elif not check_password_hash(u["hash"], atual):
+                falhas[ip].append(agora)
+                erro = "Senha atual incorreta."
+            elif len(nova) < SENHA_MIN:
+                erro = f"A nova senha precisa ter pelo menos {SENHA_MIN} caracteres."
+            elif nova != request.form.get("confirmar", ""):
+                erro = "A confirmação não confere com a nova senha."
+            elif nova == atual:
+                erro = "A nova senha precisa ser diferente da atual."
+            else:
+                novo_hash = generate_password_hash(nova)
+                try:
+                    gravar_senha(login, novo_hash)
+                except Exception:
+                    logging.exception("Não foi possível gravar a nova senha de %s.", login)
+                    erro = "Não foi possível salvar agora. Tente de novo em alguns minutos."
+                else:
+                    u.update(hash=novo_hash, trocar=False)
+                    session["versao"] = versao_senha(novo_hash)
+                    logging.info("Senha trocada: %s.", login)
+                    return redirect(url_for("index"))
+        return render_template("trocar_senha.html", erro=erro, nome=u["nome"], obrigatoria=u["trocar"],
+                               senha_min=SENHA_MIN)
 
     @app.post("/logout")
     def logout():
