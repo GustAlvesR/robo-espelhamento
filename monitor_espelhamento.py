@@ -41,6 +41,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import gspread
+import requests
 import schedule
 from google.oauth2.service_account import Credentials
 from gspread.exceptions import APIError, WorksheetNotFound
@@ -90,6 +91,12 @@ FECHAMENTO_SUMIDA_MIN = int(os.getenv("FECHAMENTO_SUMIDA_MIN", "30"))
 
 # Intervalo de execução do robô.
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "5"))
+
+# Tempo limite das chamadas ao Google (conexão, leitura), em segundos. Sem ele o
+# gspread espera para sempre, e uma conexão travada parava o robô inteiro.
+GOOGLE_TIMEOUT_S = (15, 90)
+# Ciclo que passa disto é dado como travado: o processo sai e o Render sobe outro.
+CICLO_MAX_MINUTOS = int(os.getenv("CICLO_MAX_MINUTOS", "20"))
 
 # Regra de negócio: SLA de início — quantos minutos antes do início previsto
 # o espelhamento já deveria estar "OK".
@@ -194,7 +201,9 @@ def get_gspread_client():
         creds = Credentials.from_service_account_info(info, scopes=SCOPES)
     else:
         creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
-    return gspread.authorize(creds)
+    client = gspread.authorize(creds)
+    client.set_timeout(GOOGLE_TIMEOUT_S)
+    return client
 
 
 def gspread_retry(max_retries=5, base_delay=2):
@@ -226,6 +235,13 @@ def gspread_retry(max_retries=5, base_delay=2):
                         time.sleep(wait)
                         continue
                     raise
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                    if attempt >= max_retries:
+                        raise
+                    wait = base_delay * (2 ** (attempt - 1))
+                    logging.warning("Conexão com o Google falhou (%s) na tentativa %s/%s. Aguardando %ss.",
+                                    type(e).__name__, attempt, max_retries, wait)
+                    time.sleep(wait)
         return wrapper
     return decorator
 
@@ -283,7 +299,8 @@ def load_state(client=None) -> dict:
             ws = _get_state_worksheet(client)
             partes = [r[0] for r in ws.get_all_values() if r]
             texto = "".join(partes).strip()
-            return json.loads(texto) if texto else {}
+            # raw_decode: se uma gravação foi interrompida, sobra lixo depois do JSON novo.
+            return json.JSONDecoder().raw_decode(texto)[0] if texto else {}
         except json.JSONDecodeError as e:
             logging.error("Estado no Sheets inválido (%s). Iniciando vazio.", e)
             return {}
@@ -306,8 +323,9 @@ def save_state(state: dict, client=None) -> None:
         ws = _get_state_worksheet(client)
         pedacos = [[texto[i:i + STATE_CHUNK_SIZE]]
                    for i in range(0, len(texto), STATE_CHUNK_SIZE)] or [[""]]
-        ws.clear()
+        # Grava antes de limpar o que sobrou: a aba nunca fica vazia no meio do caminho.
         ws.update(values=pedacos, range_name="A1", raw=True)
+        ws.batch_clear([f"A{len(pedacos) + 1}:A"])
         return
     pasta = os.path.dirname(STATE_FILE)
     if pasta:
@@ -1379,7 +1397,37 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
 # 8. CICLO PRINCIPAL
 # =============================================================================
 
+_CICLO = {"inicio": None, "fim": time.monotonic()}
+
+
+def vigia():
+    """Sai do processo (o Render sobe outro) se um ciclo travar ou se os ciclos
+    pararem de acontecer. O site continuaria no ar com o robô parado."""
+    limite = CICLO_MAX_MINUTOS * 60
+    while True:
+        time.sleep(30)
+        agora, inicio = time.monotonic(), _CICLO["inicio"]
+        if inicio is not None and agora - inicio > limite:
+            motivo = f"ciclo rodando há {round((agora - inicio) / 60)} min"
+        elif inicio is None and agora - _CICLO["fim"] > limite + CHECK_INTERVAL_MINUTES * 60:
+            motivo = f"nenhum ciclo há {round((agora - _CICLO['fim']) / 60)} min"
+        else:
+            continue
+        logging.critical("Robô travado (%s). Reiniciando o processo.", motivo)
+        for h in logging.getLogger().handlers:
+            h.flush()
+        os._exit(1)
+
+
 def job():
+    _CICLO["inicio"] = time.monotonic()
+    try:
+        _job()
+    finally:
+        _CICLO["inicio"], _CICLO["fim"] = None, time.monotonic()
+
+
+def _job():
     now = now_local()
     logging.info("========== Iniciando ciclo de verificação (%s) ==========", now)
     try:
@@ -1496,6 +1544,12 @@ def self_ping():
         logging.warning("Auto-ping falhou (%s).", e)
 
 
+def _loop_self_ping():
+    while True:
+        time.sleep(SELF_PING_MINUTES * 60)
+        self_ping()
+
+
 def main():
     setup_logging()
     start_http_server()
@@ -1507,10 +1561,12 @@ def main():
     )
     logging.info("TomTom: %s.", f"chave carregada (termina em ...{GEO.key[-4:]})" if GEO.key else "SEM CHAVE")
 
+    threading.Thread(target=vigia, daemon=True).start()
+    if SELF_PING_URL:
+        # Fora da fila dos ciclos: um ciclo demorado não deixa o serviço hibernar.
+        threading.Thread(target=_loop_self_ping, daemon=True).start()
     job()  # executa uma vez imediatamente ao subir o robô
     schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(job)
-    if SELF_PING_URL:
-        schedule.every(SELF_PING_MINUTES).minutes.do(self_ping)
 
     while True:
         schedule.run_pending()
