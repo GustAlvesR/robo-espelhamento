@@ -48,6 +48,7 @@ from gspread.exceptions import APIError, WorksheetNotFound
 
 import clima
 import geo_tomtom
+import rotograma
 
 
 # =============================================================================
@@ -1306,6 +1307,7 @@ def carregar_cancelamentos(client) -> dict:
 GEO = geo_tomtom.GeoTomTom()
 INMET_ATIVO = os.getenv("INMET_ATIVO", "1") != "0"
 CLIMA = clima.AlertasInmet()
+ROTOGRAMAS = rotograma.Rotogramas()
 _SNAPSHOT = {}  # lido pelo site; trocado inteiro a cada ciclo (atribuição é atômica)
 
 
@@ -1379,9 +1381,11 @@ def atualizar_trilhas(state: dict, resultados: list, geo_por_trip: dict, now: da
         g["trilha"] = [list(p) for p in trilha]  # cópia: o site serializa enquanto o próximo ciclo roda
 
 
-def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None) -> None:
+def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None,
+                      rotogramas=None) -> None:
     global _SNAPSHOT
     _SNAPSHOT = {
+        "rotogramas": rotogramas or {},
         "atualizado_em": _fmt(now),
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
@@ -1489,6 +1493,17 @@ def _job():
                 logging.exception("Falha na etapa de clima (INMET); seguindo sem ela.")
                 for r in resultados:
                     r.setdefault("Alerta Chuva (INMET)", "")
+        try:
+            rotogramas_mapa = rotograma.aplicar(
+                ROTOGRAMAS, GEO, resultados, geo_por_trip,
+                lambda r: viagem_iniciada(r, state.get(r["Trip Number"], {}), now))
+            if GEO.geocache_alterado:
+                geo_tomtom.salvar_geocache(GEO, client.open_by_key(RESULTS_SPREADSHEET_ID))
+        except Exception:
+            logging.exception("Falha na etapa de rotogramas; seguindo sem ela.")
+            rotogramas_mapa = {}
+            for r in resultados:
+                r.setdefault("Alerta Rotograma", "")
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
@@ -1504,7 +1519,7 @@ def _job():
         append_events(client_escrita, eventos_do_ciclo)
         append_fechamentos(client_escrita, fechadas)
 
-        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento)
+        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa)
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s), "
