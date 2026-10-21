@@ -37,18 +37,22 @@ Opcionais: `TOMTOM_MAX_CHAMADAS_DIA` (padrão 2000), `TOLERANCIA_ATRASO_MIN` (30
 
 ## 3. Usuários
 
-Na planilha Acompanhamento Telemetria, crie a aba `Usuarios_Site` com o cabeçalho:
+Aba `Usuarios_Site` da planilha Acompanhamento Telemetria:
 
-`Email | Nome | Senha_Hash | Ativo`
+`Email | Nome | Senha_Hash | Ativo | Trocar_Senha`
 
-Para cada pessoa, rode no PC e cole a linha gerada:
-
-```powershell
-python criar_usuario.py fulano@ceva.com "Fulano de Tal"
-```
-
-Para bloquear alguém, troque `Ativo` para `Não` (vale em até 5 minutos).
-Cinco senhas erradas seguidas bloqueiam o IP por 15 minutos.
+- A primeira coluna pode ser um e-mail ou um usuário curto (`rodrigo.galani`). O login
+  aceita os dois, sem diferenciar maiúsculas.
+- Usuário novo: rode no PC `python criar_usuario.py rodrigo.galani "Rodrigo Galani"`,
+  digite uma senha provisória e cole a linha gerada (já sai com `Trocar_Senha` = Sim).
+  No primeiro acesso, o site só abre a tela "Trocar senha"; depois de trocar, a coluna
+  vira `Não` sozinha.
+- Qualquer pessoa troca a própria senha pelo link "Trocar senha" no topo do site
+  (mínimo 10 caracteres). Trocar a senha derruba as outras sessões abertas daquele usuário.
+- Esqueceu a senha: gere uma provisória com o `criar_usuario.py`, cole só o
+  `Senha_Hash` na linha da pessoa e marque `Trocar_Senha` como `Sim`.
+- Para bloquear alguém, troque `Ativo` para `Não` (vale em até 5 minutos).
+- Cinco senhas erradas seguidas bloqueiam o IP por 15 minutos.
 
 ## 4. Aba Estacoes (revise uma vez)
 

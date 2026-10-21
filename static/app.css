@@ -197,3 +197,5 @@ button, input, select { font: inherit; color: inherit; }
   .detalhe { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 50%; }
   .ver-todos kbd { display: none; }
 }
+.cartao-login .link { justify-self: center; font-size: 13px; }
+.usuario a.link { color: #fff; text-decoration: underline; text-underline-offset: 2px; }

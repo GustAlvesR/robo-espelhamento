@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trocar senha · Torre LH · CEVA Logistics</title>
+<script>
+  try {
+    const t = localStorage.getItem("torreLH.tema");
+    if (t === "claro" || t === "escuro") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="tela-login">
+  <form class="cartao-login" method="post" autocomplete="off">
+    <img class="login-logo login-logo-claro" src="{{ url_for('static', filename='img/logo-ceva.svg') }}" alt="CEVA Logistics">
+    <img class="login-logo login-logo-escuro" src="{{ url_for('static', filename='img/logo-ceva-escuro.svg') }}" alt="CEVA Logistics">
+    <h1>Trocar senha</h1>
+    {% if obrigatoria %}
+      <p class="intro">Olá, {{ nome }}. Este é o seu primeiro acesso: crie uma senha só sua para continuar.</p>
+    {% else %}
+      <p class="intro">{{ nome }}, a nova senha passa a valer agora; outras sessões abertas saem.</p>
+    {% endif %}
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label>Senha atual<input type="password" name="atual" autocomplete="current-password" required autofocus></label>
+    <label>Nova senha (mínimo {{ senha_min }} caracteres)<input type="password" name="nova" autocomplete="new-password" minlength="{{ senha_min }}" required></label>
+    <label>Repita a nova senha<input type="password" name="confirmar" autocomplete="new-password" minlength="{{ senha_min }}" required></label>
+    {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+    <button type="submit">Salvar nova senha</button>
+    {% if not obrigatoria %}<a class="link" href="{{ url_for('index') }}">Voltar para o mapa</a>{% endif %}
+  </form>
+</body>
+</html>
