@@ -163,7 +163,9 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             raise
         except Exception as e:
             url = _url_sem_parametros(pagina.url) if pagina else ""
-            detalhe = str(e).splitlines()[0][:300] if str(e) else ""
+            detalhe = _motivo_playwright(e)
+            if passo == "fazendo login" and pagina:
+                detalhe += f"; {_raio_x_login(pagina)}"
             raise ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}") from None
         finally:
             navegador.close()
@@ -172,31 +174,81 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 def _login(pagina, usuario: str, senha: str):
     if _host(pagina.url) != HOST_AUTH:
         pagina.goto(URL_LOGIN, wait_until="domcontentloaded")
+    _fechar_avisos(pagina)
     campo_usuario = pagina.locator("input:not([type='password']):not([type='hidden']):not([type='checkbox']):visible").first
     campo_usuario.wait_for(state="visible")
     campo_usuario.fill(usuario)
     senha_campo = pagina.locator("input[type='password']")
     if senha_campo.count() and senha_campo.first.is_visible():
         senha_campo.first.fill(senha)
-        _continuar(pagina)
+        _continuar(pagina, senha_campo.first)
     else:
         # Login em duas telas: usuário, continuar, depois a senha.
-        _continuar(pagina)
+        _continuar(pagina, campo_usuario)
         senha_campo.first.wait_for(state="visible")
         senha_campo.first.fill(senha)
-        _continuar(pagina)
+        _continuar(pagina, senha_campo.first)
     try:
         pagina.wait_for_url(lambda url: _host(url) == HOST_SISTEMA, timeout=TIMEOUT_MS)
     except Exception:
         raise ErroAngellira(f"login não saiu da tela de autenticação (página: {_url_sem_parametros(pagina.url)}; "
-                            f"tela: {_texto_da_tela(pagina)!r})") from None
+                            f"tela: {_texto_da_tela(pagina)!r}; {_raio_x_login(pagina)})") from None
 
 
-def _continuar(pagina):
-    botao = pagina.locator(".mdc-button--raised:not(:disabled), .mdc-button--unelevated:not(:disabled)")
-    if not botao.count():
-        botao = pagina.get_by_role("button", name=re.compile(r"continuar|entrar|acessar", re.I))
-    botao.first.click()
+def _fechar_avisos(pagina):
+    """Aviso de cookies ou LGPD por cima do formulário impede o clique em Continuar."""
+    avisos = pagina.locator("button:visible, a:visible").filter(
+        has_text=re.compile(r"^\s*(aceitar|aceito|concordo|entendi|ok|permitir)", re.I))
+    for i in range(min(avisos.count(), 3)):
+        try:
+            avisos.nth(i).click(timeout=2000)
+        except Exception:
+            pass
+
+
+def _continuar(pagina, campo):
+    """Clica em Continuar. Procura primeiro pelo texto, depois pelo estilo do botão,
+    sempre entre os visíveis (um botão escondido antes no HTML travava o clique).
+    Se o clique não acontecer, envia o formulário com Enter no campo."""
+    candidatos = (
+        pagina.locator("button:visible, [role='button']:visible, input[type='submit']:visible").filter(
+            has_text=re.compile(r"continuar|entrar|acessar|login|avan[cç]ar", re.I)),
+        pagina.locator(".mdc-button--raised:visible, .mdc-button--unelevated:visible"),
+        pagina.locator("button[type='submit']:visible"),
+    )
+    botao = next((c.first for c in candidatos if c.count()), None)
+    if botao is not None:
+        try:
+            botao.click(timeout=15000)
+            return
+        except Exception as e:
+            logging.info("Angellira: clique em Continuar não aconteceu (%s); tentando Enter.", _motivo_playwright(e))
+    campo.press("Enter")
+
+
+def _raio_x_login(pagina) -> str:
+    """Botões visíveis e sinais de captcha, para entender pelo log por que o login travou.
+    Não lê o conteúdo dos campos."""
+    try:
+        return pagina.evaluate("""() => {
+            const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+            const botoes = [...document.querySelectorAll('button, [role=button], input[type=submit]')].filter(vis)
+                .slice(0, 6).map(b => `${(b.innerText || b.value || '').trim().slice(0, 25) || '?'}` +
+                    `${b.disabled || b.getAttribute('aria-disabled') === 'true' ? ' (desabilitado)' : ''}`);
+            const captcha = !!document.querySelector("iframe[src*='captcha'], iframe[src*='turnstile'], .g-recaptcha, .h-captcha, .cf-turnstile");
+            return `botões: ${botoes.join(', ') || 'nenhum'}; captcha: ${captcha ? 'sim' : 'não'}`;
+        }""")
+    except Exception:
+        return "botões: não foi possível ler"
+
+
+def _motivo_playwright(e) -> str:
+    """Primeira linha do erro e, do registro do Playwright, a pista do que travou."""
+    linhas = [l.strip(" -") for l in str(e).splitlines() if l.strip()]
+    if not linhas:
+        return ""
+    pistas = [l for l in linhas[1:] if re.search(r"intercepts|not enabled|not visible|not stable|disabled|outside", l)]
+    return "; ".join(dict.fromkeys([linhas[0]] + pistas[-1:]))[:400]
 
 
 def _abrir_tracking(pagina):
