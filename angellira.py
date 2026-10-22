@@ -127,14 +127,25 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
     carregados e as chamadas feitas pelo Exportar (sem parâmetros, que podem ter token)."""
     from playwright.sync_api import sync_playwright
 
-    passo, pagina, no_tracking = "abrindo o navegador", None, False
+    passo, pagina, no_tracking, tempos = "abrindo o navegador", None, False, []
+
+    def marcar(novo):
+        """Passo atual: vai para as mensagens de erro, para o log de tempos e para um
+        arquivo que o processo pai lê se tiver de encerrar a rodada por prazo."""
+        nonlocal passo
+        passo = novo
+        tempos.append((novo, time.monotonic()))
+        try:
+            with open(os.path.join(pasta, "passo.txt"), "w", encoding="utf-8") as f:
+                f.write(f"{novo}|{time.time():.0f}")
+        except OSError:
+            pass
+
     with sync_playwright() as pw:
         navegador = pw.chromium.launch(
             headless=not visivel, executable_path=os.getenv("ANGELLIRA_CHROMIUM") or None,
             args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"])
         try:
-            contexto = navegador.new_context(storage_state=estado, accept_downloads=True,
-                                             locale="pt-BR", viewport={"width": 1366, "height": 768})
             # Imagens, fontes e vídeos não fazem falta para exportar e pesam na memória:
             # o servidor tem 512 MB para o robô e o navegador juntos.
             hosts, chamadas_exportar, coletando = Counter(), [], [False]
@@ -149,20 +160,27 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                     return rota.abort()
                 return rota.continue_()
 
-            contexto.route("**/*", rotear)
-            pagina = contexto.new_page()
-            pagina.set_default_timeout(TIMEOUT_MS)
+            def novo_contexto(sessao):
+                ctx = navegador.new_context(storage_state=sessao, accept_downloads=True,
+                                            locale="pt-BR", viewport={"width": 1366, "height": 768})
+                ctx.route("**/*", rotear)
+                pg = ctx.new_page()
+                pg.set_default_timeout(TIMEOUT_MS)
+                return ctx, pg
 
-            passo = "abrindo o Tracking"
-            pagina.goto(URL_TRACKING, wait_until="domcontentloaded")
+            contexto, pagina = novo_contexto(estado)
+            marcar("abrindo o Tracking")
+            # "commit" e não "domcontentloaded": o carregamento do Tracking já passou de
+            # 60 s; quem decide se a tela abriu é o _aguardar_tela.
+            pagina.goto(URL_TRACKING, wait_until="commit")
             if _aguardar_tela(pagina) == "login":
-                passo = "fazendo login"
+                marcar("fazendo login")
                 pagina = _login(pagina, usuario, senha)
-                passo = "abrindo o Tracking depois do login"
-                _abrir_tracking(pagina)
+                marcar("abrindo o Tracking depois do login")
+                contexto, pagina = _tracking_em_contexto_limpo(contexto, pagina, novo_contexto)
 
-            passo = "atualizando a página do Tracking"
-            pagina.reload(wait_until="domcontentloaded")
+            marcar("atualizando a página do Tracking")
+            pagina.reload(wait_until="commit")
             tela = _aguardar_tela(pagina)
             if tela != "tracking":
                 motivo = "voltou para a tela de login" if tela == "login" else "o botão de exportar não apareceu"
@@ -170,10 +188,10 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                                     f"tela: {_texto_da_tela(pagina)!r})")
             no_tracking = True
 
-            passo = "clicando em exportar colunas"
+            marcar("clicando em exportar colunas")
             rotulo = _abrir_exportacao(pagina)
 
-            passo = "marcando 'Todas as colunas'"
+            marcar("marcando 'Todas as colunas'")
             caixa = rotulo.locator("input")
             if not caixa.count():
                 _clicar(pagina.get_by_text("Todas as colunas", exact=True).first)
@@ -184,7 +202,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                 if not caixa.first.is_checked():
                     raise ErroAngellira("'Todas as colunas' não ficou marcada")
 
-            passo = "clicando em Exportar e esperando o arquivo"
+            marcar("clicando em Exportar e esperando o arquivo")
             dialogo = pagina.locator("[role='dialog']")
             exportar = (dialogo if dialogo.count() else pagina).get_by_role("button", name="Exportar", exact=True)
             coletando[0] = True
@@ -200,6 +218,8 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             nome = download.suggested_filename or "relatorio.xlsx"
             caminho = os.path.join(pasta, re.sub(r"[^\w.-]", "_", nome))
             download.save_as(caminho)
+            marcar("fim")
+            logging.info("Angellira: tempo por passo: %s.", _resumo_tempos(tempos))
             return caminho, contexto.storage_state()
         except Exception as e:
             erro = e
@@ -208,7 +228,8 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                 detalhe = _motivo_playwright(e)
                 if pagina and not pagina.is_closed():
                     detalhe += f"; {_raio_x(pagina)}"
-                erro = ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}")
+                erro = ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}; "
+                                     f"tempos: {_resumo_tempos(tempos + [('', time.monotonic())])}")
             if no_tracking:
                 try:
                     erro.estado = contexto.storage_state()
@@ -217,6 +238,31 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             raise erro from None
         finally:
             navegador.close()
+
+
+def _resumo_tempos(tempos: list) -> str:
+    return ", ".join(f"{p} {t2 - t1:.0f} s" for (p, t1), (_p2, t2) in zip(tempos, tempos[1:]))
+
+
+def _tracking_em_contexto_limpo(contexto, pagina, novo_contexto):
+    """Depois do login a aba vem da home do Liralog, e seguir nela até o Tracking já
+    travou com CPU presa até o prazo. Abre o Tracking num navegador limpo só com a
+    sessão, como nas rodadas que reaproveitam o login (essas levam ~1 min). Se a
+    sessão nova não servir ali, segue na aba do login, do jeito antigo."""
+    _esperar(pagina, 8)  # o sistema grava o token logo depois de chegar
+    sessao = contexto.storage_state()
+    # Página em branco para os scripts da home pararem; a aba fica, porque o que estiver
+    # guardado só nela (sessionStorage) é preciso se o caminho limpo não servir.
+    pagina.goto("about:blank")
+    contexto2, pagina2 = novo_contexto(sessao)
+    pagina2.goto(URL_TRACKING, wait_until="commit")
+    if _aguardar_tela(pagina2) != "login":
+        contexto.close()
+        return contexto2, pagina2
+    logging.info("Angellira: a sessão do login não abriu o Tracking num navegador limpo; seguindo na aba do login.")
+    contexto2.close()
+    _abrir_tracking(pagina)
+    return contexto, pagina
 
 
 def _login(pagina, usuario: str, senha: str):
@@ -422,7 +468,7 @@ def _abrir_tracking(pagina):
     """Depois do login cai na home do Liralog: tenta o Tracking direto e, se não abrir,
     clica no ícone TRACKING (que pode abrir em outra aba)."""
     _esperar(pagina)
-    pagina.goto(URL_TRACKING, wait_until="domcontentloaded")
+    pagina.goto(URL_TRACKING, wait_until="commit")
     tela = _aguardar_tela(pagina, 30000)
     if tela == "tracking":
         return
@@ -553,7 +599,14 @@ def baixar_em_processo(usuario_env: str, senha_env: str, pasta: str, estado=None
                     except (OSError, AttributeError):
                         pass
                 proc.wait()
-                erro = ErroAngellira(f"a rodada passou de {LIMITE_RODADA_S / 60:g} min e o navegador foi encerrado")
+                onde = ""
+                try:
+                    with open(os.path.join(pasta, "passo.txt"), encoding="utf-8") as f:
+                        nome_passo, desde = f.read().rsplit("|", 1)
+                    onde = f" (parada em: {nome_passo}, há {time.time() - float(desde):.0f} s)"
+                except (OSError, ValueError):
+                    pass
+                erro = ErroAngellira(f"a rodada passou de {LIMITE_RODADA_S / 60:g} min e o navegador foi encerrado{onde}")
                 erro.estado = estado
                 raise erro from None
     try:
