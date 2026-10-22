@@ -37,7 +37,7 @@ OBRIGATORIAS = ("PROCEDIMENTO DE EMBARQUE", "VEICULO", "DATA POSICAO")
 
 
 class ErroAngellira(RuntimeError):
-    pass
+    estado = None  # sessão já logada quando a falha veio depois do login
 
 
 def _norm(texto) -> str:
@@ -105,17 +105,18 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
     """Devolve (caminho do arquivo baixado, estado da sessão para reaproveitar o login)."""
     from playwright.sync_api import sync_playwright
 
-    passo, pagina = "abrindo o navegador", None
+    passo, pagina, no_tracking = "abrindo o navegador", None, False
     with sync_playwright() as pw:
         navegador = pw.chromium.launch(
             headless=not visivel, executable_path=os.getenv("ANGELLIRA_CHROMIUM") or None,
             args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"])
         try:
             contexto = navegador.new_context(storage_state=estado, accept_downloads=True,
-                                             locale="pt-BR", viewport={"width": 1600, "height": 1000})
-            # Fontes e vídeos não fazem falta e pesam na memória do servidor.
+                                             locale="pt-BR", viewport={"width": 1366, "height": 768})
+            # Imagens (o mapa do Tracking), fontes e vídeos não fazem falta para exportar e
+            # pesam na memória: o servidor tem 512 MB para o robô e o navegador juntos.
             contexto.route("**/*", lambda rota: rota.abort()
-                           if rota.request.resource_type in ("font", "media") else rota.continue_())
+                           if rota.request.resource_type in ("image", "font", "media") else rota.continue_())
             pagina = contexto.new_page()
             pagina.set_default_timeout(TIMEOUT_MS)
 
@@ -134,35 +135,46 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                 motivo = "voltou para a tela de login" if tela == "login" else "o botão de exportar não apareceu"
                 raise ErroAngellira(f"o Tracking não abriu: {motivo} (página: {_url_sem_parametros(pagina.url)}; "
                                     f"tela: {_texto_da_tela(pagina)!r})")
+            no_tracking = True
 
             passo = "clicando em exportar colunas"
             rotulo = _abrir_exportacao(pagina)
 
             passo = "marcando 'Todas as colunas'"
             caixa = rotulo.locator("input")
-            if caixa.count():
-                caixa.first.check(force=True)  # marcar, não alternar: se já estiver marcada, fica
-            else:
-                pagina.get_by_text("Todas as colunas", exact=True).first.click()
+            if not caixa.count():
+                _clicar(pagina.get_by_text("Todas as colunas", exact=True).first)
+            elif not caixa.first.is_checked():  # marcar, não alternar: se já estiver marcada, fica
+                _clicar(caixa.first, forcar=True)
+                if not caixa.first.is_checked():  # clique forçado também cai em camada por cima
+                    caixa.first.evaluate("e => e.click()")
+                if not caixa.first.is_checked():
+                    raise ErroAngellira("'Todas as colunas' não ficou marcada")
 
             passo = "clicando em Exportar e esperando o arquivo"
             dialogo = pagina.locator("[role='dialog']")
             exportar = (dialogo if dialogo.count() else pagina).get_by_role("button", name="Exportar", exact=True)
             with pagina.expect_download(timeout=TIMEOUT_MS * 3) as espera:
-                exportar.first.click()
+                _clicar(exportar.first)
             download = espera.value
             nome = download.suggested_filename or "relatorio.xlsx"
             caminho = os.path.join(pasta, re.sub(r"[^\w.-]", "_", nome))
             download.save_as(caminho)
             return caminho, contexto.storage_state()
-        except ErroAngellira:
-            raise
         except Exception as e:
-            url = _url_sem_parametros(pagina.url) if pagina else ""
-            detalhe = _motivo_playwright(e)
-            if pagina and not pagina.is_closed():
-                detalhe += f"; {_raio_x(pagina)}"
-            raise ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}") from None
+            erro = e
+            if not isinstance(e, ErroAngellira):
+                url = _url_sem_parametros(pagina.url) if pagina else ""
+                detalhe = _motivo_playwright(e)
+                if pagina and not pagina.is_closed():
+                    detalhe += f"; {_raio_x(pagina)}"
+                erro = ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}")
+            if no_tracking:
+                try:
+                    erro.estado = contexto.storage_state()
+                except Exception:
+                    pass
+            raise erro from None
         finally:
             navegador.close()
 
@@ -284,6 +296,15 @@ def _motivo_playwright(e) -> str:
     pistas = [l for l in linhas[1:] if re.search(r"intercepts|not enabled|not visible|not stable|disabled|outside|detached", l)]
     # Sem pista conhecida, a última linha do registro diz no que ele estava esperando.
     return "; ".join(dict.fromkeys([linhas[0]] + (pistas[-1:] or linhas[-1:])))[:400]
+
+
+def _clicar(alvo, forcar=False):
+    """Clique normal; se algo por cima interceptar, clique via JavaScript no próprio elemento."""
+    try:
+        alvo.click(timeout=15000, force=forcar)
+    except Exception as e:
+        logging.info("Angellira: clique normal não pegou (%s); clicando via JavaScript.", _motivo_playwright(e))
+        alvo.evaluate("e => e.click()")
 
 
 def _abrir_exportacao(pagina):
@@ -424,6 +445,7 @@ class AtualizadorAngellira:
         self._get_client = get_client
         self._spreadsheet_id = spreadsheet_id
         self._estado = None        # cookies do login, só em memória
+        self._falhas = 0
         self.ultimo_ok = None
         self.ultimo_erro = ""
 
@@ -435,9 +457,14 @@ class AtualizadorAngellira:
         with tempfile.TemporaryDirectory() as pasta:
             try:
                 caminho, self._estado = baixar_relatorio(usuario, senha, pasta, self._estado, visivel)
-            except ErroAngellira:
-                self._estado = None  # na próxima, login do zero
+            except ErroAngellira as e:
+                # Se o login deu certo e a falha foi depois, reaproveita a sessão: cada login
+                # novo passa pelo PERMITIR e pesa mais. A cada 3 falhas seguidas, login do
+                # zero, caso a própria sessão seja a causa.
+                self._falhas += 1
+                self._estado = e.estado if e.estado and self._falhas % 3 else None
                 raise
+            self._falhas = 0
             linhas = ler_arquivo(caminho)
         validar(linhas)
         gravar_na_aba(self._get_client().open_by_key(self._spreadsheet_id), linhas)
