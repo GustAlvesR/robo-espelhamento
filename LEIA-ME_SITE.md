@@ -53,6 +53,8 @@ Aba `Usuarios_Site` da planilha Acompanhamento Telemetria:
   `Senha_Hash` na linha da pessoa e marque `Trocar_Senha` como `Sim`.
 - Para bloquear alguém, troque `Ativo` para `Não` (vale em até 5 minutos).
 - Cinco senhas erradas seguidas bloqueiam o IP por 15 minutos.
+- A planilha guarda os hashes das senhas: deixe o compartilhamento dela como
+  "Restrito" (só as pessoas e a conta de serviço do robô), nunca "qualquer pessoa com o link".
 
 ## 4. Aba Estacoes (revise uma vez)
 

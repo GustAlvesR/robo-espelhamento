@@ -31,6 +31,7 @@ ESTILOS_MAPA = {"claro": "street-light", "escuro": "street-dark"}
 SESSAO_HORAS = int(os.getenv("SESSAO_HORAS", "12"))
 MAX_TILES_CACHE = 800
 MAX_FALHAS_LOGIN, JANELA_FALHAS_S = 5, 15 * 60
+MAX_IPS_REGISTRADOS = 5000
 SENHA_MIN = 10
 NAO = ("não", "nao", "n", "false", "0", "")
 
@@ -62,12 +63,18 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     )
 
     usuarios_cache = {"em": 0.0, "dados": {}}
+    # Conferido quando o usuário não existe, para a resposta levar o mesmo tempo e não
+    # revelar quais usuários existem.
+    hash_falso = generate_password_hash(secrets.token_hex(16))
     estacoes_cache = {"em": 0.0, "dados": []}
     falhas = defaultdict(list)
     tiles = OrderedDict()
 
     def carregar_usuarios(forcar=False):
-        if not forcar and time.time() - usuarios_cache["em"] < 300:
+        # Usuário desconhecido no login força a releitura (pode ter sido criado agora),
+        # mas no máximo a cada 30 s: a cota do Google Sheets é a mesma do robô, e logins
+        # com nomes inventados não podem esgotá-la.
+        if time.time() - usuarios_cache["em"] < (30 if forcar else 300):
             return usuarios_cache["dados"]
         try:
             ws = get_client().open_by_key(results_spreadsheet_id).worksheet(USUARIOS_WORKSHEET_NAME)
@@ -119,6 +126,13 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
             return f(*a, **kw)
         return wrapper
 
+    def bloqueado(ip: str, agora: float) -> bool:
+        falhas[ip] = [t for t in falhas[ip] if agora - t < JANELA_FALHAS_S]
+        if len(falhas) > MAX_IPS_REGISTRADOS:
+            for antigo in [k for k, v in falhas.items() if not v or agora - v[-1] >= JANELA_FALHAS_S]:
+                del falhas[antigo]
+        return len(falhas[ip]) >= MAX_FALHAS_LOGIN
+
     def csrf_token():
         if "csrf" not in session:
             session["csrf"] = secrets.token_urlsafe(24)
@@ -134,6 +148,11 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "DENY"
         resp.headers["Referrer-Policy"] = "same-origin"
+        if os.getenv("RENDER"):
+            resp.headers["Strict-Transport-Security"] = "max-age=31536000"
+        if resp.mimetype in ("text/html", "application/json"):
+            # Páginas e dados das rotas não ficam guardados no navegador (computador compartilhado).
+            resp.headers["Cache-Control"] = "no-store"
         return resp
 
     @app.get("/health")
@@ -146,8 +165,7 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         if request.method == "POST":
             ip = request.remote_addr or "?"
             agora = time.time()
-            falhas[ip] = [t for t in falhas[ip] if agora - t < JANELA_FALHAS_S]
-            if len(falhas[ip]) >= MAX_FALHAS_LOGIN:
+            if bloqueado(ip, agora):
                 erro = "Muitas tentativas. Aguarde 15 minutos."
             elif not csrf_ok():
                 erro = "Sessão expirada. Tente de novo."
@@ -155,7 +173,7 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
                 email = request.form.get("usuario", request.form.get("email", "")).strip().lower()
                 senha = request.form.get("senha", "")
                 u = carregar_usuarios(forcar=email not in usuarios_cache["dados"]).get(email)
-                if u and check_password_hash(u["hash"], senha):
+                if check_password_hash(u["hash"] if u else hash_falso, senha) and u:
                     session.clear()
                     session.permanent = True
                     session["email"], session["nome"] = email, u["nome"]
@@ -188,9 +206,8 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
         if request.method == "POST":
             ip = request.remote_addr or "?"
             agora = time.time()
-            falhas[ip] = [t for t in falhas[ip] if agora - t < JANELA_FALHAS_S]
             atual, nova = request.form.get("atual", ""), request.form.get("nova", "")
-            if len(falhas[ip]) >= MAX_FALHAS_LOGIN:
+            if bloqueado(ip, agora):
                 erro = "Muitas tentativas. Aguarde 15 minutos."
             elif not csrf_ok():
                 erro = "Sessão expirada. Tente de novo."
