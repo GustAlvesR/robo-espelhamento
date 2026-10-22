@@ -10,7 +10,7 @@
   --acento: #2a78d6;
   --est-hub: #7c4dff; --est-fmh: #0891b2; --est-soc: #051039; --est-outra: #c2417f;
   --rotograma: #6d28d9;
-  --clima-amarelo: #e8b300; --clima-laranja: #f07c00; --clima-vermelho: #d03b3b; --clima-laranja-texto: #9a4a00;
+  --clima-potencial: #4fb3e8; --clima-perigo: #1f7fd1; --clima-grande: #0b4ea2; --clima-texto: #0b4f7a;
   --fonte: Arial, "Helvetica Neue", Helvetica, sans-serif;
   --mono: var(--fonte);
   color-scheme: light;
@@ -23,7 +23,7 @@
     --acento: #3987e5;
     --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
     --rotograma: #a78bfa;
-    --clima-amarelo: #f5c400; --clima-laranja: #ff8c1a; --clima-vermelho: #ef5a5a; --clima-laranja-texto: #ffb066;
+    --clima-potencial: #7cc8f5; --clima-perigo: #45a3f0; --clima-grande: #6f9bff; --clima-texto: #a8dcfc;
     color-scheme: dark;
   }
 }
@@ -34,7 +34,7 @@
   --acento: #3987e5;
   --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
   --rotograma: #a78bfa;
-  --clima-amarelo: #f5c400; --clima-laranja: #ff8c1a; --clima-vermelho: #ef5a5a; --clima-laranja-texto: #ffb066;
+  --clima-potencial: #7cc8f5; --clima-perigo: #45a3f0; --clima-grande: #6f9bff; --clima-texto: #a8dcfc;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -56,7 +56,7 @@ button, input, select { font: inherit; color: inherit; }
   background: transparent; color: rgba(255, 255, 255, .85); font-size: 13px; }
 .kpi:hover { border-color: #fff; color: #fff; }
 .kpi b { font-size: 16px; margin-right: 6px; color: #fff; font-variant-numeric: tabular-nums; }
-.kpi.nok b { color: #ff8585; } .kpi.alerta b { color: #fab219; } .kpi.canc b { color: rgba(255, 255, 255, .6); }
+.kpi.nok b { color: #ff8585; } .kpi.alerta b { color: #fab219; } .kpi.chuva b { color: #7cc8f5; } .kpi.canc b { color: rgba(255, 255, 255, .6); }
 .usuario { display: flex; gap: 12px; align-items: center; color: rgba(255, 255, 255, .75); font-size: 12px; flex-wrap: wrap; }
 .usuario form { margin: 0; }
 .usuario select { padding: 3px 8px; border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
@@ -127,8 +127,8 @@ button, input, select { font: inherit; color: inherit; }
 .controle-estacoes .aviso { color: var(--suave); font-size: 12px; max-width: 190px; white-space: normal; }
 .controle-estacoes .aviso:empty { display: none; }
 .controle-estacoes .grupo { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); margin-top: 2px; }
-.amostra-clima { display: inline-block; width: 14px; height: 10px; border: 1px solid var(--clima-laranja);
-  background: color-mix(in srgb, var(--clima-laranja) 30%, transparent); }
+.amostra-clima { display: inline-block; width: 14px; height: 10px; border: 1px solid var(--clima-perigo);
+  background: color-mix(in srgb, var(--clima-perigo) 30%, transparent); }
 .dica-clima { white-space: pre-line; max-width: 320px; }
 .lista .tags { display: flex; gap: 4px; }
 .tag.chuva { font-weight: 700; }
@@ -141,9 +141,12 @@ button, input, select { font: inherit; color: inherit; }
 .tr.rotograma { border-top-color: var(--rotograma); }
 .pt.autorizado { background: var(--ok); width: 8px; height: 8px; }
 .pt.risco-leg { background: var(--nok); }
-.tag.chuva.amarelo { border-color: var(--clima-amarelo); color: var(--alerta-texto); background: color-mix(in srgb, var(--clima-amarelo) 18%, transparent); }
-.tag.chuva.laranja { border-color: var(--clima-laranja); color: var(--clima-laranja-texto); background: color-mix(in srgb, var(--clima-laranja) 16%, transparent); }
-.tag.chuva.vermelho { border-color: var(--clima-vermelho); color: var(--nok); background: color-mix(in srgb, var(--clima-vermelho) 14%, transparent); }
+/* Chuva em azul (do claro ao escuro conforme o nível do INMET), para não se confundir
+   com o amarelo/vermelho de atraso e sem sinal. O nível também vai escrito na etiqueta. */
+.tag.chuva { color: var(--clima-texto); }
+.tag.chuva.potencial { border-color: var(--clima-potencial); background: color-mix(in srgb, var(--clima-potencial) 18%, transparent); }
+.tag.chuva.perigo { border-color: var(--clima-perigo); background: color-mix(in srgb, var(--clima-perigo) 22%, transparent); }
+.tag.chuva.grande { border-color: var(--clima-grande); border-width: 2px; background: color-mix(in srgb, var(--clima-grande) 28%, transparent); }
 
 .leaflet-tooltip { font-family: var(--fonte); }
 .ver-todos { position: absolute; top: 10px; left: 54px; z-index: 600; padding: 6px 12px; cursor: pointer; font-weight: 700;

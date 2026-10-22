@@ -149,7 +149,8 @@ function alternarTipoEstacao(tipo, ligar) {
 }
 
 // Alertas de chuva do INMET (vêm com as rotas a cada atualização), desligados por padrão.
-const NIVEL_CLIMA = { 1: "amarelo", 2: "laranja", 3: "vermelho" };
+const NIVEL_CLIMA = { 1: "potencial", 2: "perigo", 3: "grande" };
+const TEXTO_CHUVA = { 1: "Chuva", 2: "Chuva · perigo", 3: "Chuva · grande perigo" };
 mapa.createPane("clima").style.zIndex = 380;
 const camadaClima = L.layerGroup().addTo(mapa);
 let alertasClima = [];
@@ -170,7 +171,7 @@ function desenharClima() {
   if (!climaLigado) return;
   const estilo = getComputedStyle(document.documentElement);
   for (const a of alertasClima) {
-    const cor = estilo.getPropertyValue(`--clima-${NIVEL_CLIMA[a.nivel] || "amarelo"}`).trim();
+    const cor = estilo.getPropertyValue(`--clima-${NIVEL_CLIMA[a.nivel] || "potencial"}`).trim();
     const dica = [`${a.rotulo} · ${a.evento}`, a.inicio && `de ${a.inicio}`, a.fim && `até ${a.fim}`]
       .filter(Boolean).join(" ");
     L.polygon(a.poligono, { pane: "clima", color: cor, weight: 1, fillColor: cor, fillOpacity: 0.18,
@@ -319,7 +320,7 @@ function desenharKpis() {
   const nRot = cont((r) => alertasRotograma(r).length > 0);
   if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
   const nChuva = cont(chuvaNoCaminho);
-  if (nChuva) kpis.push(["Chuva no caminho", nChuva, "alerta", () => aplicarFiltro(null, null, false, true)]);
+  if (nChuva) kpis.push(["Chuva no caminho", nChuva, "chuva", () => aplicarFiltro(null, null, false, true)]);
   const nCanc = dados.length - validas.length;
   if (nCanc) kpis.push(["Canceladas", nCanc, "canc", () => aplicarFiltro("fStatus", "Cancelada")]);
   const alvo = document.getElementById("kpis");
@@ -347,9 +348,10 @@ function tagRotograma(r) {
 function tagChuva(r) {
   const avisos = (r._geo || {}).clima || [];
   if (!avisos.length || cancelada(r)) return null;
-  const a = avisos[0];
-  return el("span", { class: `tag chuva ${NIVEL_CLIMA[a.nivel] || "amarelo"}`,
-    title: avisos.map((x) => `${x.rotulo}: ${x.evento}${x.fim ? ` até ${x.fim}` : ""}`).join("\n") }, "Chuva");
+  const a = avisos.reduce((m, x) => ((x.nivel || 1) > (m.nivel || 1) ? x : m));
+  return el("span", { class: `tag chuva ${NIVEL_CLIMA[a.nivel] || "potencial"}`,
+    title: avisos.map((x) => `${x.rotulo}: ${x.evento}${x.fim ? ` até ${x.fim}` : ""}`).join("\n") },
+    TEXTO_CHUVA[a.nivel] || "Chuva");
 }
 
 function desenharLista(lista) {
