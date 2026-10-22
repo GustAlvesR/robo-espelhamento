@@ -21,6 +21,7 @@ import tempfile
 import threading
 import time
 import unicodedata
+from collections import Counter
 from datetime import date, datetime
 from urllib.parse import urlparse
 
@@ -32,6 +33,13 @@ HOST_SISTEMA = urlparse(URL_TRACKING).netloc
 INTERVALO_MIN = int(os.getenv("ANGELLIRA_INTERVALO_MIN", "15"))
 TIMEOUT_MS = int(os.getenv("ANGELLIRA_TIMEOUT_S", "60")) * 1000
 ABA = os.getenv("TRACKING_WORKSHEET_NAME", "Rastreamento_Angellira")
+# Domínios que a tela do Tracking carrega e o relatório não usa (mapa, métricas, chat).
+# Bloqueados, o navegador disputa menos CPU com o robô; se o Tracking não abrir sem
+# eles, o robô volta sozinho ao modo completo.
+HOSTS_DISPENSAVEIS = ("maps.googleapis.com", "maps.gstatic.com", "google-analytics.com",
+                      "googletagmanager.com", "doubleclick.net", "hotjar.com", "clarity.ms",
+                      "tawk.to", "zdassets.com", "intercom.io", "crisp.chat", "jivosite.com",
+                      "octadesk.com", "movidesk.com", "hs-scripts.com", "hubspot.com")
 # Sem estas colunas o robô não usa o relatório (ver carregar_rastreamento): não grava.
 OBRIGATORIAS = ("PROCEDIMENTO DE EMBARQUE", "VEICULO", "DATA POSICAO")
 
@@ -101,8 +109,15 @@ def _esperar(pagina, segundos=5):
         pass
 
 
-def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=False):
-    """Devolve (caminho do arquivo baixado, estado da sessão para reaproveitar o login)."""
+def _dispensavel(host: str) -> bool:
+    return any(host == h or host.endswith("." + h) for h in HOSTS_DISPENSAVEIS)
+
+
+def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=False, leve=True,
+                     registrar_rede=False):
+    """Devolve (caminho do arquivo baixado, estado da sessão para reaproveitar o login).
+    leve: bloqueia os domínios dispensáveis. registrar_rede: põe no log os domínios
+    carregados e as chamadas feitas pelo Exportar (sem parâmetros, que podem ter token)."""
     from playwright.sync_api import sync_playwright
 
     passo, pagina, no_tracking = "abrindo o navegador", None, False
@@ -113,10 +128,21 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
         try:
             contexto = navegador.new_context(storage_state=estado, accept_downloads=True,
                                              locale="pt-BR", viewport={"width": 1366, "height": 768})
-            # Imagens (o mapa do Tracking), fontes e vídeos não fazem falta para exportar e
-            # pesam na memória: o servidor tem 512 MB para o robô e o navegador juntos.
-            contexto.route("**/*", lambda rota: rota.abort()
-                           if rota.request.resource_type in ("image", "font", "media") else rota.continue_())
+            # Imagens, fontes e vídeos não fazem falta para exportar e pesam na memória:
+            # o servidor tem 512 MB para o robô e o navegador juntos.
+            hosts, chamadas_exportar, coletando = Counter(), [], [False]
+
+            def rotear(rota):
+                req = rota.request
+                host = urlparse(req.url).hostname or ""
+                hosts[host] += 1
+                if coletando[0] and req.resource_type in ("xhr", "fetch"):
+                    chamadas_exportar.append(f"{req.method} {host}{urlparse(req.url).path}")
+                if req.resource_type in ("image", "font", "media") or (leve and _dispensavel(host)):
+                    return rota.abort()
+                return rota.continue_()
+
+            contexto.route("**/*", rotear)
             pagina = contexto.new_page()
             pagina.set_default_timeout(TIMEOUT_MS)
 
@@ -154,9 +180,16 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
             passo = "clicando em Exportar e esperando o arquivo"
             dialogo = pagina.locator("[role='dialog']")
             exportar = (dialogo if dialogo.count() else pagina).get_by_role("button", name="Exportar", exact=True)
+            coletando[0] = True
             with pagina.expect_download(timeout=TIMEOUT_MS * 3) as espera:
                 _clicar(exportar.first)
             download = espera.value
+            if registrar_rede:
+                logging.info("Angellira: domínios carregados (%s): %s. O Exportar chamou: %s.",
+                             "modo leve" if leve else "modo completo",
+                             ", ".join(f"{h}{' [bloqueado]' if leve and _dispensavel(h) else ''} ({n})"
+                                       for h, n in hosts.most_common(15)),
+                             "; ".join(dict.fromkeys(chamadas_exportar)) or "nada (arquivo montado no navegador)")
             nome = download.suggested_filename or "relatorio.xlsx"
             caminho = os.path.join(pasta, re.sub(r"[^\w.-]", "_", nome))
             download.save_as(caminho)
@@ -279,10 +312,12 @@ def _raio_x(pagina) -> str:
             const captcha = !!document.querySelector("iframe[src*='captcha'], iframe[src*='turnstile'], .g-recaptcha, .h-captcha, .cf-turnstile");
             const outros = [...document.querySelectorAll('a, img[alt]')].filter(vis).slice(0, 6)
                 .map(e => (e.tagName === 'IMG' ? 'img:' + e.alt : (e.innerText || '').trim()).slice(0, 25)).filter(Boolean);
-            const janelas = [...document.querySelectorAll("[role=dialog], [role=presentation], .MuiBackdrop-root, .MuiModal-root")]
-                .filter(vis).length;
+            // Uma janela do MUI tem várias camadas (fundo, contêiner...); só a [role=dialog] conta.
+            const janelas = [...document.querySelectorAll("[role=dialog], [role=alertdialog]")].filter(vis)
+                .map(j => (j.innerText || '').trim().replace(/\\s+/g, ' ').slice(0, 80) || '?');
             return `botões: ${botoes.join(', ') || 'nenhum'}; links: ${outros.join(', ') || 'nenhum'}; ` +
-                `janelas por cima: ${janelas}; captcha: ${captcha ? 'sim' : 'não'}`;
+                `janelas por cima: ${janelas.length}${janelas.length ? ' (' + janelas.join(' | ') + ')' : ''}; ` +
+                `captcha: ${captcha ? 'sim' : 'não'}`;
         }""")
     except Exception:
         return "botões: não foi possível ler"
@@ -307,24 +342,65 @@ def _clicar(alvo, forcar=False):
         alvo.evaluate("e => e.click()")
 
 
+FECHA_JANELA = re.compile(r"^\s*(fechar|ok|entendi|ciente|concordo|aceitar|aceito|depois|agora n[aã]o|pular|dispensar)", re.I)
+
+
+def _fechar_janelas(pagina):
+    """Fecha janelas que aparecem por cima do Tracking (comunicados depois do login, por
+    exemplo) pelo X, por um botão de dispensar ou com Esc. O texto vai para o log."""
+    for _ in range(3):
+        janelas = pagina.locator("[role='dialog']:visible, [role='alertdialog']:visible")
+        if not janelas.count():
+            return
+        janela = janelas.first
+        try:
+            texto = " ".join(janela.inner_text(timeout=3000).split())[:100]
+        except Exception:
+            texto = "?"
+        if "Todas as colunas" in texto:
+            return  # é o próprio popup de exportar
+        fechar = janela.locator("button[aria-label*='fechar' i], button[aria-label*='close' i], "
+                                "button:has(svg[data-testid^='Close'])")
+        if not fechar.count():
+            fechar = janela.locator("button, [role='button']").filter(has_text=FECHA_JANELA)
+        try:
+            if fechar.count():
+                _clicar(fechar.first)
+            else:
+                pagina.keyboard.press("Escape")
+        except Exception:
+            pagina.keyboard.press("Escape")
+        logging.info("Angellira: fechei a janela por cima do Tracking: %r.", texto)
+        pagina.wait_for_timeout(1000)
+
+
+def _clicar_exportar_js(pagina) -> bool:
+    """Acha o ícone visível e clica no botão dele numa operação só, dentro da página: a
+    barra do Tracking é redesenhada o tempo todo e o elemento some entre achar e clicar."""
+    return pagina.evaluate("""(seletor) => {
+        const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+        const icone = [...document.querySelectorAll(seletor)].find(vis);
+        if (!icone) return false;
+        const botao = icone.closest("button, [role=button]");
+        if (botao) botao.click();
+        else icone.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+        return true;
+    }""", SELETOR_EXPORTAR)
+
+
 def _abrir_exportacao(pagina):
-    """Abre o popup de exportar e devolve o rótulo 'Todas as colunas'. Clica no ícone
-    visível (pode haver cópias escondidas do botão), fecha avisos que estejam por cima
-    e, se o clique normal não abrir o popup, tenta forçado e depois via JavaScript."""
+    """Abre o popup de exportar e devolve o rótulo 'Todas as colunas'. Antes fecha
+    janelas por cima; tenta o clique normal e, se não abrir, o clique via JavaScript."""
     rotulo = pagina.locator("label:visible", has_text="Todas as colunas").first
     erro = None
     for tentativa in range(3):
+        _fechar_janelas(pagina)
         _fechar_avisos(pagina)
-        icone = pagina.locator(f"{SELETOR_EXPORTAR}:visible").first
-        alvo = icone.locator("xpath=ancestor-or-self::*[self::button or @role='button'][1]")
         try:
-            alvo = alvo if alvo.count() else icone
             if tentativa == 0:
-                alvo.click(timeout=15000)
-            elif tentativa == 1:
-                alvo.click(timeout=15000, force=True)
-            else:
-                alvo.evaluate("e => e.click()")
+                pagina.locator(f"button:has({SELETOR_EXPORTAR}):visible, {SELETOR_EXPORTAR}:visible").first.click(timeout=15000)
+            elif not _clicar_exportar_js(pagina):
+                raise ErroAngellira("o ícone de exportar não está visível")
             rotulo.wait_for(state="visible", timeout=15000)
             return rotulo
         except Exception as e:
@@ -446,6 +522,8 @@ class AtualizadorAngellira:
         self._spreadsheet_id = spreadsheet_id
         self._estado = None        # cookies do login, só em memória
         self._falhas = 0
+        self._leve = os.getenv("ANGELLIRA_MODO_LEVE", "1") != "0"
+        self._rede_registrada = False
         self.ultimo_ok = None
         self.ultimo_erro = ""
 
@@ -456,8 +534,14 @@ class AtualizadorAngellira:
         inicio = time.monotonic()
         with tempfile.TemporaryDirectory() as pasta:
             try:
-                caminho, self._estado = baixar_relatorio(usuario, senha, pasta, self._estado, visivel)
+                caminho, self._estado = baixar_relatorio(usuario, senha, pasta, self._estado, visivel,
+                                                         leve=self._leve, registrar_rede=not self._rede_registrada)
+                self._rede_registrada = True
             except ErroAngellira as e:
+                if self._leve and "botão de exportar não apareceu" in str(e):
+                    self._leve = False
+                    logging.warning("Angellira: o Tracking não abriu sem o mapa e os scripts de terceiros; "
+                                    "voltando ao modo completo.")
                 # Se o login deu certo e a falha foi depois, reaproveita a sessão: cada login
                 # novo passa pelo PERMITIR e pesa mais. A cada 3 falhas seguidas, login do
                 # zero, caso a própria sessão seja a causa.

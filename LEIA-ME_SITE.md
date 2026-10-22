@@ -213,6 +213,13 @@ Exportar colunas, "Todas as colunas", Exportar.
 - Falha em qualquer passo vai para o log com o nome do passo, por exemplo
   `Angellira: falhou clicando em exportar colunas (página: ...)`. A próxima tentativa
   é 15 minutos depois. O robô e o site seguem funcionando.
+- Janelas que aparecem por cima do Tracking (comunicados depois do login) são fechadas
+  pelo X ou por Esc, e o texto delas vai para o log.
+- Modo leve: o navegador não carrega o Google Maps nem scripts de métricas e chat, que
+  o relatório não usa e que disputam CPU com o robô no plano gratuito. Se o Tracking
+  não abrir assim, o robô volta sozinho ao modo completo e avisa no log. Para desligar
+  de vez: `ANGELLIRA_MODO_LEVE=0`. Na primeira exportação depois de cada reinício, o
+  log lista os domínios que a página carregou e o que o botão Exportar chamou.
 
 ### Configuração no Render (uma vez)
 
