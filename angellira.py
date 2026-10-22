@@ -7,6 +7,8 @@ login em auth.angellira.com.br, Tracking, atualiza a página, Exportar colunas,
 ANGELLIRA_SENHA; nunca ficam no código nem na planilha.
 
 Rodando dentro do robô, repete a cada ANGELLIRA_INTERVALO_MIN (15) numa thread própria.
+O navegador roda num processo à parte, com prioridade baixa de CPU e prazo
+(ANGELLIRA_LIMITE_MIN, 8): travou, é encerrado e o robô segue.
 Para testar no PC:  python angellira.py --uma-vez [--visivel]
 Só gravar um arquivo já baixado:  python angellira.py --arquivo relatorio.xlsx"""
 
@@ -14,14 +16,18 @@ import argparse
 import csv
 import importlib.util
 import io
+import json
 import logging
 import os
 import re
+import signal
+import subprocess
+import sys
 import tempfile
 import threading
 import time
 import unicodedata
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, datetime
 from urllib.parse import urlparse
 
@@ -32,6 +38,7 @@ HOST_AUTH = urlparse(URL_LOGIN).netloc
 HOST_SISTEMA = urlparse(URL_TRACKING).netloc
 INTERVALO_MIN = int(os.getenv("ANGELLIRA_INTERVALO_MIN", "15"))
 TIMEOUT_MS = int(os.getenv("ANGELLIRA_TIMEOUT_S", "60")) * 1000
+LIMITE_RODADA_S = int(float(os.getenv("ANGELLIRA_LIMITE_MIN", "8")) * 60)
 ABA = os.getenv("TRACKING_WORKSHEET_NAME", "Rastreamento_Angellira")
 # Domínios que a tela do Tracking carrega e o relatório não usa (mapa, métricas, chat).
 # Bloqueados, o navegador disputa menos CPU com o robô; se o Tracking não abrir sem
@@ -516,6 +523,115 @@ def gravar_na_aba(planilha, linhas: list) -> None:
 # Ciclo
 # =============================================================================
 
+def baixar_em_processo(usuario_env: str, senha_env: str, pasta: str, estado=None, visivel=False, leve=True,
+                      registrar_rede=False):
+    """Roda baixar_relatorio num processo à parte e devolve o mesmo que ele.
+    Depois de um login, a página já ficou consumindo CPU sem parar enquanto o robô
+    esperava por ela sem prazo: o ciclo passava de 20 min e o vigia reiniciava tudo.
+    Separado, o navegador roda com prioridade baixa e, se passar do prazo, é encerrado.
+    Usuário e senha vão pelas variáveis de ambiente, nunca na linha de comando."""
+    entrada, saida = os.path.join(pasta, "estado_entrada.json"), os.path.join(pasta, "resultado.json")
+    if estado:
+        with open(entrada, "w", encoding="utf-8") as f:
+            json.dump(estado, f)
+    cmd = [sys.executable, os.path.abspath(__file__), "--processo-filho", pasta]
+    cmd += ["--visivel"] * visivel + ["--completo"] * (not leve) + ["--registrar-rede"] * registrar_rede
+    env = {**os.environ, "ANGELLIRA_USUARIO": usuario_env, "ANGELLIRA_SENHA": senha_env}
+    proc = subprocess.Popen(cmd, env=env, start_new_session=True)
+    inicio = time.monotonic()
+    while True:
+        try:
+            proc.wait(timeout=5)
+            break
+        except subprocess.TimeoutExpired:
+            descendentes = _descendentes(proc.pid)
+            _baixar_prioridade(descendentes)
+            if time.monotonic() - inicio > LIMITE_RODADA_S:
+                for pid in [proc.pid] + descendentes:
+                    try:
+                        os.kill(pid, signal.SIGKILL)
+                    except (OSError, AttributeError):
+                        pass
+                proc.wait()
+                erro = ErroAngellira(f"a rodada passou de {LIMITE_RODADA_S / 60:g} min e o navegador foi encerrado")
+                erro.estado = estado
+                raise erro from None
+    try:
+        with open(saida, encoding="utf-8") as f:
+            resultado = json.load(f)
+    except (OSError, ValueError):
+        raise ErroAngellira(f"o processo do navegador terminou sem resultado (código {proc.returncode})") from None
+    if resultado.get("erro"):
+        erro = ErroAngellira(resultado["erro"])
+        erro.estado = resultado.get("estado")
+        raise erro
+    return resultado["caminho"], resultado.get("estado")
+
+
+PRIORIDADE_NAVEGADOR = 10  # nice: o robô (0) tem preferência na CPU
+
+
+def _descendentes(pid: int) -> list:
+    """Processos abaixo de pid, pelo /proc (Linux). O Chromium abre sessão própria,
+    então o grupo de processos do filho não chega até ele."""
+    filhos = defaultdict(list)
+    try:
+        for d in os.listdir("/proc"):
+            if d.isdigit():
+                try:
+                    with open(f"/proc/{d}/stat", encoding="utf-8", errors="replace") as f:
+                        filhos[int(f.read().rsplit(")", 1)[1].split()[1])].append(int(d))
+                except (OSError, ValueError, IndexError):
+                    pass
+    except OSError:
+        return []
+    fila, todos = [pid], []
+    while fila:
+        for filho in filhos.get(fila.pop(), []):
+            todos.append(filho)
+            fila.append(filho)
+    return todos
+
+
+def _baixar_prioridade(pids: list):
+    """Reaplica a prioridade baixa em cada thread: com permissão para isso, o Chromium
+    sobe a prioridade dos próprios processos (no Linux ela vale por thread)."""
+    for pid in pids:
+        try:
+            tids = [int(t) for t in os.listdir(f"/proc/{pid}/task")]
+        except OSError:
+            continue
+        for tid in tids:
+            try:
+                if os.getpriority(os.PRIO_PROCESS, tid) < PRIORIDADE_NAVEGADOR:
+                    os.setpriority(os.PRIO_PROCESS, tid, PRIORIDADE_NAVEGADOR)
+            except (OSError, AttributeError):
+                pass
+
+
+def _processo_filho(pasta: str, visivel: bool, leve: bool, registrar_rede: bool):
+    if hasattr(os, "nice"):
+        try:
+            os.nice(PRIORIDADE_NAVEGADOR)  # o Chromium herda; o pai reaplica se ele mudar
+        except OSError:
+            pass
+    entrada = os.path.join(pasta, "estado_entrada.json")
+    estado = None
+    if os.path.exists(entrada):
+        with open(entrada, encoding="utf-8") as f:
+            estado = json.load(f)
+    try:
+        caminho, estado = baixar_relatorio(os.getenv("ANGELLIRA_USUARIO", ""), os.getenv("ANGELLIRA_SENHA", ""),
+                                           pasta, estado, visivel, leve, registrar_rede)
+        resultado = {"caminho": caminho, "estado": estado}
+    except ErroAngellira as e:
+        resultado = {"erro": str(e), "estado": e.estado}
+    except Exception as e:
+        resultado = {"erro": f"{type(e).__name__}: {e}"[:500]}
+    with open(os.path.join(pasta, "resultado.json"), "w", encoding="utf-8") as f:
+        json.dump(resultado, f)
+
+
 class AtualizadorAngellira:
     def __init__(self, get_client, spreadsheet_id: str):
         self._get_client = get_client
@@ -534,8 +650,8 @@ class AtualizadorAngellira:
         inicio = time.monotonic()
         with tempfile.TemporaryDirectory() as pasta:
             try:
-                caminho, self._estado = baixar_relatorio(usuario, senha, pasta, self._estado, visivel,
-                                                         leve=self._leve, registrar_rede=not self._rede_registrada)
+                caminho, self._estado = baixar_em_processo(usuario, senha, pasta, self._estado, visivel,
+                                                           leve=self._leve, registrar_rede=not self._rede_registrada)
                 self._rede_registrada = True
             except ErroAngellira as e:
                 if self._leve and "botão de exportar não apareceu" in str(e):
@@ -577,6 +693,9 @@ def iniciar_em_segundo_plano(get_client, spreadsheet_id: str):
     if importlib.util.find_spec("playwright") is None:
         logging.warning("Angellira: Playwright não instalado; atualização automática desligada.")
         return None
+    if any(t.name == "angellira" for t in threading.enumerate()):
+        logging.warning("Angellira: atualização automática já estava ligada; não abro outra.")
+        return None
     atualizador = AtualizadorAngellira(get_client, spreadsheet_id)
     threading.Thread(target=atualizador.loop, daemon=True, name="angellira").start()
     logging.info("Angellira: atualização automática ligada, a cada %s min.", INTERVALO_MIN)
@@ -588,8 +707,14 @@ def main():
     ap.add_argument("--uma-vez", action="store_true", help="baixa e grava uma vez e sai")
     ap.add_argument("--visivel", action="store_true", help="abre o navegador com janela (para acompanhar)")
     ap.add_argument("--arquivo", help="só grava este arquivo já baixado, sem abrir o navegador")
+    ap.add_argument("--processo-filho", help=argparse.SUPPRESS)
+    ap.add_argument("--completo", action="store_true", help=argparse.SUPPRESS)
+    ap.add_argument("--registrar-rede", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-8s | %(message)s")
+    if args.processo_filho:
+        _processo_filho(args.processo_filho, args.visivel, not args.completo, args.registrar_rede)
+        return
     import monitor_espelhamento as robo
     if args.arquivo:
         linhas = ler_arquivo(args.arquivo)
