@@ -147,7 +147,7 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   um aviso por item, no padrão CAP (evento, severidade, vigência e polígono da área).
   Gratuito, sem chave. O robô relê o feed a cada 30 minutos e só baixa os avisos novos.
 - Entram os avisos de chuva e tempestade vigentes e os que começam nas próximas 12 horas.
-  Cores: amarelo = Perigo Potencial, laranja = Perigo, vermelho = Grande Perigo.
+  Cores: azul claro = Perigo Potencial, azul médio = Perigo, azul escuro = Grande Perigo (azul para não se confundir com atraso e sem sinal; o nível também aparece escrito na etiqueta).
 - Para cada rota, o robô verifica se o caminho que falta percorrer (o azul da TomTom) ou,
   antes da viagem, o trajeto planejado passa por alguma área com alerta. As rotas
   marcadas ganham a etiqueta "Chuva" na lista, a seção "Chuva no caminho" no detalhe e
