@@ -136,13 +136,9 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                                     f"tela: {_texto_da_tela(pagina)!r})")
 
             passo = "clicando em exportar colunas"
-            icone = pagina.locator(SELETOR_EXPORTAR).first
-            botao = pagina.locator(f"button:has({SELETOR_EXPORTAR})")
-            (botao.first if botao.count() else icone).click()
+            rotulo = _abrir_exportacao(pagina)
 
             passo = "marcando 'Todas as colunas'"
-            rotulo = pagina.locator("label", has_text="Todas as colunas").first
-            rotulo.wait_for(state="visible")
             caixa = rotulo.locator("input")
             if caixa.count():
                 caixa.first.check(force=True)  # marcar, não alternar: se já estiver marcada, fica
@@ -164,8 +160,8 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
         except Exception as e:
             url = _url_sem_parametros(pagina.url) if pagina else ""
             detalhe = _motivo_playwright(e)
-            if passo == "fazendo login" and pagina:
-                detalhe += f"; {_raio_x_login(pagina)}"
+            if pagina and not pagina.is_closed():
+                detalhe += f"; {_raio_x(pagina)}"
             raise ErroAngellira(f"falhou {passo} (página: {url}): {type(e).__name__}: {detalhe}") from None
         finally:
             navegador.close()
@@ -224,7 +220,7 @@ def _concluir_login(pagina):
                     pass
         pagina.wait_for_timeout(2000)
     raise ErroAngellira(f"login não saiu da tela de autenticação (página: {_url_sem_parametros(pagina.url)}; "
-                        f"{_raio_x_login(pagina)}; abas: {len(pagina.context.pages)}; "
+                        f"{_raio_x(pagina)}; abas: {len(pagina.context.pages)}; "
                         f"tela: {_texto_da_tela(pagina)!r})")
 
 
@@ -259,9 +255,9 @@ def _continuar(pagina, campo):
     campo.press("Enter")
 
 
-def _raio_x_login(pagina) -> str:
-    """Botões visíveis e sinais de captcha, para entender pelo log por que o login travou.
-    Não lê o conteúdo dos campos."""
+def _raio_x(pagina) -> str:
+    """Botões visíveis, janelas abertas e sinais de captcha, para entender pelo log onde
+    a automação travou. Não lê o conteúdo dos campos."""
     try:
         return pagina.evaluate("""() => {
             const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
@@ -271,8 +267,10 @@ def _raio_x_login(pagina) -> str:
             const captcha = !!document.querySelector("iframe[src*='captcha'], iframe[src*='turnstile'], .g-recaptcha, .h-captcha, .cf-turnstile");
             const outros = [...document.querySelectorAll('a, img[alt]')].filter(vis).slice(0, 6)
                 .map(e => (e.tagName === 'IMG' ? 'img:' + e.alt : (e.innerText || '').trim()).slice(0, 25)).filter(Boolean);
+            const janelas = [...document.querySelectorAll("[role=dialog], [role=presentation], .MuiBackdrop-root, .MuiModal-root")]
+                .filter(vis).length;
             return `botões: ${botoes.join(', ') || 'nenhum'}; links: ${outros.join(', ') || 'nenhum'}; ` +
-                `captcha: ${captcha ? 'sim' : 'não'}`;
+                `janelas por cima: ${janelas}; captcha: ${captcha ? 'sim' : 'não'}`;
         }""")
     except Exception:
         return "botões: não foi possível ler"
@@ -283,8 +281,37 @@ def _motivo_playwright(e) -> str:
     linhas = [l.strip(" -") for l in str(e).splitlines() if l.strip()]
     if not linhas:
         return ""
-    pistas = [l for l in linhas[1:] if re.search(r"intercepts|not enabled|not visible|not stable|disabled|outside", l)]
-    return "; ".join(dict.fromkeys([linhas[0]] + pistas[-1:]))[:400]
+    pistas = [l for l in linhas[1:] if re.search(r"intercepts|not enabled|not visible|not stable|disabled|outside|detached", l)]
+    # Sem pista conhecida, a última linha do registro diz no que ele estava esperando.
+    return "; ".join(dict.fromkeys([linhas[0]] + (pistas[-1:] or linhas[-1:])))[:400]
+
+
+def _abrir_exportacao(pagina):
+    """Abre o popup de exportar e devolve o rótulo 'Todas as colunas'. Clica no ícone
+    visível (pode haver cópias escondidas do botão), fecha avisos que estejam por cima
+    e, se o clique normal não abrir o popup, tenta forçado e depois via JavaScript."""
+    rotulo = pagina.locator("label:visible", has_text="Todas as colunas").first
+    erro = None
+    for tentativa in range(3):
+        _fechar_avisos(pagina)
+        icone = pagina.locator(f"{SELETOR_EXPORTAR}:visible").first
+        alvo = icone.locator("xpath=ancestor-or-self::*[self::button or @role='button'][1]")
+        try:
+            alvo = alvo if alvo.count() else icone
+            if tentativa == 0:
+                alvo.click(timeout=15000)
+            elif tentativa == 1:
+                alvo.click(timeout=15000, force=True)
+            else:
+                alvo.evaluate("e => e.click()")
+            rotulo.wait_for(state="visible", timeout=15000)
+            return rotulo
+        except Exception as e:
+            erro = e
+            logging.info("Angellira: popup de exportar não abriu na tentativa %s (%s; %s).",
+                         tentativa + 1, _motivo_playwright(e), _raio_x(pagina))
+            pagina.keyboard.press("Escape")  # fecha o que tiver aberto por cima antes de tentar de novo
+    raise erro
 
 
 def _abrir_tracking(pagina):
