@@ -213,6 +213,11 @@ Exportar colunas, "Todas as colunas", Exportar.
 - Falha em qualquer passo vai para o log com o nome do passo, por exemplo
   `Angellira: falhou clicando em exportar colunas (página: ...)`. A próxima tentativa
   é 15 minutos depois. O robô e o site seguem funcionando.
+- O navegador roda num processo separado do robô, com prioridade baixa de CPU (o
+  robô sempre tem preferência) e prazo de 8 minutos por rodada
+  (`ANGELLIRA_LIMITE_MIN`). Passou do prazo, o navegador é encerrado à força, o log
+  diz `a rodada passou de 8 min e o navegador foi encerrado` e o robô segue. Antes,
+  uma tela travada depois do login prendia CPU até o vigia reiniciar o serviço.
 - Janelas que aparecem por cima do Tracking (comunicados depois do login) são fechadas
   pelo X ou por Esc, e o texto delas vai para o log.
 - Modo leve: o navegador não carrega o Google Maps nem scripts de métricas e chat, que
