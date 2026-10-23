@@ -183,6 +183,11 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - O robô localiza cada ponto e cada área de risco pela TomTom (nome do posto perto do
   centro da cidade; se não achar, fica a posição da cidade), no máximo 40 chamadas por
   ciclo (`ROTOGRAMA_MAX_CHAMADAS_CICLO`), com cache. A primeira vez leva cerca de uma hora.
+- A cidade só é aceita se a TomTom a devolver dentro do estado pedido: "Ribeirão, PE" já
+  veio em Goiás e "Escada, PE" em Minas, e os postos dessas cidades foram parar lá. Isso
+  vale também para a posição dos caminhões por cidade. Cidade fora do estado que já
+  estava no cache é localizada de novo sozinha; se a TomTom não achar a cidade no
+  estado, ela fica sem posição (e o log avisa) em vez de cair no lugar errado.
 - Rota do rotograma (linha roxa): rota de caminhão passando pelos postos autorizados, na
   ordem, um a cada 40 km. O detalhe mostra o tamanho dela e o do rotograma, para conferir.
 - Pontos autorizados (verde) e áreas de risco (vermelho com "!") aparecem ao selecionar
