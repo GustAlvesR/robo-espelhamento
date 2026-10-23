@@ -88,6 +88,8 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - `Alerta Chuva (INMET)` (última coluna): alertas de chuva do INMET cuja área o
   caminho que falta percorrer atravessa, do mais grave para o menos, por exemplo
   `Perigo: Chuvas Intensas até 21/10 10:00`. Vazio quando não há alerta.
+- `Motorista` (depois de `Alerta Rotograma`, a última): nome da coluna `Driver_Name`
+  da Telemetria; se ela vier vazia, o `MOTORISTA` do relatório da Angellira.
 
 ## Uso do mapa
 
@@ -111,7 +113,9 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 - A lista vem por gravidade: sem sinal agora, NOK, atraso provável e o resto.
 - Filtro "Trecho": lista os pares origem → destino das rotas carregadas, com a cidade
   de cada sigla (ex.: Betim/MG → Recife/PE · SOC-MG2 → SOC-PE4) e quantas rotas há em
-  cada um. A busca também aceita o nome da cidade.
+  cada um. A busca também aceita o nome da cidade e o do motorista, sem diferenciar
+  acento nem maiúsculas ("joao" acha "JOÃO"). Quando a rota aparece pelo motorista,
+  o nome dele surge na lista.
 - As cidades vêm de `dados/estacoes_shopee.csv`, gerado da planilha de endereços da
   Shopee. Quando a planilha mudar: `pip install openpyxl`, depois
   `python importar_estacoes.py "Endereços e CNPJ.xlsx"` e commit do CSV. Endereço e

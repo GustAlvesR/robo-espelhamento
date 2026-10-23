@@ -392,6 +392,9 @@ OPTIONAL_COLUMNS = {
 # Status da viagem no DBLH (PRE VIAGEM / EM TRANSITO). Vai para a última coluna do
 # Resultado ("Status Viagem") e decide no site se o trajeto é só previsto.
 STATUS_VIAGEM_NOMES = {"statuscorrigido"}
+# Nome do motorista (Driver_Name na Telemetria). Vai para a última coluna do Resultado
+# ("Motorista") e para a busca do site; sem a coluna, usa o MOTORISTA da Angellira.
+MOTORISTA_NOMES = {"drivername", "motorista", "nomemotorista"}
 
 
 def _norm_cab(texto) -> str:
@@ -468,6 +471,8 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
     df["status_viagem"] = df[col_status] if col_status else ""
     if col_status is None:
         logging.warning("Coluna status_corrigido não encontrada; 'Status Viagem' sai vazio.")
+    col_motorista = next((c for c in df.columns if _norm_cab(c) in MOTORISTA_NOMES), None)
+    df["driver_name"] = df[col_motorista] if col_motorista else ""
 
     # Remove linhas sem trip_number (linhas em branco no fim da planilha).
     df = df[df["trip_number"].astype(str).str.strip() != ""]
@@ -542,7 +547,7 @@ TRACKING_OUTPUT = [
     ("trk_encerrada", "Viagem Encerrada (Seguradora)"),
 ]
 # Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
-TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", "")]
+TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", "")]
 _MSG_ENCERRADA = ("FIMDEVIAGEM", "CHEGADANOCLIENTE", "FIMDEDESCARGA")
 
 
@@ -645,6 +650,7 @@ def carregar_rastreamento(client):
             "ultima_msg": cel(l, "ULTIMAMENSAGEM"),
             "origem_nome": cel(l, "ORIGEM"),
             "destino_nome": cel(l, "CLIENTE"),
+            "motorista": cel(l, "MOTORISTA"),
         })
     return registros, (max(referencias) if referencias else None)
 
@@ -723,6 +729,7 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
             df.at[i, "trk_ultima_msg"] = msg_limpa
             df.at[i, "trk_origem_nome"] = reg["origem_nome"]
             df.at[i, "trk_destino_nome"] = reg["destino_nome"]
+            df.at[i, "trk_motorista"] = reg["motorista"]
             df.at[i, "trk_encerrada"] = "Sim" if any(t in _norm_chave(msg) for t in _MSG_ENCERRADA) else "Não"
 
         logging.info("Rastreamento: %s linha(s) Shopee, %s rota(s) casada(s) por placa, "
@@ -906,6 +913,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
         "inicio": _iso(inicio_previsto),
         "fim": _iso(fim_previsto),
         "info": info_veiculo,
+        "motorista": " ".join((_txt(row.get("driver_name")) or _txt(row.get("trk_motorista"))).split()).upper(),
     }
     atualizar_realizado(dados, realizado)
 
@@ -1046,6 +1054,11 @@ def colunas_realizadas(resultado: dict, dados: dict) -> None:
     resultado["Janela Final"] = "Sim" if dados.get("chegada_realizada") else "Não"
 
 
+def coluna_motorista(resultado: dict, dados: dict) -> None:
+    """Última coluna de Resultado_Espelhamento, para não deslocar as existentes."""
+    resultado["Motorista"] = (dados.get("base") or {}).get("motorista", "")
+
+
 def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) -> list:
     """Rotas que já saíram da aba Telemetria mas chegaram há menos de
     FINALIZADAS_HORAS: resultado com a janela fechada na chegada realizada."""
@@ -1061,6 +1074,7 @@ def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) 
         r = montar_resultado(trip_number, dados, dados.get("last_status") or "", corte=corte, now=now)
         r["Status Viagem"] = "FINALIZADA"
         colunas_realizadas(r, dados)
+        coluna_motorista(r, dados)
         saida.append(r)
     return saida
 
@@ -1504,6 +1518,8 @@ def _job():
             rotogramas_mapa = {}
             for r in resultados:
                 r.setdefault("Alerta Rotograma", "")
+        for r in resultados:
+            coluna_motorista(r, state.get(r["Trip Number"], {}))
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())

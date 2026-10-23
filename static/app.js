@@ -286,8 +286,13 @@ function desenharTrechos() {
   sel.value = cont.has(desejado) ? desejado : "";
 }
 
+// Busca sem diferenciar acento nem maiúsculas: "joão" acha "JOAO".
+const semAcento = (t) => String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+const termoBusca = () => semAcento(document.getElementById("busca").value.trim());
+const motoristaBate = (r, q) => !!q && semAcento(r["Motorista"]).includes(q);
+
 function filtrar() {
-  const q = document.getElementById("busca").value.trim().toUpperCase();
+  const q = termoBusca();
   const fs = document.getElementById("fStatus").value;
   const fr = document.getElementById("fRisco").value;
   const ft = document.getElementById("fTrecho").value;
@@ -299,9 +304,9 @@ function filtrar() {
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
     if (!q) return true;
-    return ["Trip Number", "Placa", "Placa 2", "Origin Station Code", "Destination Station Code", "Cidade/UF",
-      "_origem_local", "_destino_local"]
-      .some((c) => String(r[c] || "").toUpperCase().includes(q));
+    return ["Trip Number", "Placa", "Placa 2", "Motorista", "Origin Station Code", "Destination Station Code",
+      "Cidade/UF", "_origem_local", "_destino_local"]
+      .some((c) => semAcento(r[c]).includes(q));
   }).sort((a, b) => gravidade(a) - gravidade(b));
 }
 
@@ -360,6 +365,7 @@ function desenharLista(lista) {
   document.getElementById("exportar").disabled = !lista.length;
   const ul = document.getElementById("lista");
   if (!lista.length) { ul.replaceChildren(el("li", { class: "vazio" }, "Nenhuma rota com esses filtros.")); return; }
+  const q = termoBusca();
   ul.replaceChildren(...lista.map((r) => {
     const risco = r["Risco de Atraso"] || "";
     const tagCls = risco === "Atraso provável" ? "atraso" : risco === "No prazo" ? "prazo" : "";
@@ -374,6 +380,8 @@ function desenharLista(lista) {
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
+      // O nome só aparece na lista quando foi ele que a busca encontrou.
+      motoristaBate(r, q) ? el("div", { class: "l2" }, `Motorista: ${r["Motorista"]}`) : null,
     );
   }));
 }
@@ -438,6 +446,7 @@ function desenharDetalhe() {
     el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
     el("dl", {},
       ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
+      ...linha("Motorista", r["Motorista"]),
       ...linha("Cancelamento", r["Cancelamento"]),
       ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
       ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
