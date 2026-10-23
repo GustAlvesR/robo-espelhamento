@@ -146,6 +146,9 @@ STATE_CHUNK_SIZE = 40000  # limite do Sheets é 50.000 caracteres por célula
 
 # Web Service: o Render exige uma porta HTTP aberta. O PORT é injetado por ele.
 HTTP_PORT = int(os.getenv("PORT", "10000"))
+# Atendimentos simultâneos do site. Depois de um deploy, os navegadores abertos recarregam
+# o mapa juntos e cada quadrinho passa pelo servidor (cache vazio): 16 enfileirava até 26.
+SITE_THREADS = int(os.getenv("SITE_THREADS", "32"))
 # URL pública (o Render define RENDER_EXTERNAL_URL automaticamente). Se existir,
 # o robô se auto-pinga para tentar evitar a hibernação do plano gratuito.
 SELF_PING_URL = os.getenv("SELF_PING_URL", os.getenv("RENDER_EXTERNAL_URL", ""))
@@ -1631,10 +1634,14 @@ def _job():
             coluna_motorista(r, state.get(r["Trip Number"], {}))
             ajustar_risco(r, state.get(r["Trip Number"], {}), now)
             alerta_acidente(r, state.get(r["Trip Number"], {}), geo_por_trip.get(r["Trip Number"]), now)
-        transito = [t for g in geo_por_trip.values() for t in (g or {}).get("transito") or []]
-        if transito:
-            logging.info("TomTom trânsito nas rotas: %s acidente(s), %s interdição(ões), %s congestionamento(s).",
-                         *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")))
+        # Em todo ciclo, mesmo zerado: é por aqui que se confere a leitura do trânsito da TomTom.
+        consultadas = [g for g in geo_por_trip.values() if g and "transito" in g]
+        transito = [t for g in consultadas for t in g["transito"]]
+        logging.info("TomTom trânsito: %s de %s rota(s) com o caminho até o destino consultado, %s trecho(s) de "
+                     "trânsito recebido(s); %s acidente(s), %s interdição(ões), %s congestionamento(s) de %s min ou mais.",
+                     len(consultadas), len(resultados), sum(g.get("trechos_brutos", 0) for g in consultadas),
+                     *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")),
+                     geo_tomtom.CONGESTIONAMENTO_MIN_ATRASO)
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
@@ -1676,7 +1683,7 @@ def start_http_server():
 
     app = create_app(lambda: _SNAPSHOT, get_gspread_client, RESULTS_SPREADSHEET_ID, GEO.key)
     threading.Thread(target=serve, args=(app,),
-                     kwargs={"host": "0.0.0.0", "port": HTTP_PORT, "threads": 16},
+                     kwargs={"host": "0.0.0.0", "port": HTTP_PORT, "threads": SITE_THREADS},
                      daemon=True).start()
     logging.info("Site ouvindo na porta %s.", HTTP_PORT)
 
