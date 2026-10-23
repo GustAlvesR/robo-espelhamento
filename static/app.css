@@ -85,6 +85,17 @@ button, input, select { font: inherit; color: inherit; }
 .tag { font-size: 11px; font-weight: 400; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--linha); white-space: nowrap; color: var(--suave); }
 .tag.atraso { border-color: var(--alerta); color: var(--alerta-texto); background: color-mix(in srgb, var(--alerta) 14%, transparent); }
 .tag.prazo { border-color: var(--ok); color: var(--ok); }
+.tag.acidente.motorista { border-color: var(--nok); background: var(--nok); color: #fff; font-weight: 700; }
+.tag.acidente.tomtom { border-color: var(--nok); color: var(--nok); font-weight: 700; }
+/* Trânsito da TomTom na rota selecionada: acidente vermelho, interdição escura, fila laranja. */
+.incidente { display: grid; place-items: center; }
+.incidente span { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 3px; transform: rotate(45deg);
+  color: #fff; font: 700 11px/1 var(--fonte); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+.incidente span b { transform: rotate(-45deg); }
+.incidente.acidente span { background: var(--nok); }
+.incidente.interdicao span { background: #5b1a1a; }
+.incidente.fila span { background: #f07c00; }
+.pt.incidente-leg { background: var(--nok); border-radius: 2px; transform: rotate(45deg); }
 .tag.atrasada { border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); font-weight: 700; }
 .vazio { padding: 24px; color: var(--suave); text-align: center; }
 
@@ -134,7 +145,7 @@ button, input, select { font: inherit; color: inherit; }
 .amostra-clima { display: inline-block; width: 14px; height: 10px; border: 1px solid var(--clima-perigo);
   background: color-mix(in srgb, var(--clima-perigo) 30%, transparent); }
 .dica-clima { white-space: pre-line; max-width: 320px; }
-.lista .tags { display: flex; gap: 4px; }
+.lista .tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .tag.chuva { font-weight: 700; }
 .tag.rotograma { font-weight: 700; border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); }
 /* Área de risco do rotograma: círculo vermelho com "!" (posição só da cidade = tracejado). */

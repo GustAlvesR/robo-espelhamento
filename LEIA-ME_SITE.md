@@ -103,6 +103,7 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   repetir em dois relatórios atualizados, e se mais da metade das viagens some de uma
   vez nada é encerrado. `Viagem Encerrada (Seguradora)` passa a seguir essa mesma regra.
 - A telemetria (`% Espelhamento`) continua pela regra da Shopee: até a chegada realizada.
+- `Alerta Acidente` (a última): ver "Acidentes no caminho".
 
 ## Uso do mapa
 
@@ -183,6 +184,26 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   menos os que já venceram. A camada do mapa mostra de quando é a leitura.
 - Variáveis opcionais: `INMET_ATIVO=0` desliga; `INMET_ATUALIZAR_MIN` (30),
   `INMET_ANTECEDENCIA_H` (12), `INMET_MAX_NOVOS_POR_CICLO` (40), `INMET_RSS_URL`.
+
+## Acidentes no caminho
+
+Dupla checagem, com prioridade para o motorista:
+
+- Motorista: macro com "ACIDENTE" na última mensagem da Angellira (por exemplo
+  `ACIDENTE NA PISTA`). Vira o alerta principal (etiqueta vermelha cheia, primeiro da
+  lista) e vale até ele mandar outra mensagem, no máximo 6 h (`ACIDENTE_MOTORISTA_MAX_H`).
+  Só conta com a viagem em andamento: a macro da viagem anterior do caminhão não entra.
+- TomTom: na mesma chamada que calcula a chegada (sem custo extra), a rota até o
+  destino vem com os trechos de trânsito. Acidente (causa TPEG 2), interdição e
+  congestionamento com 15 min ou mais de atraso (`CONGESTIONAMENTO_MIN_ATRASO`) aparecem
+  como losangos na rota selecionada; acidente e interdição também vão para o alerta.
+- Se a TomTom vê acidente a até 20 km do caminhão (`ACIDENTE_CONFIRMA_KM`) quando o
+  motorista avisa, o alerta diz "TomTom confirma". Só a TomTom: etiqueta vermelha de
+  contorno, "Acidente (TomTom)" ou "Interdição (TomTom)".
+- O trânsito da TomTom só existe para caminhões com posição recente (o ETA é
+  recalculado a cada posição nova, no máximo a cada 30 min).
+- O log resume a cada ciclo quantos acidentes, interdições e congestionamentos a TomTom
+  achou nas rotas, para conferir.
 
 ## Rotogramas (Angellira)
 

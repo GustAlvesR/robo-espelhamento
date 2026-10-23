@@ -556,6 +556,10 @@ SM_SITUACAO_ENCERRADA = ("FINALIZ", "ENCERR", "CONCLU")
 # A SM casada pela placa só conta como desta viagem se a saída prevista dela estiver a
 # até tantas horas do início previsto (senão pode ser a da viagem anterior do caminhão).
 SM_TOLERANCIA_SAIDA_H = float(os.getenv("SM_TOLERANCIA_SAIDA_H", "6"))
+# Acidente: vale primeiro o que o motorista informa (macro com "ACIDENTE" na última
+# mensagem da Angellira); a TomTom confirma se vir acidente a até tantos km à frente.
+ACIDENTE_MOTORISTA_MAX_H = float(os.getenv("ACIDENTE_MOTORISTA_MAX_H", "6"))
+ACIDENTE_CONFIRMA_KM = float(os.getenv("ACIDENTE_CONFIRMA_KM", "20"))
 
 
 def _norm_chave(texto) -> str:
@@ -1110,6 +1114,37 @@ def atualizar_sms(state: dict, df: pd.DataFrame, now: datetime) -> None:
                          trip, _fmt(_parse_iso(dados["sm_encerrada_em"])))
 
 
+def alerta_acidente(resultado: dict, dados: dict, info: dict, now: datetime) -> None:
+    """Coluna 'Alerta Acidente' (a última). O aviso do motorista vem primeiro e vale até
+    ele mandar outra mensagem (no máximo ACIDENTE_MOTORISTA_MAX_H); a TomTom confirma
+    ou, sozinha, avisa acidente ou interdição no caminho que falta. Só com a viagem em
+    andamento: a macro da viagem anterior do caminhão não conta."""
+    msg = str(resultado.get("Última Mensagem") or "").strip()
+    em_viagem = (viagem_iniciada(resultado, dados, now) and not dados.get("sm_encerrada_em")
+                 and not resultado.get("Cancelamento"))
+    aviso = None
+    if em_viagem and "ACIDENTE" in _norm_chave(msg):
+        aviso = dados.get("acidente_motorista")
+        if not aviso or aviso.get("texto") != msg:
+            aviso = dados["acidente_motorista"] = {"em": now.isoformat(), "texto": msg}
+            logging.info("[%s] Motorista informou acidente: %s.", resultado["Trip Number"], msg)
+        if now - _parse_iso(aviso["em"]) > timedelta(hours=ACIDENTE_MOTORISTA_MAX_H):
+            aviso = None
+    else:
+        dados.pop("acidente_motorista", None)
+    tomtom = sorted((t for t in ((info or {}).get("transito") or []) if t["tipo"] in ("acidente", "interdição")),
+                    key=lambda t: t["km"]) if em_viagem else []
+    partes = []
+    if aviso:
+        confirma = next((t for t in tomtom if t["tipo"] == "acidente" and t["km"] <= ACIDENTE_CONFIRMA_KM), None)
+        partes.append(f"Motorista: {aviso['texto']} às {_fmt(_parse_iso(aviso['em']))[-5:]}"
+                      + (f" (TomTom confirma: acidente a {confirma['km']} km)" if confirma else ""))
+        tomtom = [t for t in tomtom if t is not confirma]
+    partes += [f"TomTom: {t['tipo']} a {t['km']} km" + (f", +{t['atraso_min']} min" if t["atraso_min"] else "")
+               for t in tomtom[:3]]
+    resultado["Alerta Acidente"] = "; ".join(partes)
+
+
 def ajustar_risco(resultado: dict, dados: dict, now: datetime) -> None:
     """O atraso vale até a SM encerrar. Com a chegada realizada da DBLH, o risco vira o
     fato (chegou no prazo ou com atraso); sem ela, prazo vencido é 'Atrasada', mesmo
@@ -1595,6 +1630,11 @@ def _job():
         for r in resultados:
             coluna_motorista(r, state.get(r["Trip Number"], {}))
             ajustar_risco(r, state.get(r["Trip Number"], {}), now)
+            alerta_acidente(r, state.get(r["Trip Number"], {}), geo_por_trip.get(r["Trip Number"]), now)
+        transito = [t for g in geo_por_trip.values() for t in (g or {}).get("transito") or []]
+        if transito:
+            logging.info("TomTom trânsito nas rotas: %s acidente(s), %s interdição(ões), %s congestionamento(s).",
+                         *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")))
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())

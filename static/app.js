@@ -247,8 +247,10 @@ function aguardandoInicio(r) {
 
 function gravidade(r) {
   if (cancelada(r)) return 4;
+  if (acidenteMotorista(r)) return -1;
   if (r["Espelhamento Atual"] === "NOK") return 0;
   if (statusDe(r) === "NOK") return 1;
+  if (acidenteDe(r)) return 1.5;
   if (r["Risco de Atraso"] === "Atrasada") return 2;
   if (r["Risco de Atraso"] === "Atraso provável") return 3;
   return 3.5;
@@ -308,6 +310,7 @@ function filtrar() {
     if (semSinal && (r["Espelhamento Atual"] !== "NOK" || cancelada(r))) return false;
     if (soChuva && (!chuvaNoCaminho(r) || cancelada(r))) return false;
     if (soRotograma && (!alertasRotograma(r).length || cancelada(r))) return false;
+    if (soAcidente && (!acidenteDe(r) || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
@@ -332,6 +335,8 @@ function desenharKpis() {
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
       () => aplicarFiltro(null, null, true)],
   ];
+  const nAcid = cont((r) => !!acidenteDe(r));
+  if (nAcid) kpis.splice(1, 0, ["Acidente no caminho", nAcid, "nok", () => aplicarFiltro(null, null, false, false, false, true)]);
   const nRot = cont((r) => alertasRotograma(r).length > 0);
   if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
   const nChuva = cont(chuvaNoCaminho);
@@ -344,14 +349,27 @@ function desenharKpis() {
 }
 
 let soRotograma = false;
-function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false) {
+let soAcidente = false;
+// "Alerta Acidente": o aviso do motorista vem primeiro ("Motorista: ..."); o resto é da TomTom.
+const acidenteDe = (r) => r["Alerta Acidente"] || "";
+const acidenteMotorista = (r) => acidenteDe(r).startsWith("Motorista:");
+function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false) {
   soRotograma = rot;
+  soAcidente = acidente;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
   soChuva = chuva;
   if (selecionada) selecionar(null);
   else render();
+}
+
+function tagAcidente(r) {
+  const texto = acidenteDe(r);
+  if (!texto || cancelada(r)) return null;
+  const motorista = acidenteMotorista(r);
+  const rotulo = motorista ? "Acidente" : /TomTom: acidente/.test(texto) ? "Acidente (TomTom)" : "Interdição (TomTom)";
+  return el("span", { class: `tag acidente ${motorista ? "motorista" : "tomtom"}`, title: texto.split("; ").join("\n") }, rotulo);
 }
 
 function tagRotograma(r) {
@@ -386,7 +404,7 @@ function desenharLista(lista) {
       onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
-        el("span", { class: "tags" }, tagRotograma(r), tagChuva(r), tag)),
+        el("span", { class: "tags" }, tagAcidente(r), tagRotograma(r), tagChuva(r), tag)),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -488,6 +506,7 @@ function desenharDetalhe() {
       ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
+    ...secaoAcidente(r, g),
     ...secaoRotograma(r, g),
     ...(g.clima && g.clima.length ? [
       el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
@@ -512,6 +531,34 @@ function desenharDetalhe() {
 // (não há o caminho entre uma posição e outra). Falta percorrer = caminho mais
 // rápido da TomTom com o trânsito do momento, recalculado a cada 30 min. Sem
 // isso, cai no trajeto planejado cortado no ponto mais próximo do caminhão.
+function secaoAcidente(r, g) {
+  const avisos = acidenteDe(r) ? acidenteDe(r).split("; ") : [];
+  const filas = (g.transito || []).filter((t) => t.tipo === "congestionamento");
+  if (!avisos.length && !filas.length) return [];
+  return [
+    el("div", { class: "sec" }, "Acidentes e trânsito no caminho"),
+    el("dl", {},
+      ...avisos.flatMap((a) => {
+        const [fonte, ...resto] = a.split(": ");
+        return linha(fonte, resto.join(": "));
+      }),
+      ...filas.flatMap((t) => linha("Congestionamento", `a ${t.km} km, +${t.atraso_min} min`)),
+    ),
+  ];
+}
+
+function desenharTransito(g) {
+  const ROTULO = { "acidente": "Acidente", "interdição": "Interdição", "congestionamento": "Congestionamento" };
+  for (const t of g.transito || []) {
+    L.marker([t.lat, t.lon], { keyboard: false,
+      icon: L.divIcon({ className: `incidente ${t.tipo === "congestionamento" ? "fila" : t.tipo === "acidente" ? "acidente" : "interdicao"}`,
+        html: `<span><b>${t.tipo === "congestionamento" ? "≈" : t.tipo === "acidente" ? "!" : "×"}</b></span>`,
+        iconSize: [18, 18], iconAnchor: [9, 9] }) })
+      .bindTooltip(escHtml(`${ROTULO[t.tipo] || t.tipo} (TomTom) a ${t.km} km${t.atraso_min ? `, +${t.atraso_min} min` : ""}`))
+      .addTo(camadaSel);
+  }
+}
+
 function secaoRotograma(r, g) {
   const rot = rotogramaDe(r);
   if (!rot) return [];
@@ -551,6 +598,7 @@ function desenharRotograma(rot) {
 function desenharTrajeto(r, g) {
   const rot = rotogramaDe(r);
   if (rot) desenharRotograma(rot);
+  desenharTransito(g);
   const linhaRot = rot && rot.linha && rot.linha.length >= 2 ? rot.linha : null;
   const pts = g.pontos || [];
   const trilha = g.trilha || [];
@@ -722,7 +770,7 @@ function salvarVisao() {
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
       fTrecho: document.getElementById("fTrecho").value,
-      estacoes: [...tiposLigados], clima: climaLigado, soChuva, soRotograma,
+      estacoes: [...tiposLigados], clima: climaLigado, soChuva, soRotograma, soAcidente,
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -741,6 +789,7 @@ function restaurarVisao() {
     climaLigado = !!v.clima;
     soChuva = !!v.soChuva;
     soRotograma = !!v.soRotograma;
+    soAcidente = !!v.soAcidente;
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -792,7 +841,7 @@ seletorTema.addEventListener("change", () => {
 
 for (const id of ["busca", "fStatus", "fRisco", "fTrecho"]) {
   document.getElementById(id).addEventListener("input", () => {
-    if (id !== "busca") semSinal = soChuva = soRotograma = false;
+    if (id !== "busca") semSinal = soChuva = soRotograma = soAcidente = false;
     render();
   });
 }
