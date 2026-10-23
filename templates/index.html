@@ -44,9 +44,10 @@
       </select>
       <select id="fRisco">
         <option value="">Risco: todos</option>
-        <option>Atraso provável</option><option>No prazo</option>
-        <option>Posição antiga</option><option>Sem posição</option>
-        <option>Sem coord. da estação</option><option>No destino</option><option>Encerrada</option>
+        <option>Atrasada</option><option>Atraso provável</option><option>No prazo</option>
+        <option>No destino</option><option>Chegou no prazo</option><option>Chegou com atraso</option>
+        <option>Encerrada no prazo</option><option>Encerrada com atraso</option>
+        <option>Posição antiga</option><option>Sem posição</option><option>Sem coord. da estação</option>
       </select>
       <select id="fTrecho" aria-label="Trecho"><option value="">Trecho: todos</option></select>
     </div>
@@ -59,6 +60,7 @@
     <div id="detalhe" class="detalhe" hidden></div>
     <div class="legenda">
       <span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--ok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--ok)"/></svg>OK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--nok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--nok)"/></svg>NOK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--pend)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--pend)"/></svg>Pendente</span>
+      <span><i class="pt anel vencido"></i>Prazo vencido</span>
       <span><i class="pt anel"></i>Atraso provável</span>
       <span><i class="pt cidade"></i>Posição só por cidade</span>
       <span><i class="pt origem"></i>Sem posição (na origem)</span>

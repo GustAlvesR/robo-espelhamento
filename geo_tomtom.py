@@ -567,9 +567,9 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                 info["idade_pos_min"] = max(0, round((now - dt_pos).total_seconds() / 60))
 
             previsao, desvio, risco = None, None, ""
-            pct = _num(str(r.get("% Percorrido (Seguradora)", "")).replace("%", ""))
-            chegou = (pct is not None and pct >= 99) or (
-                info["veiculo"] and dest and distancia_km(info["veiculo"], dest) <= RAIO_CHEGADA_KM)
+            # Só a distância diz que chegou: o % percorrido da Angellira já veio 100% com o
+            # caminhão a 80 km do destino, e o da viagem anterior aparece antes do início.
+            chegou = info["veiculo"] and dest and distancia_km(info["veiculo"], dest) <= RAIO_CHEGADA_KM
             if encerrada:
                 risco = "Encerrada"
             elif chegou:
@@ -591,7 +591,8 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                         # Parado: sai "agora". Em movimento: o tempo de viagem conta da hora da posição.
                         # Parado antes do início previsto: assume saída no horário previsto.
                         base = max(now, inicio or now) if parado else dt_pos
-                        previsao = base + timedelta(seconds=eta["travel_s"])
+                        # Quem não chegou não chega no passado (posição de horas atrás).
+                        previsao = max(base + timedelta(seconds=eta["travel_s"]), now)
             elif info["rota_tomtom_min"] is not None and inicio and (not dt_pos) and now < inicio:
                 previsao = inicio + timedelta(minutes=info["rota_tomtom_min"])
             elif not dest:

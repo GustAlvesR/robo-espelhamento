@@ -70,7 +70,8 @@ function rumoEstimado(g) {
 const DIST_MAX_CORTE_KM = 30;
 function indiceDeCorte(r, g) {
   const pts = g.pontos;
-  if (["No destino", "Encerrada"].includes(r["Risco de Atraso"])) return pts.length - 1;
+  const risco = r["Risco de Atraso"] || "";
+  if (risco === "No destino" || risco.startsWith("Encerrada") || risco.startsWith("Chegou")) return pts.length - 1;
   if (!g.veiculo) return null;
   const i = pontoMaisProximo(pts, g.veiculo);
   return distanciaKm(pts[i], g.veiculo) <= DIST_MAX_CORTE_KM ? i : null;
@@ -82,7 +83,13 @@ function tamanhoIcone() {
 }
 
 // Caminhão visto de cima, apontando para o norte (cabine em cima).
-function iconeCaminhao(cor, { atraso, cidade, graus }) {
+// Risco de Atraso: prazo vencido sem chegada é fato, não previsão.
+const RISCO_ATRASADO = ["Atrasada", "Chegou com atraso", "Encerrada com atraso"];
+const RISCO_NO_PRAZO = ["No prazo", "Chegou no prazo", "Encerrada no prazo"];
+const classeRisco = (risco) => risco === "Atraso provável" ? "atraso"
+  : RISCO_ATRASADO.includes(risco) ? "atrasada" : RISCO_NO_PRAZO.includes(risco) ? "prazo" : "";
+
+function iconeCaminhao(cor, { atraso, vencido, cidade, graus }) {
   const t = tamanhoIcone();
   const detalhe = t >= 24
     ? '<rect x="8" y="4.5" width="8" height="3" rx="1" fill="#fff" opacity=".85"/>'
@@ -92,7 +99,7 @@ function iconeCaminhao(cor, { atraso, cidade, graus }) {
     <rect x="4.5" y="13" width="15" height="25" rx="2" fill="${cor}" stroke="#fff" stroke-width="1.6"/>
     <rect x="6" y="2" width="12" height="10" rx="3.5" fill="${cor}" stroke="#fff" stroke-width="1.6"/>
     ${detalhe}</svg>`;
-  const classes = ["caminhao", atraso ? "atraso" : "", cidade ? "cidade" : ""].join(" ");
+  const classes = ["caminhao", vencido ? "atrasada" : atraso ? "atraso" : "", cidade ? "cidade" : ""].join(" ");
   return L.divIcon({ className: "", html: `<div class="${classes}" style="width:${t + 8}px;height:${t + 8}px">${svg}</div>`,
     iconSize: [t + 8, t + 8], iconAnchor: [(t + 8) / 2, (t + 8) / 2] });
 }
@@ -242,8 +249,9 @@ function gravidade(r) {
   if (cancelada(r)) return 4;
   if (r["Espelhamento Atual"] === "NOK") return 0;
   if (statusDe(r) === "NOK") return 1;
-  if (r["Risco de Atraso"] === "Atraso provável") return 2;
-  return 3;
+  if (r["Risco de Atraso"] === "Atrasada") return 2;
+  if (r["Risco de Atraso"] === "Atraso provável") return 3;
+  return 3.5;
 }
 
 function idade(min) {
@@ -317,6 +325,8 @@ function desenharKpis() {
   const kpis = [
     ["Rotas", validas.length, "", () => aplicarFiltro()],
     ["NOK", cont((r) => statusDe(r) === "NOK"), "nok", () => aplicarFiltro("fStatus", "NOK")],
+    ["Atrasadas", cont((r) => r["Risco de Atraso"] === "Atrasada"), "nok",
+      () => aplicarFiltro("fRisco", "Atrasada")],
     ["Atraso provável", cont((r) => r["Risco de Atraso"] === "Atraso provável"), "alerta",
       () => aplicarFiltro("fRisco", "Atraso provável")],
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
@@ -368,7 +378,7 @@ function desenharLista(lista) {
   const q = termoBusca();
   ul.replaceChildren(...lista.map((r) => {
     const risco = r["Risco de Atraso"] || "";
-    const tagCls = risco === "Atraso provável" ? "atraso" : risco === "No prazo" ? "prazo" : "";
+    const tagCls = classeRisco(risco);
     const tag = cancelada(r) ? el("span", { class: "tag", title: r["Cancelamento"] || "" }, "Cancelada")
       : risco ? el("span", { class: `tag ${tagCls}` }, risco) : null;
     return el("li", {
@@ -401,17 +411,19 @@ function desenharMapa(lista) {
     if (!ponto) continue;
     limites.push(ponto);
     const atraso = r["Risco de Atraso"] === "Atraso provável";
+    const vencido = r["Risco de Atraso"] === "Atrasada";
     const dica = `${escHtml(r["Trip Number"])} · ${escHtml(r["Placa"])}`;
     let marcador;
     if (g.veiculo) {
       marcador = L.marker(ponto, {
-        icon: iconeCaminhao(cor, { atraso, cidade: g.precisao === "cidade", graus: rumoEstimado(g) }),
+        icon: iconeCaminhao(cor, { atraso, vencido, cidade: g.precisao === "cidade", graus: rumoEstimado(g) }),
         riseOnHover: true, keyboard: false,
       });
     } else {
       // Sem posição da Angellira: marca a origem, sem fingir que é o caminhão.
       marcador = L.circleMarker(ponto, {
-        radius: 5, color: atraso ? corCss("var(--alerta)") : cor, weight: atraso ? 3 : 2,
+        radius: 5, color: vencido ? corCss("var(--nok)") : atraso ? corCss("var(--alerta)") : cor,
+        weight: atraso || vencido ? 3 : 2,
         fillColor: cor, fillOpacity: 0.15, bubblingMouseEvents: false,
       });
     }

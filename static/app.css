@@ -85,6 +85,7 @@ button, input, select { font: inherit; color: inherit; }
 .tag { font-size: 11px; font-weight: 400; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--linha); white-space: nowrap; color: var(--suave); }
 .tag.atraso { border-color: var(--alerta); color: var(--alerta-texto); background: color-mix(in srgb, var(--alerta) 14%, transparent); }
 .tag.prazo { border-color: var(--ok); color: var(--ok); }
+.tag.atrasada { border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); font-weight: 700; }
 .vazio { padding: 24px; color: var(--suave); text-align: center; }
 
 /* --- Mapa -------------------------------------------------------------- */
@@ -106,6 +107,9 @@ button, input, select { font: inherit; color: inherit; }
 .caminhao.atraso { border-color: var(--alerta); background: color-mix(in srgb, var(--alerta) 18%, transparent); }
 .caminhao.cidade { border-style: dashed; border-color: var(--suave); }
 .caminhao.atraso.cidade { border-color: var(--alerta); }
+.caminhao.atrasada { border-color: var(--nok); background: color-mix(in srgb, var(--nok) 18%, transparent); }
+.caminhao.atrasada.cidade { border-color: var(--nok); }
+.pt.anel.vencido { border-color: var(--nok); }
 
 /* Estações: losango, para não confundir com caminhão nem com a origem (círculo). */
 .estacao { display: grid; place-items: center; }
