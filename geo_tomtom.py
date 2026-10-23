@@ -52,6 +52,43 @@ _UFS = {"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", 
         "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"}
 
 
+# Limites aproximados de cada estado (lat mín, lat máx, lon mín, lon máx), com folga na
+# conferência. A TomTom devolve o primeiro lugar do Brasil com aquele nome: "Ribeirão,
+# PE" já veio em Goiás e "Escada, PE" em Minas. Cidade fora do estado pedido é recusada.
+LIMITES_UF = {
+    "AC": (-11.2, -7.1, -74.0, -66.6), "AL": (-10.5, -8.8, -38.3, -35.1), "AP": (-1.3, 4.5, -54.9, -49.8),
+    "AM": (-9.9, 2.3, -73.9, -56.0), "BA": (-18.4, -8.5, -46.7, -37.3), "CE": (-7.9, -2.7, -41.5, -37.2),
+    "DF": (-16.1, -15.5, -48.3, -47.3), "ES": (-21.4, -17.8, -41.9, -39.6), "GO": (-19.6, -12.3, -53.3, -45.9),
+    "MA": (-10.3, -1.0, -48.8, -41.8), "MT": (-18.1, -7.3, -61.7, -50.2), "MS": (-24.1, -17.1, -58.2, -50.9),
+    "MG": (-22.95, -14.2, -51.1, -39.8), "PA": (-9.9, 2.6, -58.9, -46.0), "PB": (-8.3, -6.0, -38.8, -34.8),
+    "PR": (-26.8, -22.5, -54.7, -48.0), "PE": (-9.5, -7.2, -41.4, -34.8), "PI": (-10.95, -2.7, -46.0, -40.4),
+    "RJ": (-23.4, -20.7, -44.9, -40.9), "RN": (-7.0, -4.8, -38.6, -34.9), "RS": (-33.8, -27.0, -57.7, -49.7),
+    "RO": (-13.7, -7.9, -66.9, -59.7), "RR": (-1.6, 5.3, -64.9, -58.8), "SC": (-29.4, -25.9, -53.9, -48.3),
+    "SP": (-25.4, -19.7, -53.2, -44.1), "SE": (-11.6, -9.5, -38.3, -36.4), "TO": (-13.5, -5.1, -50.8, -45.6),
+}
+NOMES_UF = {
+    "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará",
+    "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso",
+    "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná",
+    "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
+    "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo",
+    "SE": "Sergipe", "TO": "Tocantins",
+}
+FOLGA_UF_GRAUS = 0.3
+
+
+def uf_da_consulta(consulta: str):
+    """'RIBEIRAO, PE' -> 'PE'; None se a consulta não termina numa UF."""
+    m = re.fullmatch(r".+,\s*([A-Z]{2})", consulta.strip())
+    return m.group(1) if m and m.group(1) in LIMITES_UF else None
+
+
+def dentro_da_uf(ponto, uf: str) -> bool:
+    lat_min, lat_max, lon_min, lon_max = LIMITES_UF[uf]
+    f = FOLGA_UF_GRAUS
+    return lat_min - f <= ponto[0] <= lat_max + f and lon_min - f <= ponto[1] <= lon_max + f
+
+
 def _sem_acento(t: str) -> str:
     return unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().upper().strip()
 
@@ -170,23 +207,47 @@ class GeoTomTom:
 
     # ----------------------------------------------------------- Geocoding
     def geocodificar(self, consulta: str):
-        """Cidade/endereço -> (lat, lon). Cacheado, inclusive os 'não achei'."""
+        """Cidade/endereço -> (lat, lon). Cacheado, inclusive os 'não achei'.
+        Com 'CIDADE, UF', só aceita resultado dentro do estado."""
         consulta = _sem_acento(consulta)
         if not consulta:
             return None
+        uf = uf_da_consulta(consulta)
         if consulta in self.geocache:
             v = self.geocache[consulta]
-            return tuple(v) if v else None
-        dados = self._chamar(f"/search/2/geocode/{urllib.parse.quote(consulta, safe='')}.json",
-                             {"countrySet": "BR", "limit": 1, "language": "pt-BR"})
-        if dados is None:
-            return None  # falha de rede/cota: não cacheia, tenta de novo depois
-        res = (dados.get("results") or [None])[0]
-        pos = (res or {}).get("position")
-        valor = [round(pos["lat"], 5), round(pos["lon"], 5)] if pos else None
+            if not (v and uf and not dentro_da_uf(v, uf)):
+                return tuple(v) if v else None
+            self._descartar_cidade(consulta, v)
+        tentativas = [consulta]
+        if uf:
+            tentativas.append(f"{consulta.rsplit(',', 1)[0].strip()}, {_sem_acento(NOMES_UF[uf])}, BRASIL")
+        valor = None
+        for texto in tentativas:
+            dados = self._chamar(f"/search/2/geocode/{urllib.parse.quote(texto, safe='')}.json",
+                                 {"countrySet": "BR", "limit": 5 if uf else 1, "language": "pt-BR"})
+            if dados is None:
+                return None  # falha de rede/cota: não cacheia, tenta de novo depois
+            for res in dados.get("results") or []:
+                pos = res.get("position")
+                if pos and (not uf or dentro_da_uf((pos["lat"], pos["lon"]), uf)):
+                    valor = [round(pos["lat"], 5), round(pos["lon"], 5)]
+                    break
+            if valor:
+                break
+        if uf and not valor:
+            logging.warning("TomTom: '%s' não foi encontrada dentro de %s; fica sem posição.", consulta, uf)
         self.geocache[consulta] = valor
         self.geocache_alterado = True
         return tuple(valor) if valor else None
+
+    def _descartar_cidade(self, consulta: str, ponto):
+        """Tira do cache a cidade que caiu fora do estado e os lugares procurados em
+        volta dela (as chaves POI levam o centro usado)."""
+        centro = f"|{ponto[0]:.3f},{ponto[1]:.3f}"
+        for chave in [k for k in self.geocache if k == consulta or (k.startswith("POI|") and k.endswith(centro))]:
+            del self.geocache[chave]
+        self.geocache_alterado = True
+        logging.info("TomTom: '%s' estava fora do estado no cache (%s); localizando de novo.", consulta, ponto)
 
     def buscar_referencia(self, referencia: str, centro):
         """Ponto de referência (POI) perto do centro da cidade, ou None."""
