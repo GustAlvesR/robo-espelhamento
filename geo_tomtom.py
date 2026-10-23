@@ -371,13 +371,14 @@ class GeoTomTom:
             for leg in rota.get("legs", []):
                 pontos += [[round(p["latitude"], 5), round(p["longitude"], 5)] for p in leg.get("points", [])]
         transito = _trechos_de_transito(rota.get("sections") or [], pontos)
+        trechos_brutos = sum(1 for s in rota.get("sections") or [] if s.get("sectionType") == "TRAFFIC")
         if len(pontos) > max_pontos:
             passo = math.ceil(len(pontos) / max_pontos)
             pontos = pontos[::passo] + [pontos[-1]]
         return {"dur_s": resumo.get("travelTimeInSeconds"),
                 "dist_m": resumo.get("lengthInMeters"),
                 "atraso_transito_s": resumo.get("trafficDelayInSeconds", 0),
-                "pontos": pontos, "transito": transito}
+                "pontos": pontos, "transito": transito, "trechos_brutos": trechos_brutos}
 
     def rota_planejada(self, trip, origem, destino, inicio: datetime, now: datetime):
         chave = (tuple(origem), tuple(destino), inicio.isoformat() if inicio else "")
@@ -405,7 +406,7 @@ class GeoTomTom:
             return atual  # mantém o último cálculo válido, se houver
         novo = {"chave": chave, "calc_em": now, "travel_s": r["dur_s"],
                 "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"], "pontos": r["pontos"],
-                "transito": r["transito"]}
+                "transito": r["transito"], "trechos_brutos": r["trechos_brutos"]}
         self.etas[trip] = novo
         return novo
 
@@ -620,6 +621,7 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                     if eta and eta.get("pontos"):
                         info["rota_atual"] = eta["pontos"]
                         info["transito"] = eta.get("transito") or []
+                        info["trechos_brutos"] = eta.get("trechos_brutos") or 0
                         info["rota_atual_em"] = eta["calc_em"].strftime("%H:%M")
                         info["rota_atual_km"] = round(eta["dist_m"] / 1000) if eta.get("dist_m") else None
                         info["transito_min"] = round((eta.get("atraso_transito_s") or 0) / 60)

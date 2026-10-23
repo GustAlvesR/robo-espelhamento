@@ -202,8 +202,12 @@ Dupla checagem, com prioridade para o motorista:
   contorno, "Acidente (TomTom)" ou "Interdição (TomTom)".
 - O trânsito da TomTom só existe para caminhões com posição recente (o ETA é
   recalculado a cada posição nova, no máximo a cada 30 min).
-- O log resume a cada ciclo quantos acidentes, interdições e congestionamentos a TomTom
-  achou nas rotas, para conferir.
+- Todo ciclo o log traz `TomTom trânsito: X de Y rota(s) com o caminho até o destino
+  consultado, Z trecho(s) de trânsito recebido(s); ...`. Z acima de zero mostra que a
+  TomTom está mandando os trechos (inclusive os pequenos, que o filtro descarta); X
+  baixo quer dizer caminhões sem posição recente da Angellira.
+- O site atende 32 pedidos ao mesmo tempo (`SITE_THREADS`): depois de um deploy, os
+  navegadores abertos recarregam o mapa juntos.
 
 ## Rotogramas (Angellira)
 
