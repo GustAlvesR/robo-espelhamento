@@ -547,8 +547,19 @@ TRACKING_OUTPUT = [
     ("trk_encerrada", "Viagem Encerrada (Seguradora)"),
 ]
 # Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
-TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", "")]
-_MSG_ENCERRADA = ("FIMDEVIAGEM", "CHEGADANOCLIENTE", "FIMDEDESCARGA")
+TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", ""),
+                    ("trk_saida", ""), ("trk_situacao", ""), ("trk_fresco", ""), ("trk_ref", "")]
+# Fim de viagem = SM encerrada na Angellira. O relatório do Tracking só traz SMs em
+# andamento, então a SM encerrada é a viagem que some dele. A macro "FIM DE VIAGEM" do
+# motorista não encerra: a SM segue "Em Viagem" depois dela.
+SM_SITUACAO_ENCERRADA = ("FINALIZ", "ENCERR", "CONCLU")
+# A SM casada pela placa só conta como desta viagem se a saída prevista dela estiver a
+# até tantas horas do início previsto (senão pode ser a da viagem anterior do caminhão).
+SM_TOLERANCIA_SAIDA_H = float(os.getenv("SM_TOLERANCIA_SAIDA_H", "6"))
+# Acidente: vale primeiro o que o motorista informa (macro com "ACIDENTE" na última
+# mensagem da Angellira); a TomTom confirma se vir acidente a até tantos km à frente.
+ACIDENTE_MOTORISTA_MAX_H = float(os.getenv("ACIDENTE_MOTORISTA_MAX_H", "6"))
+ACIDENTE_CONFIRMA_KM = float(os.getenv("ACIDENTE_CONFIRMA_KM", "20"))
 
 
 def _norm_chave(texto) -> str:
@@ -651,6 +662,7 @@ def carregar_rastreamento(client):
             "origem_nome": cel(l, "ORIGEM"),
             "destino_nome": cel(l, "CLIENTE"),
             "motorista": cel(l, "MOTORISTA"),
+            "situacao": cel(l, "SITUACAO"),
         })
     return registros, (max(referencias) if referencias else None)
 
@@ -730,7 +742,11 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
             df.at[i, "trk_origem_nome"] = reg["origem_nome"]
             df.at[i, "trk_destino_nome"] = reg["destino_nome"]
             df.at[i, "trk_motorista"] = reg["motorista"]
-            df.at[i, "trk_encerrada"] = "Sim" if any(t in _norm_chave(msg) for t in _MSG_ENCERRADA) else "Não"
+            df.at[i, "trk_saida"] = reg["saida"].isoformat() if reg["saida"] else ""
+            df.at[i, "trk_situacao"] = reg["situacao"]
+        # Relatório atualizado e com linhas: só nele o sumiço de uma viagem quer dizer SM encerrada.
+        df["trk_fresco"] = "Sim" if status_base == "OK" and registros else "Não"
+        df["trk_ref"] = ref.isoformat() if ref else ""
 
         logging.info("Rastreamento: %s linha(s) Shopee, %s rota(s) casada(s) por placa, "
                      "%s linha(s) sem rota, defasagem %s min.",
@@ -1055,8 +1071,95 @@ def colunas_realizadas(resultado: dict, dados: dict) -> None:
 
 
 def coluna_motorista(resultado: dict, dados: dict) -> None:
-    """Última coluna de Resultado_Espelhamento, para não deslocar as existentes."""
+    """Últimas colunas de Resultado_Espelhamento, para não deslocar as existentes."""
     resultado["Motorista"] = (dados.get("base") or {}).get("motorista", "")
+    resultado["SM Encerrada Em"] = _fmt(_parse_iso(dados.get("sm_encerrada_em")))
+
+
+def atualizar_sms(state: dict, df: pd.DataFrame, now: datetime) -> None:
+    """Marca no estado a hora em que a SM da viagem foi encerrada na Angellira.
+    Só vale a SM vista depois do início previsto e com saída prevista compatível, e o
+    sumiço tem de se repetir em dois relatórios diferentes e atualizados: um relatório
+    que falha ou atrasa não pode encerrar viagens."""
+    sumidas, vistas = [], 0
+    for _, row in df.iterrows():
+        dados = state.get(str(row["trip_number"]).strip())
+        inicio = row["eta_scheduled_origin_edited"]
+        if not dados or dados.get("sm_encerrada_em") or pd.isna(inicio) or now < inicio:
+            continue
+        status = _txt(row.get("trk_status"))
+        if status in ("OK", "Desatualizado"):
+            if any(t in _norm_chave(row.get("trk_situacao")) for t in SM_SITUACAO_ENCERRADA):
+                dados["sm_encerrada_em"] = now.isoformat()
+                continue
+            saida = _parse_iso(_txt(row.get("trk_saida")))
+            if saida is None or abs(saida - inicio) <= timedelta(hours=SM_TOLERANCIA_SAIDA_H):
+                dados["sm_vista"] = True
+            dados.pop("sm_sumiu_ref", None)
+            dados.pop("sm_sumiu_em", None)
+        if dados.get("sm_vista"):
+            vistas += 1
+            if status == "Sem correspondência" and row.get("trk_fresco") == "Sim":
+                sumidas.append((str(row["trip_number"]).strip(), dados, _txt(row.get("trk_ref"))))
+    if len(sumidas) > max(3, vistas // 2):
+        logging.warning("Rastreamento: %s de %s viagem(ns) sumiram juntas do relatório da Angellira; "
+                        "não marco SM encerrada neste ciclo.", len(sumidas), vistas)
+        return
+    for trip, dados, ref in sumidas:
+        if not dados.get("sm_sumiu_ref"):
+            dados["sm_sumiu_ref"], dados["sm_sumiu_em"] = ref, now.isoformat()
+        elif ref != dados["sm_sumiu_ref"]:
+            dados["sm_encerrada_em"] = dados["sm_sumiu_em"]
+            logging.info("[%s] SM encerrada na Angellira (saiu do relatório às %s).",
+                         trip, _fmt(_parse_iso(dados["sm_encerrada_em"])))
+
+
+def alerta_acidente(resultado: dict, dados: dict, info: dict, now: datetime) -> None:
+    """Coluna 'Alerta Acidente' (a última). O aviso do motorista vem primeiro e vale até
+    ele mandar outra mensagem (no máximo ACIDENTE_MOTORISTA_MAX_H); a TomTom confirma
+    ou, sozinha, avisa acidente ou interdição no caminho que falta. Só com a viagem em
+    andamento: a macro da viagem anterior do caminhão não conta."""
+    msg = str(resultado.get("Última Mensagem") or "").strip()
+    em_viagem = (viagem_iniciada(resultado, dados, now) and not dados.get("sm_encerrada_em")
+                 and not resultado.get("Cancelamento"))
+    aviso = None
+    if em_viagem and "ACIDENTE" in _norm_chave(msg):
+        aviso = dados.get("acidente_motorista")
+        if not aviso or aviso.get("texto") != msg:
+            aviso = dados["acidente_motorista"] = {"em": now.isoformat(), "texto": msg}
+            logging.info("[%s] Motorista informou acidente: %s.", resultado["Trip Number"], msg)
+        if now - _parse_iso(aviso["em"]) > timedelta(hours=ACIDENTE_MOTORISTA_MAX_H):
+            aviso = None
+    else:
+        dados.pop("acidente_motorista", None)
+    tomtom = sorted((t for t in ((info or {}).get("transito") or []) if t["tipo"] in ("acidente", "interdição")),
+                    key=lambda t: t["km"]) if em_viagem else []
+    partes = []
+    if aviso:
+        confirma = next((t for t in tomtom if t["tipo"] == "acidente" and t["km"] <= ACIDENTE_CONFIRMA_KM), None)
+        partes.append(f"Motorista: {aviso['texto']} às {_fmt(_parse_iso(aviso['em']))[-5:]}"
+                      + (f" (TomTom confirma: acidente a {confirma['km']} km)" if confirma else ""))
+        tomtom = [t for t in tomtom if t is not confirma]
+    partes += [f"TomTom: {t['tipo']} a {t['km']} km" + (f", +{t['atraso_min']} min" if t["atraso_min"] else "")
+               for t in tomtom[:3]]
+    resultado["Alerta Acidente"] = "; ".join(partes)
+
+
+def ajustar_risco(resultado: dict, dados: dict, now: datetime) -> None:
+    """O atraso vale até a SM encerrar. Com a chegada realizada da DBLH, o risco vira o
+    fato (chegou no prazo ou com atraso); sem ela, prazo vencido é 'Atrasada', mesmo
+    com o caminhão perto do destino ou a Angellira dizendo 100% percorrido."""
+    fim = _parse_iso((dados.get("base") or {}).get("fim"))
+    if not fim or resultado.get("Cancelamento"):
+        return
+    chegada = _parse_iso(dados.get("chegada_realizada"))
+    encerrada = _parse_iso(dados.get("sm_encerrada_em"))
+    if chegada:
+        resultado["Risco de Atraso"] = "Chegou no prazo" if chegada <= fim else "Chegou com atraso"
+    elif encerrada:
+        resultado["Risco de Atraso"] = "Encerrada no prazo" if encerrada <= fim else "Encerrada com atraso"
+    elif now > fim:
+        resultado["Risco de Atraso"] = "Atrasada"
 
 
 def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) -> list:
@@ -1075,6 +1178,7 @@ def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) 
         r["Status Viagem"] = "FINALIZADA"
         colunas_realizadas(r, dados)
         coluna_motorista(r, dados)
+        ajustar_risco(r, dados, now)
         saida.append(r)
     return saida
 
@@ -1479,6 +1583,11 @@ def _job():
             for ev in eventos_do_ciclo[n_antes:]:
                 ev["resultado"] = resultado_linha
 
+        atualizar_sms(state, df, now)
+        for r in resultados:
+            encerrada = state.get(r["Trip Number"], {}).get("sm_encerrada_em")
+            r["Viagem Encerrada (Seguradora)"] = "Sim" if encerrada else "Não"
+
         if not _SNAPSHOT:
             # Logo após reiniciar, o site já mostra as rotas enquanto a TomTom
             # recalcula (a primeira passada pode levar mais de um minuto).
@@ -1520,6 +1629,12 @@ def _job():
                 r.setdefault("Alerta Rotograma", "")
         for r in resultados:
             coluna_motorista(r, state.get(r["Trip Number"], {}))
+            ajustar_risco(r, state.get(r["Trip Number"], {}), now)
+            alerta_acidente(r, state.get(r["Trip Number"], {}), geo_por_trip.get(r["Trip Number"]), now)
+        transito = [t for g in geo_por_trip.values() for t in (g or {}).get("transito") or []]
+        if transito:
+            logging.info("TomTom trânsito nas rotas: %s acidente(s), %s interdição(ões), %s congestionamento(s).",
+                         *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")))
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())

@@ -80,16 +80,30 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 
 - `Previsão TomTom`: chegada estimada.
 - `Desvio vs Fim Previsto (min)`: positivo é atraso.
-- `Risco de Atraso`: `Atraso provável` (desvio acima da tolerância), `No prazo`,
-  `No destino`, `Encerrada`, `Posição antiga`, `Sem posição`,
-  `Sem coord. da estação`.
+- `Risco de Atraso`: o atraso vale até a SM ser encerrada na Angellira.
+  - Com a chegada realizada da DBLH: `Chegou no prazo` ou `Chegou com atraso`.
+  - SM encerrada sem chegada na DBLH: `Encerrada no prazo` ou `Encerrada com atraso`.
+  - Passou do fim previsto sem chegada: `Atrasada`, mesmo perto do destino ou com a
+    Angellira dizendo 100% percorrido (já veio 100% com o caminhão a 80 km).
+  - Antes do fim previsto: `Atraso provável` (previsão da TomTom passa da tolerância),
+    `No prazo`, `No destino` (a até 5 km do destino), `Posição antiga`, `Sem posição`,
+    `Sem coord. da estação`.
 - `Status Viagem`: cópia da coluna `status_corrigido` da Telemetria (PRE VIAGEM,
   EM TRANSITO). Se a coluna sumir, sai vazia e o site usa o horário de início previsto.
 - `Alerta Chuva (INMET)` (última coluna): alertas de chuva do INMET cuja área o
   caminho que falta percorrer atravessa, do mais grave para o menos, por exemplo
   `Perigo: Chuvas Intensas até 21/10 10:00`. Vazio quando não há alerta.
-- `Motorista` (depois de `Alerta Rotograma`, a última): nome da coluna `Driver_Name`
+- `Motorista` (depois de `Alerta Rotograma`): nome da coluna `Driver_Name`
   da Telemetria; se ela vier vazia, o `MOTORISTA` do relatório da Angellira.
+- `SM Encerrada Em` (a última): quando a SM da viagem foi encerrada na Angellira. O
+  relatório do Tracking só traz SMs em andamento, então é a hora em que a viagem saiu
+  dele (ou em que a SITUAÇÃO passou a finalizada). A macro "FIM DE VIAGEM" do
+  motorista não encerra. Para não errar: só vale a SM vista depois do início previsto e
+  com saída prevista a até 6 h dele (`SM_TOLERANCIA_SAIDA_H`), o sumiço precisa se
+  repetir em dois relatórios atualizados, e se mais da metade das viagens some de uma
+  vez nada é encerrado. `Viagem Encerrada (Seguradora)` passa a seguir essa mesma regra.
+- A telemetria (`% Espelhamento`) continua pela regra da Shopee: até a chegada realizada.
+- `Alerta Acidente` (a última): ver "Acidentes no caminho".
 
 ## Uso do mapa
 
@@ -170,6 +184,26 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   menos os que já venceram. A camada do mapa mostra de quando é a leitura.
 - Variáveis opcionais: `INMET_ATIVO=0` desliga; `INMET_ATUALIZAR_MIN` (30),
   `INMET_ANTECEDENCIA_H` (12), `INMET_MAX_NOVOS_POR_CICLO` (40), `INMET_RSS_URL`.
+
+## Acidentes no caminho
+
+Dupla checagem, com prioridade para o motorista:
+
+- Motorista: macro com "ACIDENTE" na última mensagem da Angellira (por exemplo
+  `ACIDENTE NA PISTA`). Vira o alerta principal (etiqueta vermelha cheia, primeiro da
+  lista) e vale até ele mandar outra mensagem, no máximo 6 h (`ACIDENTE_MOTORISTA_MAX_H`).
+  Só conta com a viagem em andamento: a macro da viagem anterior do caminhão não entra.
+- TomTom: na mesma chamada que calcula a chegada (sem custo extra), a rota até o
+  destino vem com os trechos de trânsito. Acidente (causa TPEG 2), interdição e
+  congestionamento com 15 min ou mais de atraso (`CONGESTIONAMENTO_MIN_ATRASO`) aparecem
+  como losangos na rota selecionada; acidente e interdição também vão para o alerta.
+- Se a TomTom vê acidente a até 20 km do caminhão (`ACIDENTE_CONFIRMA_KM`) quando o
+  motorista avisa, o alerta diz "TomTom confirma". Só a TomTom: etiqueta vermelha de
+  contorno, "Acidente (TomTom)" ou "Interdição (TomTom)".
+- O trânsito da TomTom só existe para caminhões com posição recente (o ETA é
+  recalculado a cada posição nova, no máximo a cada 30 min).
+- O log resume a cada ciclo quantos acidentes, interdições e congestionamentos a TomTom
+  achou nas rotas, para conferir.
 
 ## Rotogramas (Angellira)
 

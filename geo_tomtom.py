@@ -40,6 +40,10 @@ MAX_PONTOS_ROTA = 300
 PENDENTE = "pendente"  # localização que falhou na API (ou estourou a cota): tentar de novo depois
 # Caminho recalculado da posição atual: vai para todas as rotas dentro da página.
 MAX_PONTOS_ROTA_ATUAL = 150
+# Trechos de trânsito da rota atual (sectionType=traffic, na mesma chamada do ETA: sem
+# custo extra). Causa TPEG-TEC 2 = acidente. Congestionamento só entra a partir deste atraso.
+CAUSA_ACIDENTE = 2
+CONGESTIONAMENTO_MIN_ATRASO = int(os.getenv("CONGESTIONAMENTO_MIN_ATRASO", "15"))
 
 ESTACOES_WORKSHEET_NAME = os.getenv("ESTACOES_WORKSHEET_NAME", "Estacoes")
 GEO_CACHE_WORKSHEET_NAME = os.getenv("GEO_CACHE_WORKSHEET_NAME", "_cache_geo")
@@ -87,6 +91,35 @@ def dentro_da_uf(ponto, uf: str) -> bool:
     lat_min, lat_max, lon_min, lon_max = LIMITES_UF[uf]
     f = FOLGA_UF_GRAUS
     return lat_min - f <= ponto[0] <= lat_max + f and lon_min - f <= ponto[1] <= lon_max + f
+
+
+def _trechos_de_transito(secoes: list, pontos: list) -> list:
+    """Acidentes, interdições e congestionamentos grandes da rota, com a posição do
+    início do trecho e a distância até ele pela rota (km a partir do caminhão)."""
+    acumulado, km = [0.0], 0.0
+    for a, b in zip(pontos, pontos[1:]):
+        km += distancia_km(a, b)
+        acumulado.append(km)
+    saida = []
+    for s in secoes:
+        if s.get("sectionType") != "TRAFFIC":
+            continue
+        i = s.get("startPointIndex")
+        if not isinstance(i, int) or not 0 <= i < len(pontos):
+            continue
+        causas = {c.get("mainCauseCode") for c in (s.get("tec") or {}).get("causes") or []}
+        atraso_min = round((s.get("delayInSeconds") or 0) / 60)
+        if CAUSA_ACIDENTE in causas:
+            tipo = "acidente"
+        elif s.get("simpleCategory") == "ROAD_CLOSURE":
+            tipo = "interdição"
+        elif s.get("simpleCategory") == "JAM" and atraso_min >= CONGESTIONAMENTO_MIN_ATRASO:
+            tipo = "congestionamento"
+        else:
+            continue
+        saida.append({"tipo": tipo, "lat": pontos[i][0], "lon": pontos[i][1], "km": round(acumulado[i]),
+                      "atraso_min": atraso_min})
+    return saida
 
 
 def _sem_acento(t: str) -> str:
@@ -315,12 +348,15 @@ class GeoTomTom:
         r["trechos_m"] = [leg.get("summary", {}).get("lengthInMeters") for leg in dados["routes"][0].get("legs", [])]
         return r
 
-    def _rota(self, origem, destino, depart_at: datetime, com_pontos: bool, max_pontos: int = MAX_PONTOS_ROTA):
+    def _rota(self, origem, destino, depart_at: datetime, com_pontos: bool, max_pontos: int = MAX_PONTOS_ROTA,
+              secoes_transito: bool = False):
         params = {"travelMode": "truck", "traffic": "true", "routeType": "fastest",
                   "vehicleCommercial": "true", "language": "pt-BR",
                   "departAt": depart_at.strftime("%Y-%m-%dT%H:%M:%S") + "-03:00"}
         if not com_pontos:
             params["routeRepresentation"] = "summaryOnly"
+        if secoes_transito:
+            params["sectionType"] = "traffic"
         locs = f"{origem[0]},{origem[1]}:{destino[0]},{destino[1]}"
         dados = self._chamar(f"/routing/1/calculateRoute/{locs}/json", params)
         if not dados or not dados.get("routes"):
@@ -334,13 +370,14 @@ class GeoTomTom:
         if com_pontos:
             for leg in rota.get("legs", []):
                 pontos += [[round(p["latitude"], 5), round(p["longitude"], 5)] for p in leg.get("points", [])]
-            if len(pontos) > max_pontos:
-                passo = math.ceil(len(pontos) / max_pontos)
-                pontos = pontos[::passo] + [pontos[-1]]
+        transito = _trechos_de_transito(rota.get("sections") or [], pontos)
+        if len(pontos) > max_pontos:
+            passo = math.ceil(len(pontos) / max_pontos)
+            pontos = pontos[::passo] + [pontos[-1]]
         return {"dur_s": resumo.get("travelTimeInSeconds"),
                 "dist_m": resumo.get("lengthInMeters"),
                 "atraso_transito_s": resumo.get("trafficDelayInSeconds", 0),
-                "pontos": pontos}
+                "pontos": pontos, "transito": transito}
 
     def rota_planejada(self, trip, origem, destino, inicio: datetime, now: datetime):
         chave = (tuple(origem), tuple(destino), inicio.isoformat() if inicio else "")
@@ -363,11 +400,12 @@ class GeoTomTom:
         # Mesma chamada de antes, agora com o desenho: é o caminho mais rápido com o
         # trânsito do momento, da posição até o destino.
         r = self._rota(posicao[:2], destino, now + timedelta(minutes=1), com_pontos=True,
-                       max_pontos=MAX_PONTOS_ROTA_ATUAL)
+                       max_pontos=MAX_PONTOS_ROTA_ATUAL, secoes_transito=True)
         if not r:
             return atual  # mantém o último cálculo válido, se houver
         novo = {"chave": chave, "calc_em": now, "travel_s": r["dur_s"],
-                "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"], "pontos": r["pontos"]}
+                "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"], "pontos": r["pontos"],
+                "transito": r["transito"]}
         self.etas[trip] = novo
         return novo
 
@@ -567,9 +605,9 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                 info["idade_pos_min"] = max(0, round((now - dt_pos).total_seconds() / 60))
 
             previsao, desvio, risco = None, None, ""
-            pct = _num(str(r.get("% Percorrido (Seguradora)", "")).replace("%", ""))
-            chegou = (pct is not None and pct >= 99) or (
-                info["veiculo"] and dest and distancia_km(info["veiculo"], dest) <= RAIO_CHEGADA_KM)
+            # Só a distância diz que chegou: o % percorrido da Angellira já veio 100% com o
+            # caminhão a 80 km do destino, e o da viagem anterior aparece antes do início.
+            chegou = info["veiculo"] and dest and distancia_km(info["veiculo"], dest) <= RAIO_CHEGADA_KM
             if encerrada:
                 risco = "Encerrada"
             elif chegou:
@@ -581,6 +619,7 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                     eta = geo.eta_da_posicao(trip, info["veiculo"], dest, dt_pos, now)
                     if eta and eta.get("pontos"):
                         info["rota_atual"] = eta["pontos"]
+                        info["transito"] = eta.get("transito") or []
                         info["rota_atual_em"] = eta["calc_em"].strftime("%H:%M")
                         info["rota_atual_km"] = round(eta["dist_m"] / 1000) if eta.get("dist_m") else None
                         info["transito_min"] = round((eta.get("atraso_transito_s") or 0) / 60)
@@ -591,7 +630,8 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                         # Parado: sai "agora". Em movimento: o tempo de viagem conta da hora da posição.
                         # Parado antes do início previsto: assume saída no horário previsto.
                         base = max(now, inicio or now) if parado else dt_pos
-                        previsao = base + timedelta(seconds=eta["travel_s"])
+                        # Quem não chegou não chega no passado (posição de horas atrás).
+                        previsao = max(base + timedelta(seconds=eta["travel_s"]), now)
             elif info["rota_tomtom_min"] is not None and inicio and (not dt_pos) and now < inicio:
                 previsao = inicio + timedelta(minutes=info["rota_tomtom_min"])
             elif not dest:
