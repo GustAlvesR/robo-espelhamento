@@ -249,6 +249,7 @@ function gravidade(r) {
   if (cancelada(r)) return 4;
   if (acidenteMotorista(r)) return -1;
   if (r["Espelhamento Atual"] === "NOK") return 0;
+  if (r["Alerta Saída"]) return 0.5;
   if (statusDe(r) === "NOK") return 1;
   if (acidenteDe(r)) return 1.5;
   if (r["Risco de Atraso"] === "Atrasada") return 2;
@@ -313,12 +314,14 @@ function filtrar() {
     if (soAcidente && (!acidenteDe(r) || cancelada(r))) return false;
     if (soAlternativa && (!alternativaDe(r) || cancelada(r))) return false;
     if (soNoticia && (!noticiaAtiva(r) || cancelada(r))) return false;
+    if (soSaida && (!r["Alerta Saída"] || cancelada(r))) return false;
+    if (soGeral && !soGeral.includes(r["Trip Number"])) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
     if (!q) return true;
     return ["Trip Number", "Placa", "Placa 2", "Motorista", "Origin Station Code", "Destination Station Code",
-      "Cidade/UF", "_origem_local", "_destino_local"]
+      "Cidade/UF", "_origem_local", "_destino_local", "Acionar"]
       .some((c) => semAcento(r[c]).includes(q));
   }).sort((a, b) => gravidade(a) - gravidade(b));
 }
@@ -341,6 +344,8 @@ function desenharKpis() {
   if (nAlt) kpis.splice(1, 0, ["Rota alternativa p/ GR", nAlt, "desvio", () => aplicarFiltro(null, null, false, false, false, false, true)]);
   const nAcid = cont((r) => !!acidenteDe(r));
   if (nAcid) kpis.splice(1, 0, ["Acidente no caminho", nAcid, "nok", () => aplicarFiltro(null, null, false, false, false, true)]);
+  const nSaida = cont((r) => !!r["Alerta Saída"]);
+  if (nSaida) kpis.push(["Saída / SM pendente", nSaida, "nok", () => aplicarFiltro(null, null, false, false, false, false, false, false, true)]);
   const nRot = cont((r) => alertasRotograma(r).length > 0);
   if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
   const nNot = cont(noticiaAtiva);
@@ -359,6 +364,9 @@ let soRotograma = false;
 let soAcidente = false;
 let soAlternativa = false;
 let soNoticia = false;
+let soSaida = false;
+let soGeral = null;  // rotas da queda geral escolhida na faixa
+let quedasGerais = [];
 // Rota alternativa calculada pelo robô para a torre levar ao GR (grupo Alinhamento GR).
 const alternativaDe = (r) => (r._geo || {}).alternativa || null;
 // "Alerta Acidente": o aviso do motorista vem primeiro ("Motorista: ..."); o resto é da TomTom.
@@ -369,11 +377,14 @@ const noticiasDe = (r) => (r._geo || {}).noticias || [];
 // "Pista liberada" aparece na rota, mas não conta no indicador.
 const noticiaAtiva = (r) => noticiasDe(r).some((n) => n.tipo !== "liberada");
 const textoNoticia = (n) => `${n.tipo} em ${n.cidade}, a ${n.km} km${n.desde || ""} (${n.fonte || "notícia"}, ${n.quando}): ${n.titulo}`;
-function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false, noticia = false) {
+function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false, noticia = false,
+  saida = false) {
   soRotograma = rot;
   soAcidente = acidente;
   soAlternativa = alt;
   soNoticia = noticia;
+  soSaida = saida;
+  soGeral = null;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
@@ -395,6 +406,26 @@ function tagAlternativa(r) {
   if (!a || cancelada(r)) return null;
   return el("span", { class: "tag desvio", title: `${a.motivo}\nETA trajeto atual: ${a.chegada_ref}\nETA alternativa: ${a.chegada_alt}` },
     a.economia_min > 0 ? `Desvio −${a.economia_min} min` : "Contorno");
+}
+
+// Causa do NOK e quem acionar (robô, pendencias.py): o texto completo fica na dica e no detalhe.
+const ROTULO_CAUSA = [[/^Queda geral/, "Queda geral", "geral"], [/^Integração/, "NOK: integração", "integracao"],
+  [/^Rastreador/, "NOK: rastreador", "rastreador"], [/^SM no procedimento/, "NOK: SM errada", "sm"],
+  [/^Sem SM/, "NOK: sem SM", "sm"]];
+function tagCausa(r) {
+  const causa = r["Causa NOK"] || "";
+  const m = ROTULO_CAUSA.find(([re]) => re.test(causa));
+  if (!m || cancelada(r)) return null;
+  return el("span", { class: `tag causa ${m[2]}`, title: causa + (r["Acionar"] ? `\nAcionar: ${r["Acionar"]}` : "") }, m[1]);
+}
+
+function tagSaida(r) {
+  const texto = r["Alerta Saída"] || "";
+  if (!texto || cancelada(r)) return null;
+  const rotulo = /^CPT/.test(texto) ? "Saída atrasada" : /^Não chegou/.test(texto) ? "Não chegou na origem"
+    : /^SM no procedimento/.test(texto) ? "SM errada" : "Sem SM";
+  return el("span", { class: "tag saida", title: texto.split("; ").join("\n") + (r["Acionar"] ? `\nAcionar: ${r["Acionar"]}` : "") },
+    rotulo);
 }
 
 function tagNoticia(r) {
@@ -446,7 +477,7 @@ function desenharLista(lista) {
       onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
-        el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagAlternativa(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
+        el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagSaida(r), tagCausa(r), tagAlternativa(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
           cancelada(r) ? tag : null, tagRotograma(r), tagNoticia(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
@@ -528,6 +559,7 @@ function desenharDetalhe() {
       ...linha("Início previsto", r["Início Previsto"]),
       ...linha("Fim previsto", r["Fim Previsto"]),
     ),
+    ...secaoPendencias(g),
     el("div", { class: "sec" }, "Espelhamento"),
     el("dl", {},
       ...linha("Status geral", statusDe(r)),
@@ -591,6 +623,34 @@ function secaoAcidente(r, g) {
       ...filas.flatMap((t) => linha("Congestionamento", `a ${t.km} km, +${t.atraso_min} min`)),
     ),
   ];
+}
+
+function secaoPendencias(g) {
+  const ps = (g.pendencias || []).filter((p) => p.texto);
+  if (!ps.length) return [];
+  return [
+    el("div", { class: "sec" }, "Pendências (quem acionar)"),
+    el("dl", {}, ...ps.flatMap((p) => [
+      el("dt", {}, p.tipo),
+      el("dd", {}, p.texto,
+        p.acionar ? el("span", { class: "pend-info" }, `Acionar: ${p.acionar}`) : null,
+        p.mensagem ? el("button", { type: "button", class: "botao-alt cobranca",
+          onclick: (e) => copiarTexto(p.mensagem, e.currentTarget) }, "Copiar cobrança") : null),
+    ])),
+  ];
+}
+
+function desenharFaixaGeral() {
+  const alvo = document.getElementById("faixa-geral");
+  alvo.hidden = !quedasGerais.length;
+  alvo.replaceChildren(...quedasGerais.map((q) => el("div", { class: "faixa-item" },
+    el("span", {}, el("b", {}, "Queda geral do espelhamento"),
+      ` desde ${q.desde}: ${q.rotas.length} rotas sem sinal ao mesmo tempo, ${q.com_posicao} delas com posição recente`
+      + " na Angellira. Provável falha da Shopee ou da integração, não dos caminhões. Acionar: Shopee / Angellira."),
+    el("button", { type: "button", class: "botao-alt", onclick: () => { aplicarFiltro(); soGeral = q.rotas; render(); } },
+      "Ver rotas"),
+    el("button", { type: "button", class: "botao-alt", onclick: (e) => copiarTexto(q.mensagem, e.currentTarget) },
+      "Copiar aviso"))));
 }
 
 function secaoNoticias(g) {
@@ -861,6 +921,8 @@ function aplicarDados(j) {
   dados = j.rotas || [];
   alertasClima = j.clima || [];
   rotogramas = j.rotogramas || {};
+  quedasGerais = j.queda_geral || [];
+  desenharFaixaGeral();
   erroClima = j.clima_erro || "";
   climaLidoEm = j.clima_lido_em || "";
   desenharClima();

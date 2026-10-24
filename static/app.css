@@ -129,6 +129,19 @@ button, input, select { font: inherit; color: inherit; }
 .noticia-marca.liberada span { opacity: .55; }
 .pt.noticia-leg { background: var(--noticia); border-radius: 2px; }
 .noticia-info { display: block; margin-top: 2px; color: var(--suave); font-size: 11px; }
+/* Pendências: causa do NOK, saída/SM e quem acionar (pendencias.py). */
+.tag.saida { border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); font-weight: 700; }
+.tag.causa { border-style: dashed; font-weight: 700; }
+.tag.causa.integracao, .tag.causa.geral { border-color: var(--acento); color: var(--acento); }
+.tag.causa.rastreador { border-color: var(--alerta); color: var(--alerta-texto); }
+.tag.causa.sm { border-color: var(--nok); color: var(--nok); }
+.pend-info { display: block; margin-top: 2px; color: var(--suave); font-size: 11px; }
+.botao-alt.cobranca { margin-top: 4px; padding: 3px 8px; font-size: 11px; }
+.faixa-geral { display: grid; gap: 4px; padding: 6px 16px; background: color-mix(in srgb, var(--acento) 16%, var(--painel));
+  border-bottom: 1px solid var(--acento); color: var(--texto); font-size: 13px; }
+.faixa-geral[hidden] { display: none; }
+.faixa-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.faixa-item > span { flex: 1 1 320px; }
 .tag.atrasada { border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); font-weight: 700; }
 .vazio { padding: 24px; color: var(--suave); text-align: center; }
 

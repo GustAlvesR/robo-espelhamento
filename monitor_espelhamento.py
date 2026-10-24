@@ -50,6 +50,7 @@ import clima
 import alternativa
 import geo_tomtom
 import noticias
+import pendencias
 import rotograma
 
 
@@ -512,6 +513,8 @@ def read_source_dataframe(client: gspread.Client) -> pd.DataFrame:
 
 DBLH_COLUNAS = ("trip_number", "status_agrupado", "eta_scheduled_origin_edited",
                 "cpt_realizado", "eta_destino_realizado")
+# Para o alerta de saída (pendencias.py). Sem elas, o alerta de saída fica desligado.
+DBLH_OPCIONAIS = ("cpt_scheduled_origin_edited", "eta_realizado")
 
 
 def _dt_dblh(texto):
@@ -521,15 +524,19 @@ def _dt_dblh(texto):
 
 @gspread_retry()
 def read_realizados(client) -> dict:
-    """{TRIP: {"cpt": datetime|None, "chegada": datetime|None}} a partir da aba DBLH.
-    Viagem com várias pernas: CPT da primeira perna e chegada da última."""
+    """{TRIP: {"cpt", "chegada", "cpt_previsto", "chegada_origem": datetime|None}} a partir
+    da aba DBLH. Viagem com várias pernas: CPT e origem da primeira perna, chegada da última."""
     ws = client.open_by_key(SOURCE_SPREADSHEET_ID).worksheet(DBLH_WORKSHEET_NAME)
     cab = [_norm_cab(c) for c in ws.row_values(1)]
     faltam = [c for c in DBLH_COLUNAS if _norm_cab(c) not in cab]
     if faltam:
         raise KeyError(f"Aba '{DBLH_WORKSHEET_NAME}' sem as colunas {faltam}.")
-    letras = [re.sub(r"\d", "", gspread.utils.rowcol_to_a1(1, cab.index(_norm_cab(c)) + 1))
-              for c in DBLH_COLUNAS]
+    opcionais = [c for c in DBLH_OPCIONAIS if _norm_cab(c) in cab]
+    if len(opcionais) < len(DBLH_OPCIONAIS):
+        logging.warning("Aba '%s' sem as colunas %s: alerta de saída desligado.", DBLH_WORKSHEET_NAME,
+                        [c for c in DBLH_OPCIONAIS if c not in opcionais])
+    nomes = list(DBLH_COLUNAS) + opcionais
+    letras = [re.sub(r"\d", "", gspread.utils.rowcol_to_a1(1, cab.index(_norm_cab(c)) + 1)) for c in nomes]
     colunas = ws.batch_get([f"{l}2:{l}" for l in letras])
 
     def cel(col, i):
@@ -537,15 +544,18 @@ def read_realizados(client) -> dict:
 
     pernas = {}
     for i in range(len(colunas[0])):
-        trip, status, eta_origem, cpt, chegada = (cel(col, i) for col in colunas)
-        trip = trip.strip().upper()
-        if not trip or "CANCEL" in status.upper():
+        v = dict(zip(nomes, (cel(col, i) for col in colunas)))
+        trip = v["trip_number"].strip().upper()
+        if not trip or "CANCEL" in v["status_agrupado"].upper():
             continue
-        pernas.setdefault(trip, []).append((_dt_dblh(eta_origem) or datetime.max, _dt_dblh(cpt), _dt_dblh(chegada)))
+        pernas.setdefault(trip, []).append({k: _dt_dblh(x) for k, x in v.items()
+                                            if k not in ("trip_number", "status_agrupado")})
     saida = {}
     for trip, lista in pernas.items():
-        lista.sort(key=lambda p: p[0])
-        saida[trip] = {"cpt": lista[0][1], "chegada": lista[-1][2]}
+        lista.sort(key=lambda p: p["eta_scheduled_origin_edited"] or datetime.max)
+        saida[trip] = {"cpt": lista[0]["cpt_realizado"], "chegada": lista[-1]["eta_destino_realizado"],
+                       "cpt_previsto": lista[0].get("cpt_scheduled_origin_edited"),
+                       "chegada_origem": lista[0].get("eta_realizado")}
     return saida
 
 
@@ -569,7 +579,8 @@ TRACKING_OUTPUT = [
 ]
 # Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
 TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", ""),
-                    ("trk_saida", ""), ("trk_situacao", ""), ("trk_fresco", ""), ("trk_ref", "")]
+                    ("trk_saida", ""), ("trk_situacao", ""), ("trk_fresco", ""), ("trk_ref", ""),
+                    ("trk_outro_proc", "")]
 # Fim de viagem = SM encerrada na Angellira. O relatório do Tracking só traz SMs em
 # andamento, então a SM encerrada é a viagem que some dele. A macro "FIM DE VIAGEM" do
 # motorista não encerra: a SM segue "Em Viagem" depois dela.
@@ -630,8 +641,9 @@ def _colunas_trk_vazias(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def carregar_rastreamento(client):
-    """Lê a aba de rastreamento. Devolve (registros_shopee, referencia) ou None
-    se a aba não existir / não tiver as colunas esperadas (recurso desligado)."""
+    """Lê a aba de rastreamento. Devolve (registros_shopee, referencia, {placa: procedimento}
+    das SMs de outros procedimentos) ou None se a aba não existir / não tiver as colunas
+    esperadas (recurso desligado)."""
     sh = client.open_by_key(TRACKING_SPREADSHEET_ID)
     try:
         ws = sh.worksheet(TRACKING_WORKSHEET_NAME)
@@ -641,7 +653,7 @@ def carregar_rastreamento(client):
     valores = ws.get_all_values()
     if len(valores) < 2:
         logging.info("Aba '%s' vazia; rastreamento sem dados.", TRACKING_WORKSHEET_NAME)
-        return [], None
+        return [], None, {}
     cab = {}
     for i, c in enumerate(valores[0]):
         if c.strip():
@@ -656,13 +668,16 @@ def carregar_rastreamento(client):
         i = cab.get(nome)
         return linha[i].strip() if i is not None and i < len(linha) else ""
 
-    registros, referencias = [], []
+    registros, referencias, outros = [], [], {}
     for l in valores[1:]:
         dt_pos = _parse_dt_flex(cel(l, "DATAPOSICAO"))
         if dt_pos:
             referencias.append(dt_pos)  # todas as linhas (qualquer procedimento) dão a hora do arquivo
         proc = _norm_chave(cel(l, "PROCEDIMENTODEEMBARQUE"))
         if not all(t in proc for t in TRACKING_PROCEDIMENTO_TERMOS):
+            for col in ("VEICULO", "REBOQUE1", "REBOQUE2"):
+                if _placa(cel(l, col)):
+                    outros.setdefault(_placa(cel(l, col)), cel(l, "PROCEDIMENTODEEMBARQUE"))
             continue
         veiculo = _placa(cel(l, "VEICULO"))
         if not veiculo:
@@ -685,7 +700,7 @@ def carregar_rastreamento(client):
             "motorista": cel(l, "MOTORISTA"),
             "situacao": cel(l, "SITUACAO"),
         })
-    return registros, (max(referencias) if referencias else None)
+    return registros, (max(referencias) if referencias else None), outros
 
 
 def casar_rastreamento(df: pd.DataFrame, registros: list, now: datetime) -> dict:
@@ -731,7 +746,7 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
         carregado = carregar_rastreamento(client)
         if carregado is None:
             return df, None
-        registros, ref = carregado
+        registros, ref, outros = carregado
         defasagem = max(0, round((now - ref).total_seconds() / 60)) if ref else None
         status_base = ("" if defasagem is None else
                        "OK" if defasagem <= TRACKING_MAX_AGE_MIN else "Desatualizado")
@@ -741,6 +756,9 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
             reg = casados.get(i)
             if reg is None:
                 df.at[i, "trk_status"] = "Sem correspondência"
+                df.at[i, "trk_outro_proc"] = next(
+                    (outros[p] for p in (_placa(df.at[i, "vehicle_number"]), _placa(df.at[i, "vehicle_number2"]))
+                     if p in outros), "")
                 continue
             msg = reg["ultima_msg"]
             msg_limpa = "" if msg.strip() in ("", "0") else msg
@@ -884,6 +902,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
             "trip_number": trip_number,
             "evento": tipo,
             "duracao_segundos": duracao,
+            "queda_geral": "Sim" if dados.get("queda_geral") else "",
             **info_veiculo,
         })
 
@@ -893,6 +912,8 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
         # Início de uma nova queda (ou rota já "nasceu" caída na 1ª leitura).
         dados["current_loss_start"] = t_mudanca.isoformat()
         dados["loss_logged"] = False
+        dados.pop("queda_geral", None)
+        dados["queda_detectada_em"] = now.isoformat()  # pendencias.marcar_quedas_gerais
         logging.info("[%s] Perda de sinal confirmada (desde %s).", trip_number, t_mudanca)
 
     elif status_atual == "OK" and dados.get("current_loss_start"):
@@ -914,6 +935,7 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
                 inicio_hist = max(inicio_queda, inicio_previsto.to_pydatetime())
             _registrar_evento("RETORNO", max((t_mudanca - inicio_hist).total_seconds(), 0))
         dados["loss_logged"] = False
+        dados.pop("queda_geral", None)
         logging.info(
             "[%s] Sinal restabelecido às %s (ficou %s sem sinal).",
             trip_number, t_mudanca, seconds_to_hhmm(duracao),
@@ -973,7 +995,8 @@ def atualizar_realizado(dados: dict, realizado) -> None:
     leitura da DBLH e à saída da rota da aba Telemetria)."""
     if not realizado:
         return
-    for chave, campo in (("cpt", "cpt_realizado"), ("chegada", "chegada_realizada")):
+    for chave, campo in (("cpt", "cpt_realizado"), ("chegada", "chegada_realizada"),
+                         ("cpt_previsto", "cpt_previsto"), ("chegada_origem", "chegada_origem")):
         if realizado.get(chave):
             dados[campo] = realizado[chave].isoformat()
 
@@ -1320,7 +1343,7 @@ def append_events(client: gspread.Client, eventos: list) -> None:
     colunas_resultado = [c for c in modelo
                          if c != "Trip Number" and c not in titulos_extra]
     cabecalho = (["Data/Hora Detecção", "Trip Number", "Evento", "Duração da Queda"]
-                 + titulos_extra + colunas_resultado)
+                 + titulos_extra + colunas_resultado + ["Queda Geral"])
     cabecalho = _preparar_cabecalho(ws, cabecalho)
 
     linhas = []
@@ -1334,6 +1357,7 @@ def append_events(client: gspread.Client, eventos: list) -> None:
             "Trip Number": ev["trip_number"],
             "Evento": ev["evento"],
             "Duração da Queda": seconds_to_hhmm(duracao) if duracao != "" else "",
+            "Queda Geral": ev.get("queda_geral", ""),
         }
         linhas.append([_texto(valores.get(c, "")) for c in cabecalho])
     ws.append_rows(linhas, value_input_option="USER_ENTERED")
@@ -1556,10 +1580,11 @@ def atualizar_trilhas(state: dict, resultados: list, geo_por_trip: dict, now: da
 
 
 def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None,
-                      rotogramas=None) -> None:
+                      rotogramas=None, quedas_gerais=None) -> None:
     global _SNAPSHOT
     _SNAPSHOT = {
         "rotogramas": rotogramas or {},
+        "queda_geral": quedas_gerais or [],
         "atualizado_em": _fmt(now),
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
@@ -1639,6 +1664,11 @@ def _job():
             for ev in eventos_do_ciclo[n_antes:]:
                 ev["resultado"] = resultado_linha
 
+        ativos = [r["Trip Number"] for r in resultados]
+        try:
+            pendencias.marcar_quedas_gerais(state, ativos, eventos_do_ciclo, now)
+        except Exception:
+            logging.exception("Falha ao marcar queda geral; seguindo sem ela.")
         atualizar_sms(state, df, now)
         for r in resultados:
             encerrada = state.get(r["Trip Number"], {}).get("sm_encerrada_em")
@@ -1688,6 +1718,26 @@ def _job():
             coluna_motorista(r, state.get(r["Trip Number"], {}))
             ajustar_risco(r, state.get(r["Trip Number"], {}), now)
             alerta_acidente(r, state.get(r["Trip Number"], {}), geo_por_trip.get(r["Trip Number"]), now)
+        quedas_gerais = []
+        try:
+            grupos_gerais = pendencias.grupos_abertos(state, ativos)
+            outro_proc = dict(zip(df["trip_number"].astype(str).str.strip(), df["trk_outro_proc"]))
+            relatorio_fresco = (ref_rastreamento is not None
+                                and now - ref_rastreamento <= timedelta(minutes=TRACKING_MAX_AGE_MIN))
+            for r in resultados:
+                geo_por_trip.setdefault(r["Trip Number"], {})["pendencias"] = pendencias.avaliar(
+                    r, state.get(r["Trip Number"], {}), outro_proc.get(r["Trip Number"], ""), relatorio_fresco,
+                    grupos_gerais, now)
+            quedas_gerais = pendencias.resumo_quedas_gerais(grupos_gerais, {r["Trip Number"]: r for r in resultados})
+            logging.info("Pendências: %s rota(s) sem sinal com causa identificada, %s com alerta de saída ou SM, "
+                         "%s queda(s) geral(is) aberta(s).",
+                         sum(1 for r in resultados if r["Causa NOK"] and r["Acionar"]),
+                         sum(1 for r in resultados if r["Alerta Saída"]), len(quedas_gerais))
+        except Exception:
+            logging.exception("Falha na etapa de pendências; seguindo sem ela.")
+            for r in resultados:
+                for c in ("Causa NOK", "Alerta Saída", "Acionar"):
+                    r.setdefault(c, "")
         # Em todo ciclo, mesmo zerado: é por aqui que se confere a leitura do trânsito da TomTom.
         consultadas = [g for g in geo_por_trip.values() if g and "transito" in g]
         transito = [t for g in consultadas for t in g["transito"]]
@@ -1728,7 +1778,7 @@ def _job():
         append_events(client_escrita, eventos_do_ciclo)
         append_fechamentos(client_escrita, fechadas)
 
-        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa)
+        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa, quedas_gerais)
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s), "
