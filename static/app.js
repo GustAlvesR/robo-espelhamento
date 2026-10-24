@@ -634,8 +634,12 @@ function secaoPendencias(g) {
       el("dt", {}, p.tipo),
       el("dd", {}, p.texto,
         p.acionar ? el("span", { class: "pend-info" }, `Acionar: ${p.acionar}`) : null,
-        p.mensagem ? el("button", { type: "button", class: "botao-alt cobranca",
-          onclick: (e) => copiarTexto(p.mensagem, e.currentTarget) }, "Copiar cobrança") : null),
+        p.mensagem ? el("span", { class: "botoes-cobranca" },
+          el("a", { class: "botao-alt whats cobranca", href: `https://wa.me/?text=${encodeURIComponent(p.mensagem)}`,
+            target: "_blank", rel: "noopener", title: "Abre o WhatsApp com a mensagem pronta: escolha o contato ou o grupo" },
+            "WhatsApp"),
+          el("button", { type: "button", class: "botao-alt cobranca",
+            onclick: (e) => copiarTexto(p.mensagem, e.currentTarget) }, "Copiar cobrança")) : null),
     ])),
   ];
 }
@@ -649,6 +653,8 @@ function desenharFaixaGeral() {
       + " na Angellira. Provável falha da Shopee ou da integração, não dos caminhões. Acionar: Shopee / Angellira."),
     el("button", { type: "button", class: "botao-alt", onclick: () => { aplicarFiltro(); soGeral = q.rotas; render(); } },
       "Ver rotas"),
+    el("a", { class: "botao-alt whats", href: `https://wa.me/?text=${encodeURIComponent(q.mensagem)}`, target: "_blank",
+      rel: "noopener", title: "Abre o WhatsApp com o aviso pronto: escolha o contato ou o grupo" }, "WhatsApp"),
     el("button", { type: "button", class: "botao-alt", onclick: (e) => copiarTexto(q.mensagem, e.currentTarget) },
       "Copiar aviso"))));
 }

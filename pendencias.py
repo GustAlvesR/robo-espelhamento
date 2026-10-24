@@ -16,6 +16,8 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 
+import geo_tomtom
+
 QUEDA_GERAL_MIN_ROTAS = int(os.getenv("QUEDA_GERAL_MIN_ROTAS", "5"))
 # Com muitas rotas, 5 quedas juntas podem ser acaso: exige também esta fração das monitoradas.
 QUEDA_GERAL_MIN_PCT = float(os.getenv("QUEDA_GERAL_MIN_PCT", "10"))
@@ -27,7 +29,6 @@ PROCEDIMENTO_SHOPEE = "CEVA – SHOPEE (LINE HAUL 3PL)"
 
 GERAL, ANGELLIRA, TRANSPORTADORA, GR, ORIGEM = (
     "Shopee / Angellira", "Angellira", "Transportadora", "GR", "Origem (carregamento/emissão)")
-SAUDACAO = "Olá! Aqui é a Torre LH da CEVA."
 
 
 def _dt(iso):
@@ -107,14 +108,35 @@ def _placas(r: dict) -> str:
     return " / ".join(p for p in (r.get("Placa"), r.get("Placa 2")) if p) or "sem placa"
 
 
-def _identificacao(r: dict) -> str:
-    return (f"A viagem {r['Trip Number']} (placas {_placas(r)}, "
-            f"{r.get('Origin Station Code') or '?'} → {r.get('Destination Station Code') or '?'})")
+def _estacao(codigo) -> str:
+    local = geo_tomtom.local_estacao(codigo) if codigo else ""
+    return f"{codigo} ({local})" if local else (codigo or "?")
+
+
+def _idade(minutos) -> str:
+    if minutos is None:
+        return ""
+    return f"{int(minutos)} min" if minutos < 60 else _duracao(timedelta(minutes=minutos))
+
+
+def _mensagem(titulo: str, subtitulo: str, r: dict, linhas: list, pedido: str) -> str:
+    """Cobrança no padrão das mensagens da torre no WhatsApp (*negrito*, _itálico_), como a
+    da rota alternativa."""
+    fonte = r.get("Fonte Motorista")
+    motorista = r.get("Motorista") and r["Motorista"] + (f" _({fonte})_" if fonte and fonte != "Rastreador" else "")
+    return "\n".join(filter(lambda l: l is not None, [
+        titulo, f"_{subtitulo}_", "",
+        f"🚛 *Viagem:* {r['Trip Number']}",
+        f"🔖 *Placas:* {_placas(r)}",
+        f"👤 *Motorista:* {motorista}" if motorista else None,
+        f"🛣️ *Trecho:* {_estacao(r.get('Origin Station Code'))} ➜ {_estacao(r.get('Destination Station Code'))}",
+        *linhas, "",
+        f"👉 *{pedido}*",
+    ]))
 
 
 def _pendencia(tipo, texto, acionar, mensagem=""):
-    return {"tipo": tipo, "texto": texto, "acionar": acionar,
-            "mensagem": f"{SAUDACAO}\n{mensagem}" if mensagem else ""}
+    return {"tipo": tipo, "texto": texto, "acionar": acionar, "mensagem": mensagem}
 
 
 def _causa_nok(r, dados, sem_sm, outro_procedimento, grupos):
@@ -125,35 +147,40 @@ def _causa_nok(r, dados, sem_sm, outro_procedimento, grupos):
                                                 f"({len(grupos[geral])} rotas)", GERAL)
     min_pos = _num(r.get("Min. Sem Posição"))
     posicao = f"{r.get('Cidade/UF') or 'posição'} às {_sem_ano(r.get('Data da Posição')) or '?'}"
+    idade = f" (há {_idade(min_pos)})" if min_pos is not None else ""
+    sem_sinal = f"📵 *Sem sinal na Shopee desde:* {desde}"
     if r.get("Rastreamento") == "OK" and min_pos is not None and min_pos <= POSICAO_RECENTE_MIN:
         return "integracao", _pendencia(
             "Sem sinal", f"Integração Angellira → Shopee: a Angellira tem posição recente ({posicao})", ANGELLIRA,
-            f"{_identificacao(r)} está sem espelhamento na Shopee desde {desde}, mas a Angellira tem posição "
-            f"atualizada do veículo ({posicao}).\nPodem verificar a integração Angellira → Shopee dessa SM?")
+            _mensagem("📡 *TORRE LH · FALHA DE ESPELHAMENTO*", "Para a Angellira verificar a integração com a Shopee",
+                      r, [sem_sinal, f"📍 *Posição na Angellira:* {posicao}{idade}"],
+                      "Podem verificar a integração Angellira → Shopee dessa SM?"))
     if r.get("Rastreamento") == "OK":
-        idade = f", há {int(min_pos)} min" if min_pos is not None else ""
-        motorista = f" ({r['Motorista']})" if r.get("Motorista") else ""
         return "rastreador", _pendencia(
             "Sem sinal", f"Rastreador sem posição: última na Angellira {posicao}{idade}", TRANSPORTADORA,
-            f"{_identificacao(r)} está sem sinal na Shopee desde {desde}, e a última posição na Angellira é de "
-            f"{posicao}{idade}.\nFavor verificar o rastreador do veículo com o motorista{motorista}.")
+            _mensagem("📡 *TORRE LH · RASTREADOR SEM SINAL*", "Para a transportadora verificar o rastreador",
+                      r, [sem_sinal, f"📍 *Última posição na Angellira:* {posicao}{idade}"],
+                      "Favor verificar o rastreador do veículo com o motorista."))
     if sem_sm:
-        return "sm", _pendencia_sm(r, outro_procedimento, "Sem sinal",
-                                   f"sem espelhamento na Shopee desde {desde}")
+        return "sm", _pendencia_sm(r, outro_procedimento, "Sem sinal", [sem_sinal])
     return "", _pendencia("Sem sinal", "Sem leitura recente da Angellira para saber a causa", "")
 
 
-def _pendencia_sm(r, outro_procedimento, tipo, situacao):
+def _pendencia_sm(r, outro_procedimento, tipo, situacao: list):
     if outro_procedimento:
         return _pendencia(
             tipo, f"SM no procedimento '{outro_procedimento}', não no da Shopee", GR,
-            f"{_identificacao(r)} está {situacao}. A placa aparece numa SM do procedimento "
-            f"'{outro_procedimento}', e não no {PROCEDIMENTO_SHOPEE}: assim o espelhamento não chega na Shopee."
-            f"\nFavor verificar e corrigir a SM.")
+            _mensagem("📄 *TORRE LH · SM NO PROCEDIMENTO ERRADO*", "Para o GR corrigir a SM", r,
+                      [*situacao, f"⚠️ *SM encontrada em:* {outro_procedimento}",
+                       f"✅ *Procedimento correto:* {PROCEDIMENTO_SHOPEE}", "",
+                       "_Fora desse procedimento, o espelhamento não chega na Shopee._"],
+                      "Favor verificar e corrigir a SM."))
     return _pendencia(
         tipo, "Sem SM na Angellira", GR,
-        f"{_identificacao(r)} está {situacao} e não tem SM aberta na Angellira no procedimento "
-        f"{PROCEDIMENTO_SHOPEE}. Sem ela, o espelhamento não chega na Shopee.\nFavor abrir a SM.")
+        _mensagem("📄 *TORRE LH · VIAGEM SEM SM*", "Para o GR abrir a SM", r,
+                  [*situacao, f"⚠️ *SM:* não encontrada no procedimento {PROCEDIMENTO_SHOPEE}", "",
+                   "_Sem a SM, o espelhamento não chega na Shopee._"],
+                  "Favor abrir a SM."))
 
 
 def avaliar(r: dict, dados: dict, outro_procedimento: str, relatorio_fresco: bool, grupos: dict,
@@ -181,31 +208,40 @@ def avaliar(r: dict, dados: dict, outro_procedimento: str, relatorio_fresco: boo
     # o veículo não chegou na origem (todas as rotas virariam alerta).
     if not saiu and cpt:
         if now > cpt + tol:
+            previsto = f"previsto {_dia_hora(inicio)}" if inicio else "sem horário previsto"
             if chegou_origem:
                 situacao = f"chegou na origem às {_dia_hora(chegou_origem)}"
                 atrasou = inicio and chegou_origem > inicio + tol
                 acionar = TRANSPORTADORA if atrasou else ORIGEM
                 if atrasou:
                     situacao += f", depois do previsto ({_dia_hora(inicio)})"
+                chegada = f"{_dia_hora(chegou_origem)} ({previsto if atrasou else 'no horário'})"
             else:
                 situacao, acionar = "ainda não chegou na origem", TRANSPORTADORA
+                chegada = f"ainda não chegou ({previsto})"
+            quem = "a origem" if acionar == ORIGEM else "a transportadora"
             saida.append(_pendencia(
                 "Saída", f"CPT {_dia_hora(cpt)} vencido há {_duracao(now - cpt)}, sem saída ({situacao})", acionar,
-                f"{_identificacao(r)} tinha CPT às {_dia_hora(cpt)} e ainda não saiu (atraso de "
-                f"{_duracao(now - cpt)}). O veículo {situacao}.\nQual a previsão de saída?"))
+                _mensagem("⏰ *TORRE LH · SAÍDA ATRASADA*", f"Para {quem} informar a previsão de saída", r,
+                          [f"⏰ *CPT previsto:* {_dia_hora(cpt)}", f"⌛ *Atraso:* {_duracao(now - cpt)}",
+                           f"🏁 *Chegada na origem:* {chegada}"],
+                          "Qual a previsão de saída?")))
         elif not chegou_origem and inicio and now > inicio + tol:
             saida.append(_pendencia(
                 "Saída", f"Não chegou na origem (previsto {_dia_hora(inicio)}, atraso de {_duracao(now - inicio)})",
                 TRANSPORTADORA,
-                f"{_identificacao(r)} tinha chegada na origem prevista para {_dia_hora(inicio)} e o veículo ainda "
-                f"não chegou (atraso de {_duracao(now - inicio)}).\nQual a previsão de chegada?"))
+                _mensagem("⏰ *TORRE LH · ATRASO NA CHEGADA À ORIGEM*",
+                          "Para a transportadora informar a previsão de chegada", r,
+                          [f"🏁 *Chegada prevista na origem:* {_dia_hora(inicio)}",
+                           f"⌛ *Atraso:* {_duracao(now - inicio)}", f"⏰ *CPT previsto:* {_dia_hora(cpt)}"],
+                          "Qual a previsão de chegada?")))
     if sem_sm and causa != "sm":
         referencia = cpt or inicio
         if saiu:
-            saida.append(_pendencia_sm(r, outro_procedimento, "SM", "em viagem"))
+            saida.append(_pendencia_sm(r, outro_procedimento, "SM", ["🚚 *Situação:* em viagem"]))
         elif referencia and now >= referencia - timedelta(minutes=SM_ANTECEDENCIA_MIN):
-            vencido = "vencido " if now > referencia else ""
-            saida.append(_pendencia_sm(r, outro_procedimento, "SM", f"com CPT {vencido}às {_dia_hora(referencia)}"))
+            vencido = " (vencido)" if now > referencia else ""
+            saida.append(_pendencia_sm(r, outro_procedimento, "SM", [f"⏰ *CPT:* {_dia_hora(referencia)}{vencido}"]))
     r["Alerta Saída"] = "; ".join(p["texto"] for p in saida)
     pendencias += saida
     r["Acionar"] = " / ".join(dict.fromkeys(p["acionar"] for p in pendencias if p["acionar"]))
@@ -220,10 +256,18 @@ def resumo_quedas_gerais(grupos: dict, por_trip: dict) -> list:
         com_posicao = sum(1 for r in rotas if r.get("Rastreamento") == "OK"
                           and (_num(r.get("Min. Sem Posição")) or 1e9) <= POSICAO_RECENTE_MIN)
         desde = _dia_hora(_dt(inicio))
-        lista = ", ".join(f"{r['Trip Number']} ({r.get('Placa') or 'sem placa'})" for r in rotas)
+        conclusao = ("A Angellira segue recebendo a posição dos caminhões: a falha parece ser da integração."
+                     if com_posicao * 2 >= len(rotas)
+                     else "Várias viagens caíram juntas: a falha parece ser comum, não de cada veículo.")
         saida.append({
             "desde": desde, "rotas": [r["Trip Number"] for r in rotas], "com_posicao": com_posicao,
-            "mensagem": (f"{SAUDACAO}\nDesde {desde}, {len(rotas)} viagens estão sem espelhamento na Shopee ao "
-                         f"mesmo tempo. A Angellira tem posição recente de {com_posicao} delas, então a falha "
-                         f"parece ser da integração, não dos veículos.\nViagens: {lista}.\nPodem verificar?")})
+            "mensagem": "\n".join([
+                "🚨 *TORRE LH · QUEDA GERAL DO ESPELHAMENTO*", "_Para a Shopee e a Angellira verificarem_", "",
+                f"📵 *Sem sinal desde:* {desde}",
+                f"🚛 *Viagens afetadas:* {len(rotas)}",
+                f"📍 *Com posição recente na Angellira:* {com_posicao} de {len(rotas)}", "",
+                "⚠️ *Viagens*",
+                *(f"• {r['Trip Number']} ({_placas(r)})" for r in rotas), "",
+                f"_{conclusao}_", "",
+                "👉 *Podem verificar?*"])})
     return saida

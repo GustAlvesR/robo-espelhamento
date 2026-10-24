@@ -266,9 +266,10 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
 
 ## Pendências e quem acionar
 
-Cada pendência diz quem resolve e traz o botão "Copiar cobrança", com a mensagem pronta
-para o responsável. Na planilha: `Causa NOK`, `Alerta Saída` e `Acionar`. A busca do site
-aceita o responsável ("angellira", "GR", "transportadora").
+Cada pendência diz quem resolve e traz os botões "WhatsApp" e "Copiar cobrança", com a
+mensagem pronta para o responsável, no mesmo formato da rota alternativa (título "TORRE LH ·
+...", uma informação por linha e o pedido no fim). Na planilha: `Causa NOK`, `Alerta Saída`
+e `Acionar`. A busca do site aceita o responsável ("angellira", "GR", "transportadora").
 
 - Queda geral: 5 ou mais rotas perdendo o sinal no mesmo ciclo (`QUEDA_GERAL_MIN_ROTAS`,
   e pelo menos 10% das monitoradas, `QUEDA_GERAL_MIN_PCT`). No histórico de 14 a 24/10,
