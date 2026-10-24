@@ -10,6 +10,9 @@ funcionando como antes, só sem mapa e sem previsão.
 - `site_web.py`, `templates/`, `static/`: o site.
 - `criar_usuario.py`: gera a linha de cada usuário.
 - `testar_tomtom.py`: confere se a chave funciona em cada API.
+- `noticias.py` e `dados/municipios.csv`: notícias de ocorrência nas rodovias (ver
+  "Notícias no caminho"). A lista de municípios, com as coordenadas da sede, vem do
+  projeto kelvins/municipios-brasileiros (licença MIT em `dados/municipios.LICENSE`).
 - `monitor_espelhamento.py` e `requirements.txt`: atualizados.
 
 ## 1. Chave TomTom
@@ -250,6 +253,39 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
 - O link do Google Maps leva pontos de passagem tirados da rota de caminhão da TomTom,
   mas o Google Maps comum calcula como carro: entre os pontos ele pode escolher outra via.
 - Na planilha, a coluna `Rota Alternativa` (a última) guarda o resumo e o link.
+- Notícia no caminho de uma rota com pedido de rota alternativa entra na mensagem ao GR,
+  logo abaixo da ocorrência.
+
+## Notícias no caminho (Google Notícias)
+
+Complemento da TomTom e do aviso do motorista: notícia sai de 30 min a 2 h depois do
+fato e quase nunca diz o km, mas conta o que eles não contam (quanto deve durar uma
+interdição, se a pista foi liberada, manifestação, queda de barreira).
+
+- A cada 15 min (`NOTICIAS_ATUALIZAR_MIN`), o robô busca no Google Notícias as notícias
+  das últimas 6 h (`NOTICIAS_MAX_H`) com termos de ocorrência (acidente, interdição,
+  bloqueio, tombamento, queda de barreira, manifestação, pista liberada): uma consulta
+  geral ("rodovia" ou "estrada") e uma por rodovia. As rodovias são as dos rotogramas
+  mais a lista `NOTICIAS_RODOVIAS` (BR-116, BR-101, BR-381, BR-040, BR-251, BR-135,
+  BR-324, BR-262, BR-050, BR-153, BR-232, BR-104, BR-146), no máximo 20 consultas
+  (`NOTICIAS_MAX_CONSULTAS`).
+- A notícia só vale para a rota quando cita uma cidade (nome com maiúscula, como
+  "Feira de Santana") que fica a até 20 km (`NOTICIAS_RAIO_KM`) do caminho que falta
+  percorrer, nos próximos 600 km (`NOTICIAS_KM_FRENTE`). O caminho é o da TomTom e o
+  do rotograma a partir do caminhão; antes do início, o rotograma ou o planejado.
+  Com a UF citada ("(BA)", "/MG", "na Bahia"), ficam só as cidades dessa UF.
+- Notícia sem cidade ("acidente na Serra do Cafezal") não tem como ser ligada a uma
+  rota e fica de fora. Cidade homônima perto da rota pode trazer notícia de outro lugar:
+  o título e o link estão no detalhe para conferir.
+- No site: indicador "Notícia no caminho", etiqueta "Notícia" (ou "Pista liberada",
+  que não conta no indicador), marcador "N" na cidade e, no detalhe, a seção "Notícias
+  no caminho" com o título (link para a matéria), cidade, km, rodovia, veículo e hora.
+- Na planilha, a coluna `Alerta Notícia` guarda o resumo.
+- Rotas canceladas, encerradas ou no destino ficam de fora.
+- Falha no Google Notícias não para o robô: duas consultas seguidas com erro encerram a
+  rodada, e a próxima vem 15 min depois. O log mostra a cada rodada quantas consultas
+  deram certo e, a cada ciclo, quantas rotas têm notícia.
+- `NOTICIAS_ATIVO=0` desliga.
 
 ## Rotogramas (Angellira)
 

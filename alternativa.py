@@ -137,7 +137,7 @@ def _dia_hora(texto) -> str:
     return re.sub(r"^(\d{2}/\d{2})/\d{4}", r"\1", str(texto or ""))
 
 
-def mensagem(r: dict, s: dict) -> str:
+def mensagem(r: dict, s: dict, noticias=()) -> str:
     """Texto para o grupo Alinhamento GR no WhatsApp (*negrito* e _itálico_ do WhatsApp)."""
     placas = " / ".join(p for p in (r.get("Placa"), r.get("Placa 2")) if p) or "não informada"
     origem, destino = r.get("Origin Station Code", ""), r.get("Destination Station Code", "")
@@ -169,6 +169,8 @@ def mensagem(r: dict, s: dict) -> str:
         "",
         "⚠️ *Ocorrência*",
         *(f"• {o}" for o in ocorrencias),
+        *(f"📰 _{n['tipo'].capitalize()} em {n['cidade']}, a {n['km']} km ({n['fonte'] or 'notícia'}, {n['quando']}):_ "
+          f"{n['titulo']}" for n in noticias),
         "",
         f"🕒 *ETA se continuar no trajeto atual ({s['referencia']})*",
         f"{s['chegada_ref']} · {s['km_ref']} km",
@@ -227,7 +229,7 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
             continue
         if s:
             sugeridas += 1
-            info["alternativa"] = {**s, "mensagem": mensagem(r, s)}
+            info["alternativa"] = {**s, "mensagem": mensagem(r, s, info.get("noticias") or ())}
             r["Rota Alternativa"] = (f"Economia ~{s['economia_min']} min" if s["economia_min"] > 0
                                      else f"Contorno +{-s['economia_min']} min") + f" ({s['motivo']}) · {s['link']}"
     for trip in [t for t in _cache if t not in ativas]:
