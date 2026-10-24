@@ -107,6 +107,13 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
 
 ## Uso do mapa
 
+- Topo em duas faixas de altura fixa: marca, situação do ciclo e da Angellira e o menu
+  com o nome do usuário (tema, trocar senha, sair); embaixo, os indicadores numa linha
+  só, que rola para o lado se não couberem. Indicador zerado fica apagado, sem sumir.
+- Na lista vão as duas etiquetas mais graves de cada rota; as outras viram "+N" (passe
+  o mouse para ver). Todas aparecem no detalhe da rota.
+- A legenda do mapa fica recolhida em "Legenda"; o site lembra se ela ficou aberta.
+
 - O trajeto previsto só aparece na rota selecionada. Clicar num caminhão ou num item da
   lista isola aquela rota e mostra o trajeto. Para voltar:
   botão "Ver todos", clique numa área vazia do mapa ou tecla Esc.

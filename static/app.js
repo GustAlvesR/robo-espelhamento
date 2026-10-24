@@ -290,7 +290,7 @@ function desenharTrechos() {
   trechoPendente = "";
   if (assinatura !== assinaturaTrechos) {
     assinaturaTrechos = assinatura;
-    sel.replaceChildren(el("option", { value: "" }, "Trecho: todos"),
+    sel.replaceChildren(el("option", { value: "" }, "Trecho"),
       ...itens.map(([k, v]) => el("option", { value: k }, `${v.rotulo} (${v.n})`)));
   }
   sel.value = cont.has(desejado) ? desejado : "";
@@ -344,8 +344,9 @@ function desenharKpis() {
   const nCanc = dados.length - validas.length;
   if (nCanc) kpis.push(["Canceladas", nCanc, "canc", () => aplicarFiltro("fStatus", "Cancelada")]);
   const alvo = document.getElementById("kpis");
+  // Zerado fica apagado, sem sumir: os indicadores não mudam de lugar a cada ciclo.
   alvo.replaceChildren(...kpis.map(([rot, n, cls, fn]) =>
-    el("button", { class: `kpi ${cls}`, onclick: fn }, el("b", {}, String(n)), rot)));
+    el("button", { class: `kpi ${cls} ${n ? "" : "zero"}`, onclick: fn }, el("b", {}, String(n)), rot)));
 }
 
 let soRotograma = false;
@@ -387,6 +388,15 @@ function tagChuva(r) {
     TEXTO_CHUVA[a.nivel] || "Chuva");
 }
 
+// Na lista vão as duas etiquetas mais graves; as outras viram "+N" (todas estão no detalhe).
+function tagsResumidas(tags) {
+  const todas = tags.filter(Boolean);
+  if (todas.length <= 2) return todas;
+  const resto = todas.slice(2);
+  return [...todas.slice(0, 2), el("span", { class: "tag mais",
+    title: resto.map((t) => t.textContent + (t.title ? `: ${t.title}` : "")).join("\n") }, `+${resto.length}`)];
+}
+
 function desenharLista(lista) {
   document.getElementById("contagem").textContent =
     lista.length === dados.length ? `${dados.length} rotas` : `${lista.length} de ${dados.length} rotas`;
@@ -404,7 +414,8 @@ function desenharLista(lista) {
       onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
-        el("span", { class: "tags" }, tagAcidente(r), tagRotograma(r), tagChuva(r), tag)),
+        el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
+          cancelada(r) ? tag : null, tagRotograma(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -826,6 +837,17 @@ function aplicarTema() {
   desenharClima();
 }
 sistemaEscuro.addEventListener("change", aplicarTema);
+// Menu do usuário fecha ao clicar fora; a legenda lembra se ficou aberta.
+const menuUsuario = document.querySelector(".menu-usuario");
+document.addEventListener("click", (e) => {
+  if (menuUsuario && menuUsuario.open && !menuUsuario.contains(e.target)) menuUsuario.open = false;
+});
+const legenda = document.getElementById("legenda");
+try { legenda.open = localStorage.getItem("torreLH.legenda") === "aberta"; } catch (e) { /* sem armazenamento */ }
+legenda.addEventListener("toggle", () => {
+  try { localStorage.setItem("torreLH.legenda", legenda.open ? "aberta" : "fechada"); } catch (e) { /* idem */ }
+});
+
 const seletorTema = document.getElementById("tema");
 seletorTema.value = document.documentElement.dataset.theme || "";
 seletorTema.addEventListener("change", () => {

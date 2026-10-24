@@ -45,23 +45,37 @@ button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
 
 /* --- Cabeçalho: faixa marinho com o logo, como no BSC ------------------ */
-.topo { display: flex; align-items: center; gap: 10px 20px; padding: 10px 16px; flex-wrap: wrap;
+/* Topo em duas faixas de altura fixa: marca, situação e menu do usuário; embaixo, os
+   indicadores numa linha só (rolam para o lado se não couberem). Antes eles dividiam a
+   faixa com o resto e, num notebook, cada um caía para uma linha: o topo chegava a 295 px. */
+.topo { display: flex; align-items: center; gap: 10px 20px; padding: 8px 16px;
   background: var(--marinho); color: #fff; }
 .marca { display: flex; align-items: center; gap: 14px; color: #fff; text-decoration: none; white-space: nowrap; }
 .marca-logo { height: 30px; width: auto; display: block; }
 .marca-produto { font-weight: 700; font-size: 16px; padding-left: 14px; border-left: 2px solid var(--vermelho); line-height: 1.15; }
 .marca-produto small { display: block; font-weight: 400; font-size: 11px; color: rgba(255, 255, 255, .7); }
-.kpis { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
-.kpi { padding: 4px 12px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px; cursor: pointer;
-  background: transparent; color: rgba(255, 255, 255, .85); font-size: 13px; }
+.kpis { display: flex; gap: 6px; padding: 6px 16px; overflow-x: auto; scrollbar-width: thin;
+  background: color-mix(in srgb, var(--marinho) 88%, #fff); border-top: 1px solid rgba(255, 255, 255, .08); }
+.kpi { padding: 3px 11px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px; cursor: pointer; flex: none;
+  background: transparent; color: rgba(255, 255, 255, .85); font-size: 12.5px; white-space: nowrap; }
+.kpi.zero { opacity: .5; }
 .kpi:hover { border-color: #fff; color: #fff; }
-.kpi b { font-size: 16px; margin-right: 6px; color: #fff; font-variant-numeric: tabular-nums; }
+.kpi b { font-size: 15px; margin-right: 6px; color: #fff; font-variant-numeric: tabular-nums; }
 .kpi.nok b { color: #ff8585; } .kpi.alerta b { color: #fab219; } .kpi.chuva b { color: #7cc8f5; } .kpi.canc b { color: rgba(255, 255, 255, .6); }
-.usuario { display: flex; gap: 12px; align-items: center; color: rgba(255, 255, 255, .75); font-size: 12px; flex-wrap: wrap; }
-.usuario form { margin: 0; }
-.usuario select { padding: 3px 8px; border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
-  background: var(--marinho); color: #fff; font-size: 12px; }
-.usuario .link { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+.estado { flex: 1; min-width: 0; display: flex; gap: 14px; justify-content: flex-end; font-size: 12px;
+  color: rgba(255, 255, 255, .75); white-space: nowrap; }
+.estado span { overflow: hidden; text-overflow: ellipsis; }
+.menu-usuario { position: relative; flex: none; font-size: 12px; }
+.menu-usuario summary { list-style: none; cursor: pointer; padding: 4px 12px; border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 999px; color: #fff; white-space: nowrap; }
+.menu-usuario summary::-webkit-details-marker { display: none; }
+.menu-usuario summary::after { content: " ▾"; }
+.menu-conteudo { position: absolute; right: 0; top: calc(100% + 6px); z-index: 1100; display: grid; gap: 10px;
+  min-width: 190px; padding: 12px; background: var(--painel); color: var(--texto); border: 1px solid var(--linha);
+  border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
+.menu-conteudo form { margin: 0; }
+.menu-conteudo select { padding: 5px 8px; border: 1px solid var(--linha); border-radius: 6px; background: var(--painel); }
+.menu-conteudo .link { justify-self: start; }
 #angellira.velho, #atualizado.parado { color: #ff8585; font-weight: 700; }
 .link { background: none; border: 0; color: var(--link); cursor: pointer; padding: 0; }
 .link:disabled { color: var(--suave); cursor: default; }
@@ -69,8 +83,9 @@ button, input, select { font: inherit; color: inherit; }
 /* --- Painel ------------------------------------------------------------ */
 .painel { display: grid; grid-template-columns: 380px 1fr; flex: 1; min-height: 0; }
 .lateral { border-right: 1px solid var(--linha); background: var(--painel); display: flex; flex-direction: column; min-height: 0; }
-.filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; border-bottom: 1px solid var(--linha); }
-.filtros input, .filtros #fTrecho { grid-column: 1 / -1; }
+.filtros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 10px; border-bottom: 1px solid var(--linha); }
+.filtros input { grid-column: 1 / -1; }
+.filtros select { font-size: 13px; padding: 6px 4px; }
 .filtros input, .filtros select { padding: 7px 9px; border: 1px solid var(--linha); border-radius: 6px; background: var(--painel); width: 100%; }
 .acoes { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;
   border-bottom: 1px solid var(--linha); color: var(--suave); font-size: 12px; background: var(--painel-2); }
@@ -102,8 +117,10 @@ button, input, select { font: inherit; color: inherit; }
 /* --- Mapa -------------------------------------------------------------- */
 .mapa-area { position: relative; min-height: 0; }
 #mapa { position: absolute; inset: 0; font-family: var(--fonte); }
-.legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: var(--painel);
-  border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+.legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: var(--painel); max-width: calc(100% - 20px);
+  border: 1px solid var(--linha); border-radius: 6px; padding: 5px 10px; font-size: 12px; }
+.legenda summary { cursor: pointer; font-weight: 700; color: var(--titulo); }
+.legenda .itens { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
 .pt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 .pt.ok { background: var(--ok); } .pt.nok { background: var(--nok); } .pt.pend { background: var(--pend); }
 .pt.anel { border: 2px solid var(--alerta); } .pt.cidade { border: 1px dashed var(--suave); }
@@ -146,6 +163,7 @@ button, input, select { font: inherit; color: inherit; }
   background: color-mix(in srgb, var(--clima-perigo) 30%, transparent); }
 .dica-clima { white-space: pre-line; max-width: 320px; }
 .lista .tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.tag.mais { border-color: var(--linha); color: var(--suave); }
 .tag.chuva { font-weight: 700; }
 .tag.rotograma { font-weight: 700; border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); }
 /* Área de risco do rotograma: círculo vermelho com "!" (posição só da cidade = tracejado). */
@@ -205,15 +223,14 @@ button, input, select { font: inherit; color: inherit; }
   .painel { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; }
   .mapa-area { order: -1; height: 45vh; }
   .lateral { border-right: 0; }
-  .topo { gap: 8px 12px; }
+  .topo { gap: 6px 12px; flex-wrap: wrap; }
   .marca { flex: 1; }
   .marca-logo { height: 26px; }
   .marca-produto small { display: none; }
-  .kpis { order: 3; flex-basis: 100%; }
+  .estado { order: 3; flex-basis: 100%; justify-content: flex-start; font-size: 11px; }
   .kpi { padding: 3px 9px; font-size: 12px; }
   .legenda { display: none; }
   .detalhe { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 50%; }
   .ver-todos kbd { display: none; }
 }
 .cartao-login .link { justify-self: center; font-size: 13px; }
-.usuario a.link { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
