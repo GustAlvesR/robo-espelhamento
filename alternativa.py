@@ -209,7 +209,10 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
         if not (desviou or motorista):
             continue
         ativas.add(trip)
-        chave = (desviou, motorista, round(veiculo[0], 2), round(veiculo[1], 2))
+        # Sem aviso do motorista, recalcula só a cada RECALCULO_MIN, mesmo com o caminhão andando:
+        # o desvio da TomTom é comum e muda devagar, e com a posição na chave eram até
+        # MAX_CHAMADAS_CICLO chamadas a mais em todo ciclo. Com aviso, a posição conta.
+        chave = (desviou, motorista) + ((round(veiculo[0], 2), round(veiculo[1], 2)) if motorista else ())
         c = _cache.get(trip)
         if c and (c["chave"] == chave and now - c["em"] < timedelta(minutes=RECALCULO_MIN) or orcamento <= 0):
             s = c["sugestao"]
@@ -235,5 +238,5 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
     for trip in [t for t in _cache if t not in ativas]:
         del _cache[trip]
     if ativas:
-        logging.info("Rota alternativa: %s rota(s) com ocorrência ou desvio da TomTom, %s sugestão(ões) para o GR.",
-                     len(ativas), sugeridas)
+        logging.info("Rota alternativa: %s rota(s) com ocorrência ou desvio da TomTom, %s sugestão(ões) para o GR, "
+                     "%s chamada(s) à TomTom neste ciclo.", len(ativas), sugeridas, MAX_CHAMADAS_CICLO - orcamento)
