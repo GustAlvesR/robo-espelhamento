@@ -47,6 +47,7 @@ from google.oauth2.service_account import Credentials
 from gspread.exceptions import APIError, WorksheetNotFound
 
 import clima
+import alternativa
 import geo_tomtom
 import rotograma
 
@@ -1642,6 +1643,14 @@ def _job():
                      len(consultadas), len(resultados), sum(g.get("trechos_brutos", 0) for g in consultadas),
                      *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")),
                      geo_tomtom.CONGESTIONAMENTO_MIN_ATRASO)
+        # Última coluna: pedido de rota alternativa para o GR validar.
+        try:
+            alternativa.sugerir(GEO, resultados, geo_por_trip, rotogramas_mapa,
+                                lambda r: viagem_iniciada(r, state.get(r["Trip Number"], {}), now), now)
+        except Exception:
+            logging.exception("Falha na etapa de rota alternativa; seguindo sem ela.")
+            for r in resultados:
+                r.setdefault("Rota Alternativa", "")
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())

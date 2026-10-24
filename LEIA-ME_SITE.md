@@ -216,6 +216,28 @@ Dupla checagem, com prioridade para o motorista:
 - O site atende 32 pedidos ao mesmo tempo (`SITE_THREADS`): depois de um deploy, os
   navegadores abertos recarregam o mapa juntos.
 
+## Rota alternativa para o GR
+
+Quando há ocorrência à frente, o robô monta o pedido de alteração de rota para o GR
+validar (grupo Alinhamento GR). Nada vai direto para o motorista.
+
+- Caminho de referência: o rotograma do trecho; sem rotograma, a rota planejada.
+- Desvio da TomTom: se o caminho mais rápido com o trânsito de agora se afastou da rota
+  planejada (mais de 5 km, `ALTERNATIVA_DESVIO_KM`), o robô calcula o caminho de
+  referência com trânsito. Se ele tem acidente, interdição ou congestionamento e o mais
+  rápido chega 30 min antes ou mais (`ALTERNATIVA_ECONOMIA_MIN`), vira sugestão.
+- Aviso do motorista: a TomTom não sabe do acidente nem do atraso; o robô calcula o
+  contorno dos próximos 6 km do caminho (`ALTERNATIVA_EVITAR_KM`) e mostra quanto custa.
+- Custo: só esses dois casos chamam a TomTom, no máximo 6 vezes por ciclo
+  (`ALTERNATIVA_MAX_CHAMADAS_CICLO`), e cada rota é recalculada a cada 30 min.
+- No site: indicador "Rota alternativa p/ GR", etiqueta "Desvio −X min" (ou "Contorno"),
+  linha verde tracejada no mapa e, no detalhe, os botões "Abrir no Google Maps",
+  "Enviar ao GR (WhatsApp)" (abre o WhatsApp com a mensagem pronta; escolha o grupo
+  Alinhamento GR, porque o link não abre grupo direto) e "Copiar mensagem".
+- O link do Google Maps leva pontos de passagem tirados da rota de caminhão da TomTom,
+  mas o Google Maps comum calcula como carro: entre os pontos ele pode escolher outra via.
+- Na planilha, a coluna `Rota Alternativa` (a última) guarda o resumo e o link.
+
 ## Rotogramas (Angellira)
 
 - Ficam em `dados/rotogramas/ORIGEM__DESTINO.json`, um por trecho, gerados de cada PDF

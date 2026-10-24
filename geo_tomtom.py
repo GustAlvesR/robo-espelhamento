@@ -196,9 +196,10 @@ def referencia_da_posicao(posicao: str, cidade: str):
 
 
 class GeoTomTom:
-    def __init__(self, api_key: str = TOMTOM_API_KEY, http_get=None):
+    def __init__(self, api_key: str = TOMTOM_API_KEY, http_get=None, http_post=None):
         self.key = api_key
         self._http_get = http_get or self._http_get_real
+        self._http_post = http_post or self._http_post_real
         self._lock = threading.Lock()
         self.geocache = {}          # consulta -> [lat, lon] | None
         self.geocache_alterado = False
@@ -216,7 +217,14 @@ class GeoTomTom:
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.loads(r.read().decode("utf-8"))
 
-    def _chamar(self, caminho: str, params: dict):
+    @staticmethod
+    def _http_post_real(url: str, corpo: dict):
+        req = urllib.request.Request(url, data=json.dumps(corpo).encode("utf-8"), method="POST",
+                                     headers={"Accept": "application/json", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    def _chamar(self, caminho: str, params: dict, corpo: dict = None):
         if not self.key:
             return None
         with self._lock:
@@ -229,7 +237,7 @@ class GeoTomTom:
         params = {**params, "key": self.key}
         url = f"{TOMTOM_BASE}{caminho}?{urllib.parse.urlencode(params)}"
         try:
-            return self._http_get(url)
+            return self._http_post(url, corpo) if corpo is not None else self._http_get(url)
         except urllib.error.HTTPError as e:
             self.ultimo_erro = f"HTTP {e.code} em {caminho.split('/')[1]}"
             logging.warning("TomTom %s: HTTP %s.", caminho.split("/")[1], e.code)
@@ -379,6 +387,32 @@ class GeoTomTom:
                 "dist_m": resumo.get("lengthInMeters"),
                 "atraso_transito_s": resumo.get("trafficDelayInSeconds", 0),
                 "pontos": pontos, "transito": transito, "trechos_brutos": trechos_brutos}
+
+    def _params_transito(self, now: datetime) -> dict:
+        return {"travelMode": "truck", "traffic": "true", "routeType": "fastest", "vehicleCommercial": "true",
+                "language": "pt-BR", "sectionType": "traffic",
+                "departAt": (now + timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%S") + "-03:00"}
+
+    def rota_com_transito(self, pontos: list, now: datetime):
+        """Rota de caminhão passando pelos pontos, na ordem, com o trânsito de agora e os
+        trechos de trânsito (para comparar o caminho de sempre com o mais rápido)."""
+        locs = ":".join(f"{p[0]},{p[1]}" for p in pontos)
+        dados = self._chamar(f"/routing/1/calculateRoute/{locs}/json", self._params_transito(now))
+        if not dados or not dados.get("routes"):
+            return None
+        return self._ler_rota(dados["routes"][0], True, MAX_PONTOS_ROTA)
+
+    def rota_evitando(self, origem, destino, retangulos: list, now: datetime):
+        """Rota mais rápida com trânsito que não passa pelas áreas dadas, cada uma
+        ((lat_sul, lon_oeste), (lat_norte, lon_leste)). A área vai no corpo (POST)."""
+        corpo = {"avoidAreas": {"rectangles": [
+            {"southWestCorner": {"latitude": sw[0], "longitude": sw[1]},
+             "northEastCorner": {"latitude": ne[0], "longitude": ne[1]}} for sw, ne in retangulos]}}
+        locs = f"{origem[0]},{origem[1]}:{destino[0]},{destino[1]}"
+        dados = self._chamar(f"/routing/1/calculateRoute/{locs}/json", self._params_transito(now), corpo)
+        if not dados or not dados.get("routes"):
+            return None
+        return self._ler_rota(dados["routes"][0], True, MAX_PONTOS_ROTA)
 
     def rota_planejada(self, trip, origem, destino, inicio: datetime, now: datetime):
         chave = (tuple(origem), tuple(destino), inicio.isoformat() if inicio else "")

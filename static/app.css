@@ -9,7 +9,7 @@
   --ok: #0ca30c; --nok: #d03b3b; --pend: #8a93ab; --alerta: #fab219; --alerta-texto: #7a4f00;
   --acento: #2a78d6;
   --est-hub: #7c4dff; --est-fmh: #0891b2; --est-soc: #051039; --est-outra: #c2417f;
-  --rotograma: #6d28d9;
+  --rotograma: #6d28d9; --desvio: #0e9f6e;
   --clima-potencial: #4fb3e8; --clima-perigo: #1f7fd1; --clima-grande: #0b4ea2; --clima-texto: #0b4f7a;
   --fonte: Arial, "Helvetica Neue", Helvetica, sans-serif;
   --mono: var(--fonte);
@@ -22,7 +22,7 @@
     --ok: #22b822; --nok: #e05a5a; --pend: #7d87a6; --alerta: #fab219; --alerta-texto: #fab219;
     --acento: #3987e5;
     --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
-    --rotograma: #a78bfa;
+    --rotograma: #a78bfa; --desvio: #34d399;
     --clima-potencial: #7cc8f5; --clima-perigo: #45a3f0; --clima-grande: #6f9bff; --clima-texto: #a8dcfc;
     color-scheme: dark;
   }
@@ -33,7 +33,7 @@
   --ok: #22b822; --nok: #e05a5a; --pend: #7d87a6; --alerta: #fab219; --alerta-texto: #fab219;
   --acento: #3987e5;
   --est-hub: #a78bfa; --est-fmh: #22d3ee; --est-soc: #c7d2fe; --est-outra: #f472b6;
-  --rotograma: #a78bfa;
+  --rotograma: #a78bfa; --desvio: #34d399;
   --clima-potencial: #7cc8f5; --clima-perigo: #45a3f0; --clima-grande: #6f9bff; --clima-texto: #a8dcfc;
   color-scheme: dark;
 }
@@ -111,6 +111,14 @@ button, input, select { font: inherit; color: inherit; }
 .incidente.interdicao span { background: #5b1a1a; }
 .incidente.fila span { background: #f07c00; }
 .pt.incidente-leg { background: var(--nok); border-radius: 2px; transform: rotate(45deg); }
+.tag.desvio { border-color: var(--desvio); color: var(--desvio); font-weight: 700; }
+.tr.alternativa { border-top: 3px dashed var(--desvio); }
+.botoes-alt { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.botao-alt { padding: 6px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--painel-2);
+  color: var(--texto); font: 12px var(--fonte); text-decoration: none; cursor: pointer; }
+.botao-alt:hover { border-color: var(--acento); }
+.botao-alt.whats { background: #25d366; border-color: #1da851; color: #063a1d; font-weight: 700; }
+.kpi.desvio b { color: #34d399; }
 .tag.atrasada { border-color: var(--nok); color: var(--nok); background: color-mix(in srgb, var(--nok) 12%, transparent); font-weight: 700; }
 .vazio { padding: 24px; color: var(--suave); text-align: center; }
 
