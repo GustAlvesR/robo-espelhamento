@@ -19,37 +19,38 @@
     <img class="marca-logo" src="{{ url_for('static', filename='img/logo-ceva-escuro.svg') }}" alt="CEVA Logistics">
     <span class="marca-produto">Torre LH<small>espelhamento · rotas</small></span>
   </a>
-  <div class="kpis" id="kpis"></div>
-  <div class="usuario">
-    <span id="atualizado"></span>
-    <span id="angellira"></span>
-    <select id="tema" aria-label="Tema">
-      <option value="">Tema: automático</option><option value="claro">Tema: claro</option><option value="escuro">Tema: escuro</option>
-    </select>
-    <span>{{ nome }}</span>
-    <a class="link" href="{{ url_for('trocar_senha') }}">Trocar senha</a>
-    <form method="post" action="{{ url_for('logout') }}">
-      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <button type="submit" class="link">Sair</button>
-    </form>
-  </div>
+  <div class="estado"><span id="atualizado"></span><span id="angellira"></span></div>
+  <details class="menu-usuario">
+    <summary>{{ nome }}</summary>
+    <div class="menu-conteudo">
+      <select id="tema" aria-label="Tema">
+        <option value="">Tema: automático</option><option value="claro">Tema: claro</option><option value="escuro">Tema: escuro</option>
+      </select>
+      <a class="link" href="{{ url_for('trocar_senha') }}">Trocar senha</a>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="link">Sair</button>
+      </form>
+    </div>
+  </details>
 </header>
+<nav class="kpis" id="kpis" aria-label="Indicadores"></nav>
 <main class="painel">
   <aside class="lateral">
     <div class="filtros">
       <input id="busca" type="search" placeholder="Buscar LH, placa, motorista, estação…">
-      <select id="fStatus">
-        <option value="">Status: todos</option>
+      <select id="fStatus" aria-label="Status">
+        <option value="">Status</option>
         <option>NOK</option><option>OK</option><option>Pendente</option><option>Cancelada</option>
       </select>
-      <select id="fRisco">
-        <option value="">Risco: todos</option>
+      <select id="fRisco" aria-label="Risco">
+        <option value="">Risco</option>
         <option>Atrasada</option><option>Atraso provável</option><option>No prazo</option>
         <option>No destino</option><option>Chegou no prazo</option><option>Chegou com atraso</option>
         <option>Encerrada no prazo</option><option>Encerrada com atraso</option>
         <option>Posição antiga</option><option>Sem posição</option><option>Sem coord. da estação</option>
       </select>
-      <select id="fTrecho" aria-label="Trecho"><option value="">Trecho: todos</option></select>
+      <select id="fTrecho" aria-label="Trecho"><option value="">Trecho</option></select>
     </div>
     <div class="acoes"><span id="contagem"></span><button id="exportar" type="button" class="link">Exportar CSV</button></div>
     <ul id="lista" class="lista"></ul>
@@ -58,7 +59,9 @@
     <div id="mapa"></div>
     <button id="verTodos" type="button" class="ver-todos" hidden>← Ver todos <kbd>Esc</kbd></button>
     <div id="detalhe" class="detalhe" hidden></div>
-    <div class="legenda">
+    <details class="legenda" id="legenda">
+      <summary>Legenda</summary>
+      <div class="itens">
       <span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--ok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--ok)"/></svg>OK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--nok)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--nok)"/></svg>NOK</span><span><svg class="mini" viewBox="0 0 24 40" aria-hidden="true"><rect x="4.5" y="13" width="15" height="25" rx="2" fill="var(--pend)"/><rect x="6" y="2" width="12" height="10" rx="3.5" fill="var(--pend)"/></svg>Pendente</span>
       <span><i class="pt anel vencido"></i>Prazo vencido</span>
       <span><i class="pt incidente-leg"></i>Acidente / trânsito (TomTom)</span>
@@ -71,7 +74,8 @@
       <span><i class="tr rotograma"></i>Rota do rotograma</span>
       <span><i class="pt autorizado"></i>Ponto autorizado</span>
       <span><i class="pt risco-leg"></i>Área de risco</span>
-    </div>
+      </div>
+    </details>
   </section>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
