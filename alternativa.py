@@ -7,7 +7,8 @@ rotograma, a rota planejada. Só dois casos gastam chamadas da TomTom:
   da rota planejada. Calcula o caminho de referência com trânsito; se ele tem ocorrência
   e o mais rápido chega ALTERNATIVA_ECONOMIA_MIN antes por outro caminho, sugere o mais rápido.
 - o motorista avisou acidente: a TomTom não sabe do acidente nem do atraso, então calcula
-  o contorno dos próximos km do caminho de referência e mostra quanto ele custa.
+  o contorno dos próximos km do caminho de referência e o compara com o ETA de quem segue
+  esse caminho (o ETA sem a retenção do acidente, que ninguém sabe quanto dura).
 Nada vai para o motorista: a torre leva o pedido ao GR (grupo Alinhamento GR), que valida.
 O link abre o Google Maps com pontos de passagem tirados da rota de caminhão da TomTom
 (o Google Maps comum calcula como carro; os pontos o seguram no trajeto)."""
@@ -15,6 +16,7 @@ O link abre o Google Maps com pontos de passagem tirados da rota de caminhão da
 import logging
 import math
 import os
+import re
 import urllib.parse
 from datetime import timedelta
 
@@ -102,48 +104,85 @@ def _texto_ocorrencias(ocorrencias: list) -> str:
                      for t in sorted(ocorrencias, key=lambda t: t["km"])[:3])
 
 
+def _sugestao(tipo: str, motivo: str, ref: dict, alt: dict) -> dict:
+    return {"tipo": tipo, "motivo": motivo, "seg_ref": ref["dur_s"], "seg_alt": alt["dur_s"],
+            "economia_min": round((ref["dur_s"] - alt["dur_s"]) / 60),
+            "km_ref": round((ref.get("dist_m") or 0) / 1000), "km_alt": round((alt.get("dist_m") or 0) / 1000),
+            "pontos": alt["pontos"]}
+
+
 def _calcular(geo, veiculo, destino, eta, ref_frente, motorista: bool, desviou: bool, now):
-    rapida_s, rapida_pts = eta["travel_s"], eta["pontos"]
-    rapida_km = round((eta.get("dist_m") or 0) / 1000)
-    if desviou:
+    rapida = {"dur_s": eta["travel_s"], "dist_m": eta.get("dist_m"), "pontos": eta["pontos"]}
+    rapida_fora = afastamento_km(rapida["pontos"], ref_frente) > DESVIO_KM
+    # O ETA de quem segue o trajeto atual sai do caminho de referência; o mais rápido só
+    # serve de referência quando ele próprio segue esse caminho.
+    ref = rapida if not rapida_fora else None
+    if rapida_fora and (desviou or motorista):
         ref = geo.rota_com_transito([veiculo] + _amostrar(ref_frente, 50, 20) + [destino], now)
-        if ref and ref.get("dur_s") and ref.get("transito"):
-            economia = (ref["dur_s"] - rapida_s) / 60
-            if economia >= ECONOMIA_MIN and afastamento_km(rapida_pts, ref_frente) > DESVIO_KM:
-                return {"tipo": "tomtom", "motivo": _texto_ocorrencias(ref["transito"]),
-                        "seg_ref": ref["dur_s"], "seg_alt": rapida_s, "economia_min": round(economia),
-                        "km_ref": round((ref.get("dist_m") or 0) / 1000), "km_alt": rapida_km,
-                        "pontos": rapida_pts}
+    if not (ref and ref.get("dur_s")):
+        return None
+    if desviou and rapida_fora and ref.get("transito") and (ref["dur_s"] - rapida["dur_s"]) / 60 >= ECONOMIA_MIN:
+        return _sugestao("tomtom", _texto_ocorrencias(ref["transito"]), ref, rapida)
     if motorista:
         trecho = _trecho(ref_frente, 0.5, EVITAR_KM)
         if trecho:
             alt = geo.rota_evitando(veiculo, destino, [_retangulo([veiculo] + trecho, 1.0)], now)
             if alt and alt.get("dur_s") and afastamento_km(alt["pontos"], ref_frente) > 1.0:
-                return {"tipo": "motorista", "motivo": f"acidente informado pelo motorista; contorno dos próximos "
-                                                       f"{EVITAR_KM:g} km do caminho",
-                        "seg_ref": rapida_s, "seg_alt": alt["dur_s"],
-                        "economia_min": round((rapida_s - alt["dur_s"]) / 60),
-                        "km_ref": rapida_km, "km_alt": round((alt.get("dist_m") or 0) / 1000),
-                        "pontos": alt["pontos"]}
+                return _sugestao("motorista", f"acidente informado pelo motorista (contorno dos próximos "
+                                              f"{EVITAR_KM:g} km do caminho)", ref, alt)
     return None
 
 
+def _dia_hora(texto) -> str:
+    return re.sub(r"^(\d{2}/\d{2})/\d{4}", r"\1", str(texto or ""))
+
+
 def mensagem(r: dict, s: dict) -> str:
+    """Texto para o grupo Alinhamento GR no WhatsApp (*negrito* e _itálico_ do WhatsApp)."""
     placas = " / ".join(p for p in (r.get("Placa"), r.get("Placa 2")) if p) or "não informada"
     origem, destino = r.get("Origin Station Code", ""), r.get("Destination Station Code", "")
     local = lambda c: f" ({geo_tomtom.local_estacao(c)})" if geo_tomtom.local_estacao(c) else ""
-    resultado = (f"economia de ~{s['economia_min']} min" if s["economia_min"] > 0
-                 else f"custo de ~{-s['economia_min']} min a mais")
-    return "\n".join(filter(None, [
-        "*Torre LH: alteração de rota para o GR validar*",
-        f"Viagem: {r['Trip Number']} | Placa: {placas} | Motorista: {r.get('Motorista') or 'não informado'}",
-        f"Trecho: {origem}{local(origem)} → {destino}{local(destino)}" + (f" | SM {s['sm']}" if s.get("sm") else ""),
-        f"Posição: {r.get('Cidade/UF') or '?'}" + (f" em {r['Data da Posição']}" if r.get("Data da Posição") else ""),
-        f"Ocorrência: {s['motivo']}",
-        f"Seguindo {s['referencia']}: chegada prevista {s['chegada_ref']} ({s['km_ref']} km)",
-        f"Pela alternativa: chegada prevista {s['chegada_alt']} ({s['km_alt']} km, {resultado})",
-        f"Trajeto alternativo: {s['link']}",
-        "Favor validar a alteração de rota.",
+    fonte = r.get("Fonte Motorista")
+    motorista = (r.get("Motorista") or "não identificado") + (f" _({fonte})_" if fonte and fonte != "Rastreador" else "")
+    posicao = (r.get("Cidade/UF") or "?") + (f" às {_dia_hora(r['Data da Posição'])}" if r.get("Data da Posição") else "")
+    ocorrencias = [o[:1].upper() + o[1:] for o in s["motivo"].split("; ")]
+    diferenca = s["economia_min"]
+    if diferenca > 0:
+        resultado = f"✅ *Ganho estimado:* ~{diferenca} min"
+    elif diferenca == 0:
+        resultado = "➖ *Diferença:* ~0 min (o contorno não atrasa a viagem)"
+    else:
+        resultado = f"⏳ *Custo do contorno:* +{-diferenca} min"
+        if s["tipo"] == "motorista":
+            resultado += f"\n_Compensa se a retenção do acidente passar de {-diferenca} min._"
+    return "\n".join(filter(lambda l: l is not None, [
+        "🚨 *TORRE LH · ALTERAÇÃO DE ROTA*",
+        "_Pedido para o GR validar_",
+        "",
+        f"🚛 *Viagem:* {r['Trip Number']}",
+        f"🔖 *Placas:* {placas}",
+        f"👤 *Motorista:* {motorista}",
+        f"🛣️ *Trecho:* {origem}{local(origem)} ➜ {destino}{local(destino)}",
+        f"📄 *SM:* {s['sm']}" if s.get("sm") else None,
+        f"📍 *Posição:* {posicao}",
+        f"🎯 *Chegada planejada:* {_dia_hora(r['Fim Previsto'])}" if r.get("Fim Previsto") else None,
+        "",
+        "⚠️ *Ocorrência*",
+        *(f"• {o}" for o in ocorrencias),
+        "",
+        f"🕒 *ETA se continuar no trajeto atual ({s['referencia']})*",
+        f"{s['chegada_ref']} · {s['km_ref']} km",
+        "_Sem contar a retenção do acidente, que a TomTom não conhece._" if s["tipo"] == "motorista" else None,
+        "",
+        "🔀 *ETA pela rota alternativa*",
+        f"{s['chegada_alt']} · {s['km_alt']} km",
+        "",
+        resultado,
+        "",
+        "🗺️ *Trajeto alternativo (Google Maps)*",
+        s["link"],
+        "",
+        "👉 *Favor validar a alteração de rota.*",
     ]))
 
 
@@ -178,8 +217,7 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
             orcamento -= max(1, geo.chamadas_hoje - antes)
             if s:
                 s.update(link=link_google(veiculo, destino, s["pontos"], ref_frente),
-                         referencia=(f"o rotograma (SM {rot['sm']})" if rot.get("sm") else "o rotograma")
-                         if rot.get("linha") else "a rota planejada", sm=rot.get("sm", ""),
+                         referencia="rotograma" if rot.get("linha") else "rota planejada", sm=rot.get("sm", ""),
                          chegada_ref=(now + timedelta(seconds=s["seg_ref"])).strftime("%d/%m %H:%M"),
                          chegada_alt=(now + timedelta(seconds=s["seg_alt"])).strftime("%d/%m %H:%M"),
                          calculado_em=now.strftime("%H:%M"))

@@ -94,7 +94,12 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   caminho que falta percorrer atravessa, do mais grave para o menos, por exemplo
   `Perigo: Chuvas Intensas até 21/10 10:00`. Vazio quando não há alerta.
 - `Motorista` (depois de `Alerta Rotograma`): nome da coluna `Driver_Name`
-  da Telemetria; se ela vier vazia, o `MOTORISTA` do relatório da Angellira.
+  da Telemetria; se ela vier vazia, o `MOTORISTA` do relatório da Angellira. Quando o
+  rastreador não identifica o motorista (vazio, "MOTORISTA NÃO LOCALIZADO", "EM ABERTO",
+  "-"), vale o `MOTORISTA` do Team CEVA (abas `LH SEMANA ATUAL` e `LH PROXIMA SEMANA`,
+  pela `LH TRIP`) e, por último, o `driver_name` da aba `DBLH` (espelho da CEVA_LH).
+- `Fonte Motorista`: de onde veio o nome (`Rastreador`, `Team CEVA` ou `DBLH`). No site
+  e na mensagem ao GR, o nome que não veio do rastreador aparece com a fonte ao lado.
 - `SM Encerrada Em` (a última): quando a SM da viagem foi encerrada na Angellira. O
   relatório do Tracking só traz SMs em andamento, então é a hora em que a viagem saiu
   dele (ou em que a SITUAÇÃO passou a finalizada). A macro "FIM DE VIAGEM" do
@@ -228,6 +233,14 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
   rápido chega 30 min antes ou mais (`ALTERNATIVA_ECONOMIA_MIN`), vira sugestão.
 - Aviso do motorista: a TomTom não sabe do acidente nem do atraso; o robô calcula o
   contorno dos próximos 6 km do caminho (`ALTERNATIVA_EVITAR_KM`) e mostra quanto custa.
+- Os dois ETAs saem do mesmo momento: o de quem continua no trajeto atual (pelo caminho
+  de referência, com o trânsito de agora) e o da rota alternativa. No aviso do
+  motorista, o ETA do trajeto atual não inclui a retenção do acidente, que ninguém sabe
+  quanto dura; quando o contorno custa tempo, a mensagem diz a partir de quantos minutos
+  de retenção ele compensa.
+- A mensagem ao GR vem formatada para o WhatsApp (negrito, emojis e uma informação por
+  linha): viagem, placas, motorista, trecho, SM, posição, chegada planejada, ocorrência,
+  os dois ETAs com km, o ganho ou custo e o link do trajeto.
 - Custo: só esses dois casos chamam a TomTom, no máximo 6 vezes por ciclo
   (`ALTERNATIVA_MAX_CHAMADAS_CICLO`), e cada rota é recalculada a cada 30 min.
 - No site: indicador "Rota alternativa p/ GR", etiqueta "Desvio −X min" (ou "Contorno"),

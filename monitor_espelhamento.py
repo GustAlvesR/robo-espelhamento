@@ -84,6 +84,13 @@ CANCELAMENTO_FONTES = [
     ("DBLH", ("trip_number",), ("status_agrupado",)),
     ("LH SEMANA ATUAL", ("LH TRIP",), ("STATUS REAL",)),
 ]
+# Nome do motorista quando o rastreador (Telemetria/Angellira) não traz: Team CEVA e,
+# por último, a DBLH (a aba DBLH espelha a CEVA_LH). Vale a primeira aba com o nome.
+MOTORISTA_FONTES = [
+    ("LH SEMANA ATUAL", ("LH TRIP",), ("MOTORISTA",)),
+    ("LH PROXIMA SEMANA", ("LH TRIP",), ("MOTORISTA",)),
+    ("DBLH", ("trip_number",), ("driver_name",)),
+]
 # Comparados sem acento/espaço (ver _norm_chave). DELETADA fica de fora de propósito.
 STATUS_CANCELAMENTO = {"CANCELADO", "CANCELADA", "NOSHOW", "INFRUTIFERA", "NAOCONSUMIDA"}
 # Uma linha por rota, gravada uma vez quando ela termina (retrato final).
@@ -399,6 +406,15 @@ STATUS_VIAGEM_NOMES = {"statuscorrigido"}
 # Nome do motorista (Driver_Name na Telemetria). Vai para a última coluna do Resultado
 # ("Motorista") e para a busca do site; sem a coluna, usa o MOTORISTA da Angellira.
 MOTORISTA_NOMES = {"drivername", "motorista", "nomemotorista"}
+# O que o rastreador e as planilhas escrevem quando não sabem o motorista (sem acento/espaço).
+MOTORISTA_INVALIDO = ("NAOLOCALIZADO", "EMABERTO", "NAOINFORMADO", "ADEFINIR")
+
+
+def nome_motorista(texto) -> str:
+    """Nome em maiúsculas, ou vazio para 'MOTORISTA NÃO LOCALIZADO', '-', '0' e afins."""
+    nome = " ".join(_txt(texto).split()).upper()
+    chave = _norm_chave(nome)
+    return "" if not re.search("[A-Z]", chave) or any(m in chave for m in MOTORISTA_INVALIDO) else nome
 
 
 def _norm_cab(texto) -> str:
@@ -929,11 +945,13 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
                 trip_number, dados["sla_result"],
             )
 
+    motorista = nome_motorista(row.get("driver_name")) or nome_motorista(row.get("trk_motorista"))
     dados["base"] = {
         "inicio": _iso(inicio_previsto),
         "fim": _iso(fim_previsto),
         "info": info_veiculo,
-        "motorista": " ".join((_txt(row.get("driver_name")) or _txt(row.get("trk_motorista"))).split()).upper(),
+        "motorista": motorista,
+        "motorista_fonte": "Rastreador" if motorista else "",
     }
     atualizar_realizado(dados, realizado)
 
@@ -1076,8 +1094,19 @@ def colunas_realizadas(resultado: dict, dados: dict) -> None:
 
 def coluna_motorista(resultado: dict, dados: dict) -> None:
     """Últimas colunas de Resultado_Espelhamento, para não deslocar as existentes."""
-    resultado["Motorista"] = (dados.get("base") or {}).get("motorista", "")
+    base = dados.get("base") or {}
+    resultado["Motorista"] = nome_motorista(base.get("motorista"))
+    resultado["Fonte Motorista"] = base.get("motorista_fonte", "") if resultado["Motorista"] else ""
     resultado["SM Encerrada Em"] = _fmt(_parse_iso(dados.get("sm_encerrada_em")))
+
+
+def completar_motoristas(state: dict, motoristas: dict) -> None:
+    """Sem o nome pelo rastreador, fica o do Team CEVA ou da DBLH (vale também para as
+    rotas finalizadas, que não passam mais pelo process_trip)."""
+    for trip, dados in state.items():
+        base = dados.get("base")
+        if base and not nome_motorista(base.get("motorista")) and trip.upper() in motoristas:
+            base["motorista"], base["motorista_fonte"] = motoristas[trip.upper()]
 
 
 def atualizar_sms(state: dict, df: pd.DataFrame, now: datetime) -> None:
@@ -1374,43 +1403,48 @@ def _letra_coluna(indice: int) -> str:
     return letra
 
 
+def _ler_pares(client, fontes: list, assunto: str) -> list:
+    """[(aba, [(trip, valor), ...])] das abas da planilha de ORIGEM, com fontes no formato
+    (aba, cabeçalhos aceitos para o trip, cabeçalhos aceitos para o valor). Duas leituras em lote."""
+    planilha = client.open_by_key(SOURCE_SPREADSHEET_ID)
+    abas = {ws.title for ws in planilha.worksheets()}
+    for aba in sorted({f[0] for f in fontes} - abas):
+        logging.warning("Aba de %s '%s' não encontrada; ignorada.", assunto, aba)
+    fontes = [f for f in fontes if f[0] in abas]
+    if not fontes:
+        return []
+    cabs = planilha.values_batch_get([f"'{aba}'!1:1" for aba, _t, _v in fontes])["valueRanges"]
+    colunas = []
+    for (aba, nomes_trip, nomes_valor), vr in zip(fontes, cabs):
+        cab = {_norm_cab(c): i for i, c in enumerate((vr.get("values") or [[]])[0])}
+        it = next((cab[_norm_cab(n)] for n in nomes_trip if _norm_cab(n) in cab), None)
+        iv = next((cab[_norm_cab(n)] for n in nomes_valor if _norm_cab(n) in cab), None)
+        if it is None or iv is None:
+            logging.warning("Aba '%s' sem as colunas de trip/%s; ignorada.", aba, assunto)
+            continue
+        colunas.append((aba, it, iv))
+    if not colunas:
+        return []
+    ranges = [f"'{aba}'!{_letra_coluna(i)}2:{_letra_coluna(i)}" for aba, it, iv in colunas for i in (it, iv)]
+    dados = planilha.values_batch_get(ranges)["valueRanges"]
+    saida = []
+    for n, (aba, _it, _iv) in enumerate(colunas):
+        trips, valores = dados[2 * n].get("values", []), dados[2 * n + 1].get("values", [])
+        saida.append((aba, [((linha[0] if linha else "").strip(),
+                             (valores[i][0] if i < len(valores) and valores[i] else "").strip())
+                            for i, linha in enumerate(trips)]))
+    return saida
+
+
 def carregar_cancelamentos(client) -> dict:
     """{trip: 'ABA: STATUS'} das rotas canceladas segundo CANCELAMENTO_FONTES.
     Rota repetida numa aba só conta como cancelada se todas as linhas com status
     forem de cancelamento. Falha aqui nunca derruba o ciclo: segue sem cancelamentos."""
     try:
-        planilha = client.open_by_key(SOURCE_SPREADSHEET_ID)
-        abas = {ws.title for ws in planilha.worksheets()}
-        fontes = [f for f in CANCELAMENTO_FONTES if f[0] in abas]
-        for aba in {f[0] for f in CANCELAMENTO_FONTES} - abas:
-            logging.warning("Aba de cancelamento '%s' não encontrada; ignorada.", aba)
-        if not fontes:
-            return {}
-        cabs = planilha.values_batch_get([f"'{aba}'!1:1" for aba, _t, _s in fontes])["valueRanges"]
-        colunas = []
-        for (aba, nomes_trip, nomes_status), vr in zip(fontes, cabs):
-            cab = {_norm_cab(c): i for i, c in enumerate((vr.get("values") or [[]])[0])}
-            it = next((cab[_norm_cab(n)] for n in nomes_trip if _norm_cab(n) in cab), None)
-            ist = next((cab[_norm_cab(n)] for n in nomes_status if _norm_cab(n) in cab), None)
-            if it is None or ist is None:
-                logging.warning("Aba '%s' sem as colunas de trip/status; cancelamentos dela ignorados.", aba)
-                continue
-            colunas.append((aba, it, ist))
-        if not colunas:
-            return {}
-        ranges = []
-        for aba, it, ist in colunas:
-            ranges += [f"'{aba}'!{_letra_coluna(it)}2:{_letra_coluna(it)}",
-                       f"'{aba}'!{_letra_coluna(ist)}2:{_letra_coluna(ist)}"]
-        dados = planilha.values_batch_get(ranges)["valueRanges"]
         canceladas = {}
-        for n, (aba, _it, _ist) in enumerate(colunas):
-            trips = dados[2 * n].get("values", [])
-            status = dados[2 * n + 1].get("values", [])
+        for aba, pares in _ler_pares(client, CANCELAMENTO_FONTES, "cancelamento"):
             por_trip = {}
-            for i, linha in enumerate(trips):
-                trip = (linha[0] if linha else "").strip()
-                st = (status[i][0] if i < len(status) and status[i] else "").strip()
+            for trip, st in pares:
                 if trip and st:
                     por_trip.setdefault(trip, []).append(st)
             for trip, sts in por_trip.items():
@@ -1419,6 +1453,21 @@ def carregar_cancelamentos(client) -> dict:
         return canceladas
     except Exception:
         logging.exception("Falha ao ler os cancelamentos; seguindo sem eles.")
+        return {}
+
+
+def carregar_motoristas(client) -> dict:
+    """{TRIP: (motorista, 'Team CEVA' ou 'DBLH')} segundo MOTORISTA_FONTES.
+    Falha aqui nunca derruba o ciclo: segue só com o nome do rastreador."""
+    try:
+        motoristas = {}
+        for aba, pares in _ler_pares(client, MOTORISTA_FONTES, "motorista"):
+            da_aba = {trip.upper(): nome_motorista(v) for trip, v in pares if trip and nome_motorista(v)}
+            for trip, nome in da_aba.items():
+                motoristas.setdefault(trip, (nome, "DBLH" if aba == "DBLH" else "Team CEVA"))
+        return motoristas
+    except Exception:
+        logging.exception("Falha ao ler os motoristas do Team CEVA/DBLH; seguindo sem eles.")
         return {}
 
 
@@ -1631,6 +1680,7 @@ def _job():
             rotogramas_mapa = {}
             for r in resultados:
                 r.setdefault("Alerta Rotograma", "")
+        completar_motoristas(state, carregar_motoristas(client))
         for r in resultados:
             coluna_motorista(r, state.get(r["Trip Number"], {}))
             ajustar_risco(r, state.get(r["Trip Number"], {}), now)
