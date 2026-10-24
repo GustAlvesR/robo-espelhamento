@@ -10,6 +10,8 @@ funcionando como antes, só sem mapa e sem previsão.
 - `site_web.py`, `templates/`, `static/`: o site.
 - `criar_usuario.py`: gera a linha de cada usuário.
 - `testar_tomtom.py`: confere se a chave funciona em cada API.
+- `pendencias.py`: queda geral do espelhamento, causa do NOK, saída atrasada e SM, com
+  quem acionar e o texto de cobrança (ver "Pendências e quem acionar").
 - `noticias.py` e `dados/municipios.csv`: notícias de ocorrência nas rodovias (ver
   "Notícias no caminho"). A lista de municípios, com as coordenadas da sede, vem do
   projeto kelvins/municipios-brasileiros (licença MIT em `dados/municipios.LICENSE`).
@@ -103,6 +105,8 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   pela `LH TRIP`) e, por último, o `driver_name` da aba `DBLH` (espelho da CEVA_LH).
 - `Fonte Motorista`: de onde veio o nome (`Rastreador`, `Team CEVA` ou `DBLH`). No site
   e na mensagem ao GR, o nome que não veio do rastreador aparece com a fonte ao lado.
+- `Causa NOK`, `Alerta Saída` e `Acionar`: ver "Pendências e quem acionar". O histórico
+  de quedas ganha a coluna `Queda Geral` (Sim na perda e no retorno de quedas em massa).
 - `SM Encerrada Em` (a última): quando a SM da viagem foi encerrada na Angellira. O
   relatório do Tracking só traz SMs em andamento, então é a hora em que a viagem saiu
   dele (ou em que a SITUAÇÃO passou a finalizada). A macro "FIM DE VIAGEM" do
@@ -259,6 +263,38 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
 - Na planilha, a coluna `Rota Alternativa` (a última) guarda o resumo e o link.
 - Notícia no caminho de uma rota com pedido de rota alternativa entra na mensagem ao GR,
   logo abaixo da ocorrência.
+
+## Pendências e quem acionar
+
+Cada pendência diz quem resolve e traz o botão "Copiar cobrança", com a mensagem pronta
+para o responsável. Na planilha: `Causa NOK`, `Alerta Saída` e `Acionar`. A busca do site
+aceita o responsável ("angellira", "GR", "transportadora").
+
+- Queda geral: 5 ou mais rotas perdendo o sinal no mesmo ciclo (`QUEDA_GERAL_MIN_ROTAS`,
+  e pelo menos 10% das monitoradas, `QUEDA_GERAL_MIN_PCT`). No histórico de 14 a 24/10,
+  70% das quedas (380 de 544) vieram de ciclos assim; ciclos com 1 a 4 quedas são o
+  normal. Quedas nos 30 min seguintes (`QUEDA_GERAL_JANELA_MIN`) entram na mesma queda.
+  O site mostra uma faixa no topo com "Ver rotas" e "Copiar aviso" (para a Shopee e a
+  Angellira, com a lista das viagens). A rota volta à causa própria quando sobra só ela
+  sem sinal. O % de espelhamento segue a regra da Shopee: a queda geral conta igual.
+- Causa do NOK (rota sem sinal agora):
+  - "Integração": a Angellira tem posição do veículo de até 30 min (`POSICAO_RECENTE_MIN`)
+    e a Shopee não recebe. Acionar: Angellira.
+  - "Rastreador": a Angellira também está sem posição recente. Acionar: transportadora.
+  - "Sem SM" ou "SM errada": a placa não está numa SM do procedimento CEVA – SHOPEE
+    (LINE HAUL 3PL); se estiver numa SM de outro procedimento, a mensagem diz qual.
+    Acionar: GR.
+  - Com o relatório da Angellira parado, a causa fica "sem leitura recente".
+- Saída (da DBLH: `cpt_scheduled_origin_edited` e `eta_realizado`):
+  - "Saída atrasada": CPT planejado vencido há mais de 30 min (`SAIDA_TOLERANCIA_MIN`)
+    sem CPT realizado. Acionar: origem (carregamento/emissão) se o veículo chegou na
+    origem no horário; transportadora se chegou atrasado ou não chegou.
+  - "Não chegou na origem": passou do horário previsto na origem sem a chegada na DBLH.
+    Acionar: transportadora.
+  - "Sem SM": a menos de 1 h do CPT (`SM_ANTECEDENCIA_MIN`) ou já em viagem sem SM no
+    procedimento da Shopee. Acionar: GR. SM encerrada, rota cancelada ou que já chegou
+    ficam de fora.
+- O indicador "Saída / SM pendente" filtra as rotas com alerta de saída ou SM.
 
 ## Notícias no caminho (Google Notícias)
 
