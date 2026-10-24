@@ -245,7 +245,11 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
   linha): viagem, placas, motorista, trecho, SM, posição, chegada planejada, ocorrência,
   os dois ETAs com km, o ganho ou custo e o link do trajeto.
 - Custo: só esses dois casos chamam a TomTom, no máximo 6 vezes por ciclo
-  (`ALTERNATIVA_MAX_CHAMADAS_CICLO`), e cada rota é recalculada a cada 30 min.
+  (`ALTERNATIVA_MAX_CHAMADAS_CICLO`). O desvio da TomTom é comum (em metade das rotas,
+  num dia normal) e muda devagar, então cada rota é recalculada só a cada 30 min
+  (`ALTERNATIVA_RECALCULO_MIN`), mesmo com o caminhão andando. Com aviso do motorista,
+  a rota é recalculada também quando o caminhão anda. O log da etapa mostra quantas
+  chamadas ela fez no ciclo.
 - No site: indicador "Rota alternativa p/ GR", etiqueta "Desvio −X min" (ou "Contorno"),
   linha verde tracejada no mapa e, no detalhe, os botões "Abrir no Google Maps",
   "Enviar ao GR (WhatsApp)" (abre o WhatsApp com a mensagem pronta; escolha o grupo
