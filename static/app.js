@@ -383,7 +383,7 @@ function tagAcidente(r) {
 function tagAlternativa(r) {
   const a = alternativaDe(r);
   if (!a || cancelada(r)) return null;
-  return el("span", { class: "tag desvio", title: `${a.motivo}\nPela alternativa: chegada ${a.chegada_alt}` },
+  return el("span", { class: "tag desvio", title: `${a.motivo}\nETA trajeto atual: ${a.chegada_ref}\nETA alternativa: ${a.chegada_alt}` },
     a.economia_min > 0 ? `Desvio −${a.economia_min} min` : "Contorno");
 }
 
@@ -501,7 +501,8 @@ function desenharDetalhe() {
     el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
     el("dl", {},
       ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
-      ...linha("Motorista", r["Motorista"]),
+      ...linha("Motorista", r["Motorista"] && (r["Fonte Motorista"] && r["Fonte Motorista"] !== "Rastreador"
+        ? `${r["Motorista"]} (${r["Fonte Motorista"]})` : r["Motorista"])),
       ...linha("Cancelamento", r["Cancelamento"]),
       ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
       ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
@@ -583,8 +584,9 @@ function secaoAlternativa(r, g) {
     el("div", { class: "sec" }, "Rota alternativa (para o GR validar)"),
     el("dl", {},
       ...linha("Motivo", a.motivo),
-      ...linha("Rota atual", `chegada ${a.chegada_ref} · ${a.km_ref} km (${a.referencia.replace(/^[oa] /, "")})`),
-      ...linha("Alternativa", `chegada ${a.chegada_alt} · ${a.km_alt} km`),
+      ...linha("ETA trajeto atual", `${a.chegada_ref} · ${a.km_ref} km (${a.referencia.replace(/^[oa] /, "")}${a.sm ? `, SM ${a.sm}` : ""})`
+        + (a.tipo === "motorista" ? " · sem a retenção do acidente" : "")),
+      ...linha("ETA alternativa", `${a.chegada_alt} · ${a.km_alt} km`),
       ...linha("Resultado", resultado),
       ...linha("Calculado às", a.calculado_em),
     ),
