@@ -49,6 +49,7 @@ from gspread.exceptions import APIError, WorksheetNotFound
 import clima
 import alternativa
 import geo_tomtom
+import noticias
 import rotograma
 
 
@@ -1479,6 +1480,8 @@ GEO = geo_tomtom.GeoTomTom()
 INMET_ATIVO = os.getenv("INMET_ATIVO", "1") != "0"
 CLIMA = clima.AlertasInmet()
 ROTOGRAMAS = rotograma.Rotogramas()
+NOTICIAS_ATIVO = os.getenv("NOTICIAS_ATIVO", "1") != "0"
+NOTICIAS = noticias.NoticiasRodovias()
 _SNAPSHOT = {}  # lido pelo site; trocado inteiro a cada ciclo (atribuição é atômica)
 
 
@@ -1693,6 +1696,15 @@ def _job():
                      len(consultadas), len(resultados), sum(g.get("trechos_brutos", 0) for g in consultadas),
                      *(sum(1 for t in transito if t["tipo"] == k) for k in ("acidente", "interdição", "congestionamento")),
                      geo_tomtom.CONGESTIONAMENTO_MIN_ATRASO)
+        if NOTICIAS_ATIVO:
+            try:
+                NOTICIAS.atualizar(now, noticias.rodovias_dos_rotogramas(rotogramas_mapa))
+                noticias.aplicar_nas_rotas(NOTICIAS, resultados, geo_por_trip, rotogramas_mapa,
+                                           lambda r: viagem_iniciada(r, state.get(r["Trip Number"], {}), now))
+            except Exception:
+                logging.exception("Falha na etapa de notícias; seguindo sem ela.")
+                for r in resultados:
+                    r.setdefault("Alerta Notícia", "")
         # Última coluna: pedido de rota alternativa para o GR validar.
         try:
             alternativa.sugerir(GEO, resultados, geo_por_trip, rotogramas_mapa,

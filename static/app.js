@@ -312,6 +312,7 @@ function filtrar() {
     if (soRotograma && (!alertasRotograma(r).length || cancelada(r))) return false;
     if (soAcidente && (!acidenteDe(r) || cancelada(r))) return false;
     if (soAlternativa && (!alternativaDe(r) || cancelada(r))) return false;
+    if (soNoticia && (!noticiaAtiva(r) || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
@@ -342,6 +343,8 @@ function desenharKpis() {
   if (nAcid) kpis.splice(1, 0, ["Acidente no caminho", nAcid, "nok", () => aplicarFiltro(null, null, false, false, false, true)]);
   const nRot = cont((r) => alertasRotograma(r).length > 0);
   if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
+  const nNot = cont(noticiaAtiva);
+  if (nNot) kpis.push(["Notícia no caminho", nNot, "noticia", () => aplicarFiltro(null, null, false, false, false, false, false, true)]);
   const nChuva = cont(chuvaNoCaminho);
   if (nChuva) kpis.push(["Chuva no caminho", nChuva, "chuva", () => aplicarFiltro(null, null, false, true)]);
   const nCanc = dados.length - validas.length;
@@ -355,15 +358,22 @@ function desenharKpis() {
 let soRotograma = false;
 let soAcidente = false;
 let soAlternativa = false;
+let soNoticia = false;
 // Rota alternativa calculada pelo robô para a torre levar ao GR (grupo Alinhamento GR).
 const alternativaDe = (r) => (r._geo || {}).alternativa || null;
 // "Alerta Acidente": o aviso do motorista vem primeiro ("Motorista: ..."); o resto é da TomTom.
 const acidenteDe = (r) => r["Alerta Acidente"] || "";
 const acidenteMotorista = (r) => acidenteDe(r).startsWith("Motorista:");
-function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false) {
+// Notícias do Google Notícias ligadas à rota pela cidade citada (o robô busca a cada 15 min).
+const noticiasDe = (r) => (r._geo || {}).noticias || [];
+// "Pista liberada" aparece na rota, mas não conta no indicador.
+const noticiaAtiva = (r) => noticiasDe(r).some((n) => n.tipo !== "liberada");
+const textoNoticia = (n) => `${n.tipo} em ${n.cidade}, a ${n.km} km${n.desde || ""} (${n.fonte || "notícia"}, ${n.quando}): ${n.titulo}`;
+function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false, noticia = false) {
   soRotograma = rot;
   soAcidente = acidente;
   soAlternativa = alt;
+  soNoticia = noticia;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
@@ -385,6 +395,14 @@ function tagAlternativa(r) {
   if (!a || cancelada(r)) return null;
   return el("span", { class: "tag desvio", title: `${a.motivo}\nETA trajeto atual: ${a.chegada_ref}\nETA alternativa: ${a.chegada_alt}` },
     a.economia_min > 0 ? `Desvio −${a.economia_min} min` : "Contorno");
+}
+
+function tagNoticia(r) {
+  const ns = noticiasDe(r);
+  if (!ns.length || cancelada(r)) return null;
+  const ativa = noticiaAtiva(r);
+  return el("span", { class: `tag noticia ${ativa ? "" : "liberada"}`, title: ns.map(textoNoticia).join("\n") },
+    ativa ? "Notícia" : "Pista liberada");
 }
 
 function tagRotograma(r) {
@@ -429,7 +447,7 @@ function desenharLista(lista) {
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
         el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagAlternativa(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
-          cancelada(r) ? tag : null, tagRotograma(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
+          cancelada(r) ? tag : null, tagRotograma(r), tagNoticia(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${r["% Espelhamento"] || "–"} espelhado`),
@@ -533,6 +551,7 @@ function desenharDetalhe() {
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
     ...secaoAcidente(r, g),
+    ...secaoNoticias(g),
     ...secaoAlternativa(r, g),
     ...secaoRotograma(r, g),
     ...(g.clima && g.clima.length ? [
@@ -571,6 +590,20 @@ function secaoAcidente(r, g) {
       }),
       ...filas.flatMap((t) => linha("Congestionamento", `a ${t.km} km, +${t.atraso_min} min`)),
     ),
+  ];
+}
+
+function secaoNoticias(g) {
+  const ns = g.noticias || [];
+  if (!ns.length) return [];
+  return [
+    el("div", { class: "sec" }, "Notícias no caminho (Google Notícias)"),
+    el("dl", {}, ...ns.flatMap((n) => [
+      el("dt", {}, n.tipo.charAt(0).toUpperCase() + n.tipo.slice(1)),
+      el("dd", {}, el("a", { href: n.link, target: "_blank", rel: "noopener" }, n.titulo),
+        el("span", { class: "noticia-info" },
+          [`${n.cidade}, a ${n.km} km${n.desde || ""}`, n.rodovias && n.rodovias[0], n.fonte, n.quando].filter(Boolean).join(" · "))),
+    ])),
   ];
 }
 
@@ -630,6 +663,16 @@ function desenharTransito(g) {
   }
 }
 
+function desenharNoticias(g) {
+  for (const n of g.noticias || []) {
+    L.marker([n.lat, n.lon], { keyboard: false,
+      icon: L.divIcon({ className: `noticia-marca ${n.tipo === "liberada" ? "liberada" : ""}`, html: "<span>N</span>",
+        iconSize: [18, 18], iconAnchor: [9, 9] }) })
+      .bindTooltip(`${escHtml(`Notícia: ${n.tipo} em ${n.cidade} (${n.fonte || "notícia"}, ${n.quando})`)}<br>${escHtml(n.titulo)}`)
+      .addTo(camadaSel);
+  }
+}
+
 function secaoRotograma(r, g) {
   const rot = rotogramaDe(r);
   if (!rot) return [];
@@ -670,6 +713,7 @@ function desenharTrajeto(r, g) {
   const rot = rotogramaDe(r);
   if (rot) desenharRotograma(rot);
   desenharTransito(g);
+  desenharNoticias(g);
   const linhaRot = rot && rot.linha && rot.linha.length >= 2 ? rot.linha : null;
   const pts = g.pontos || [];
   const trilha = g.trilha || [];
