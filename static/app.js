@@ -311,6 +311,7 @@ function filtrar() {
     if (soChuva && (!chuvaNoCaminho(r) || cancelada(r))) return false;
     if (soRotograma && (!alertasRotograma(r).length || cancelada(r))) return false;
     if (soAcidente && (!acidenteDe(r) || cancelada(r))) return false;
+    if (soAlternativa && (!alternativaDe(r) || cancelada(r))) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
@@ -335,6 +336,8 @@ function desenharKpis() {
     ["Sem sinal agora", cont((r) => r["Espelhamento Atual"] === "NOK"), "nok",
       () => aplicarFiltro(null, null, true)],
   ];
+  const nAlt = cont((r) => !!alternativaDe(r));
+  if (nAlt) kpis.splice(1, 0, ["Rota alternativa p/ GR", nAlt, "desvio", () => aplicarFiltro(null, null, false, false, false, false, true)]);
   const nAcid = cont((r) => !!acidenteDe(r));
   if (nAcid) kpis.splice(1, 0, ["Acidente no caminho", nAcid, "nok", () => aplicarFiltro(null, null, false, false, false, true)]);
   const nRot = cont((r) => alertasRotograma(r).length > 0);
@@ -351,12 +354,16 @@ function desenharKpis() {
 
 let soRotograma = false;
 let soAcidente = false;
+let soAlternativa = false;
+// Rota alternativa calculada pelo robô para a torre levar ao GR (grupo Alinhamento GR).
+const alternativaDe = (r) => (r._geo || {}).alternativa || null;
 // "Alerta Acidente": o aviso do motorista vem primeiro ("Motorista: ..."); o resto é da TomTom.
 const acidenteDe = (r) => r["Alerta Acidente"] || "";
 const acidenteMotorista = (r) => acidenteDe(r).startsWith("Motorista:");
-function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false) {
+function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false) {
   soRotograma = rot;
   soAcidente = acidente;
+  soAlternativa = alt;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
   semSinal = sinal;
@@ -371,6 +378,13 @@ function tagAcidente(r) {
   const motorista = acidenteMotorista(r);
   const rotulo = motorista ? "Acidente" : /TomTom: acidente/.test(texto) ? "Acidente (TomTom)" : "Interdição (TomTom)";
   return el("span", { class: `tag acidente ${motorista ? "motorista" : "tomtom"}`, title: texto.split("; ").join("\n") }, rotulo);
+}
+
+function tagAlternativa(r) {
+  const a = alternativaDe(r);
+  if (!a || cancelada(r)) return null;
+  return el("span", { class: "tag desvio", title: `${a.motivo}\nPela alternativa: chegada ${a.chegada_alt}` },
+    a.economia_min > 0 ? `Desvio −${a.economia_min} min` : "Contorno");
 }
 
 function tagRotograma(r) {
@@ -414,7 +428,7 @@ function desenharLista(lista) {
       onclick: () => selecionar(r["Trip Number"]),
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
-        el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
+        el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagAlternativa(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
           cancelada(r) ? tag : null, tagRotograma(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
@@ -518,6 +532,7 @@ function desenharDetalhe() {
       ...linha("Última mensagem", r["Última Mensagem"]),
     ),
     ...secaoAcidente(r, g),
+    ...secaoAlternativa(r, g),
     ...secaoRotograma(r, g),
     ...(g.clima && g.clima.length ? [
       el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
@@ -556,6 +571,49 @@ function secaoAcidente(r, g) {
       ...filas.flatMap((t) => linha("Congestionamento", `a ${t.km} km, +${t.atraso_min} min`)),
     ),
   ];
+}
+
+function secaoAlternativa(r, g) {
+  const a = g.alternativa;
+  if (!a) return [];
+  const resultado = a.economia_min > 0 ? `economia de ~${a.economia_min} min` : `contorno custa ~${-a.economia_min} min a mais`;
+  const copiar = el("button", { type: "button", class: "botao-alt", onclick: (e) => copiarTexto(a.mensagem, e.currentTarget) },
+    "Copiar mensagem");
+  return [
+    el("div", { class: "sec" }, "Rota alternativa (para o GR validar)"),
+    el("dl", {},
+      ...linha("Motivo", a.motivo),
+      ...linha("Rota atual", `chegada ${a.chegada_ref} · ${a.km_ref} km (${a.referencia.replace(/^[oa] /, "")})`),
+      ...linha("Alternativa", `chegada ${a.chegada_alt} · ${a.km_alt} km`),
+      ...linha("Resultado", resultado),
+      ...linha("Calculado às", a.calculado_em),
+    ),
+    el("div", { class: "botoes-alt" },
+      el("a", { class: "botao-alt", href: a.link, target: "_blank", rel: "noopener" }, "Abrir no Google Maps"),
+      el("a", { class: "botao-alt whats", href: `https://wa.me/?text=${encodeURIComponent(a.mensagem)}`, target: "_blank",
+        rel: "noopener", title: "Abre o WhatsApp com a mensagem pronta: escolha o grupo Alinhamento GR" }, "Enviar ao GR (WhatsApp)"),
+      copiar,
+    ),
+  ];
+}
+
+function copiarTexto(texto, botao) {
+  const feito = () => { const t = botao.textContent; botao.textContent = "Copiado!"; setTimeout(() => { botao.textContent = t; }, 1500); };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(texto).then(feito, () => copiarPorSelecao(texto) && feito());
+  } else if (copiarPorSelecao(texto)) feito();
+}
+
+function copiarPorSelecao(texto) {
+  const area = el("textarea", { readonly: "" });
+  area.value = texto;
+  area.style.position = "fixed"; area.style.opacity = "0";
+  document.body.append(area);
+  area.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  area.remove();
+  return ok;
 }
 
 function desenharTransito(g) {
@@ -642,6 +700,12 @@ function desenharTrajeto(r, g) {
   }
   if (atual.length >= 2) {
     tracar(atual, { color: acento }, `Melhor caminho agora (TomTom com trânsito, calculado às ${g.rota_atual_em || "?"})`);
+    // Por cima da azul: na sugestão da TomTom as duas coincidem.
+    if (g.alternativa && (g.alternativa.pontos || []).length >= 2) {
+      tracar(g.alternativa.pontos, { color: corCss("var(--desvio)"), weight: 6, dashArray: "10 7" },
+        `Rota alternativa para o GR validar (${g.alternativa.economia_min > 0 ? `economia de ~${g.alternativa.economia_min} min`
+          : `contorno +${-g.alternativa.economia_min} min`})`);
+    }
     return;
   }
   if (pts.length < 2) return;
@@ -659,6 +723,7 @@ function enquadrarSelecionada() {
   const g = (r && r._geo) || {};
   const rot = r && rotogramaDe(r);
   const pts = [...(g.pontos || []), ...(g.rota_atual || []), ...(g.trilha || []).map((p) => [p[0], p[1]]),
+    ...((g.alternativa && g.alternativa.pontos) || []),
     ...((rot && rot.linha) || []),
     g.veiculo, g.origem, g.destino].filter(Boolean);
   if (!pts.length) return;
@@ -781,7 +846,7 @@ function salvarVisao() {
       fStatus: document.getElementById("fStatus").value,
       fRisco: document.getElementById("fRisco").value, semSinal,
       fTrecho: document.getElementById("fTrecho").value,
-      estacoes: [...tiposLigados], clima: climaLigado, soChuva, soRotograma, soAcidente,
+      estacoes: [...tiposLigados], clima: climaLigado, soChuva, soRotograma, soAcidente, soAlternativa,
     }));
   } catch (e) { /* armazenamento indisponível: recarrega sem restaurar */ }
 }
@@ -801,6 +866,7 @@ function restaurarVisao() {
     soChuva = !!v.soChuva;
     soRotograma = !!v.soRotograma;
     soAcidente = !!v.soAcidente;
+    soAlternativa = !!v.soAlternativa;
   } catch (e) { /* ignora estado inválido */ }
 }
 
@@ -863,7 +929,7 @@ seletorTema.addEventListener("change", () => {
 
 for (const id of ["busca", "fStatus", "fRisco", "fTrecho"]) {
   document.getElementById(id).addEventListener("input", () => {
-    if (id !== "busca") semSinal = soChuva = soRotograma = soAcidente = false;
+    if (id !== "busca") semSinal = soChuva = soRotograma = soAcidente = soAlternativa = false;
     render();
   });
 }
