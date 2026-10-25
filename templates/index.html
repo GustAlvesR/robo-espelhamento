@@ -26,6 +26,9 @@
       <select id="tema" aria-label="Tema">
         <option value="">Tema: automático</option><option value="claro">Tema: claro</option><option value="escuro">Tema: escuro</option>
       </select>
+      <select id="whats" aria-label="WhatsApp">
+        <option value="">WhatsApp: automático</option><option value="web">WhatsApp: navegador</option><option value="app">WhatsApp: aplicativo</option>
+      </select>
       <a class="link" href="{{ url_for('trocar_senha') }}">Trocar senha</a>
       <form method="post" action="{{ url_for('logout') }}">
         <input type="hidden" name="csrf" value="{{ csrf_token() }}">
