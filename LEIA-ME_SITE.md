@@ -301,6 +301,24 @@ e `Acionar`. A busca do site aceita o responsável ("angellira", "GR", "transpor
     ficam de fora.
 - O indicador "Saída / SM pendente" filtra as rotas com alerta de saída ou SM.
 
+## Contatos Shopee
+
+No detalhe da rota, a seção "Contatos Shopee" mostra o Field e o Senior - Suporte da origem
+e do destino e o Reversa / Monitoramento (nacional), com telefone e botão de WhatsApp. Quem
+está no turno agora aparece primeiro; os outros ficam em "Outros turnos".
+
+- A base é a aba `Contatos_Shopee` da planilha de resultados (Nome, Turno, Função, Horário,
+  Estações, Telefone, E-mail). Atualize lá; o robô relê a cada 30 min
+  (`CONTATOS_ATUALIZAR_MIN`). Telefone de pessoas não vai para o repositório.
+- Ligação com a rota pela coluna Estações: SOC pela sigla (SOC-SP8 = SP8, SP09 = SP9), FBS
+  com o prefixo (FBS MG5), FMH pela sigla da cidade (BNU, CAC...) e pela região (em SP,
+  "FMH - SPM" na Grande São Paulo e "FMH SPI" no interior; em MG, "FMH-MG"; em GO, BA e PE, o
+  Field/FMH do SOC do estado), e a região da estação para quem cobre região (SPI/MG, SUL).
+  HUBs de última milha não estão na base.
+- "No turno" sai do horário escrito na base (dias da semana, "Sáb e Dom", 12x36 de dias
+  pares ou ímpares do ano). 12x36 sem dia par/ímpar conta só pelo horário. Horário em
+  branco nunca aparece como no turno.
+
 ## Notícias no caminho (Google Notícias)
 
 Complemento da TomTom e do aviso do motorista: notícia sai de 30 min a 2 h depois do
