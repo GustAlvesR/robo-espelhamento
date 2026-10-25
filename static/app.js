@@ -639,18 +639,61 @@ function desenharDetalhe() {
   if (ativa.id === "paradas") desenharParadas(par);
   // A cada atualização (1 min) o painel é refeito: na mesma rota e aba, a rolagem fica.
   const rolagem = box.dataset.trip === r["Trip Number"] && box.dataset.aba === ativa.id ? box.scrollTop : 0;
+  const barra = el("div", { class: "abas", role: "tablist" }, ...abas.map((a) => el("button", {
+    type: "button", role: "tab", class: `aba ${a === ativa ? "ativa" : ""}`, "aria-selected": String(a === ativa),
+    onclick: () => trocarAba(a.id) }, a.rotulo, a.badge ? el("span", { class: "aba-badge" }, String(a.badge)) : null)));
   box.replaceChildren(
-    el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
-    el("div", { class: "detalhe-sub" }, [[r["Placa"], r["Placa 2"]].filter(Boolean).join(" / "), trechoDe(r)].filter(Boolean).join(" · ")),
-    el("div", { class: "abas", role: "tablist" }, ...abas.map((a) => el("button", {
-      type: "button", role: "tab", class: `aba ${a === ativa ? "ativa" : ""}`, "aria-selected": String(a === ativa),
-      onclick: () => trocarAba(a.id) }, a.rotulo, a.badge ? el("span", { class: "aba-badge" }, String(a.badge)) : null))),
+    el("div", { class: "detalhe-topo" },
+      el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
+      el("div", { class: "detalhe-sub" }, [[r["Placa"], r["Placa 2"]].filter(Boolean).join(" / "), trechoDe(r)].filter(Boolean).join(" · ")),
+      barra),
     el("div", { class: "aba-conteudo", role: "tabpanel" }, ...ativa.conteudo()),
   );
   box.dataset.trip = r["Trip Number"];
   box.dataset.aba = ativa.id;
   box.hidden = false;
   box.scrollTop = rolagem;
+  prepararBarraAbas(barra);
+}
+
+// Barra de abas numa linha só: arrasta com o mouse (clicar e puxar), com a rodinha ou pela
+// barrinha de rolagem; no celular, desliza com o dedo. Guarda a posição entre as
+// atualizações e sempre deixa a aba aberta à vista.
+let rolagemAbas = 0;
+function prepararBarraAbas(barra) {
+  barra.scrollLeft = rolagemAbas;
+  const a = barra.querySelector(".aba.ativa");
+  if (a && a.offsetLeft < barra.scrollLeft) barra.scrollLeft = a.offsetLeft - 16;
+  else if (a && a.offsetLeft + a.offsetWidth > barra.scrollLeft + barra.clientWidth) {
+    barra.scrollLeft = a.offsetLeft + a.offsetWidth - barra.clientWidth + 16;
+  }
+  const bordas = () => {
+    rolagemAbas = barra.scrollLeft;
+    barra.classList.toggle("mais-esq", barra.scrollLeft > 2);
+    barra.classList.toggle("mais-dir", barra.scrollLeft + barra.clientWidth < barra.scrollWidth - 2);
+  };
+  bordas();
+  barra.addEventListener("scroll", bordas, { passive: true });
+  barra.addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || barra.scrollWidth <= barra.clientWidth) return;
+    barra.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }, { passive: false });
+  let x0 = null, s0 = 0, arrastou = false;
+  barra.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    x0 = e.clientX; s0 = barra.scrollLeft; arrastou = false;
+  });
+  barra.addEventListener("pointermove", (e) => {
+    if (x0 === null) return;
+    if (!arrastou && Math.abs(e.clientX - x0) > 4) { arrastou = true; barra.classList.add("arrastando"); }
+    if (arrastou) barra.scrollLeft = s0 - (e.clientX - x0);
+  });
+  const soltar = () => { x0 = null; barra.classList.remove("arrastando"); };
+  barra.addEventListener("pointerup", soltar);
+  barra.addEventListener("pointerleave", soltar);
+  // Quem arrastou não quis clicar na aba em que soltou.
+  barra.addEventListener("click", (e) => { if (arrastou) { e.stopPropagation(); arrastou = false; } }, true);
 }
 
 // Aba aberta no painel da rota: fica a mesma ao trocar de rota e ao recarregar (neste navegador).

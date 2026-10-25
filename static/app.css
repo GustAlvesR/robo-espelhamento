@@ -234,13 +234,24 @@ button, input, select { font: inherit; color: inherit; }
 .detalhe dt { color: var(--suave); } .detalhe dd { margin: 0; text-align: right; }
 .detalhe .sec { margin: 12px 0 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--titulo); }
 .detalhe-sub { margin: -4px 0 6px; font-size: 12px; color: var(--suave); }
-/* Abas do painel da rota: ficam presas no topo ao rolar o conteúdo. */
-.abas { position: sticky; top: -12px; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-  margin: 0 -2px 8px; padding: 6px 2px; background: var(--painel); border-bottom: 1px solid var(--linha); }
-.aba { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 4px; border: 1px solid var(--linha);
-  border-radius: 6px; background: var(--painel-2); color: var(--texto); font: 12px var(--fonte); cursor: pointer; }
-.aba:hover { border-color: var(--acento); }
-.aba.ativa { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 16%, var(--painel)); font-weight: 700; }
+/* Topo do painel da rota (viagem, placas, trecho e abas): fica preso ao rolar o conteúdo. */
+.detalhe-topo { position: sticky; top: -12px; z-index: 1; margin: -12px -14px 8px; padding: 12px 14px 0;
+  background: var(--painel); border-bottom: 1px solid var(--linha); }
+/* Abas numa linha só, roláveis para o lado; o esmaecido na borda avisa que há mais abas. */
+.abas { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px 2px;
+  cursor: grab; user-select: none; -webkit-user-select: none; overscroll-behavior-x: contain; }
+.abas.arrastando { cursor: grabbing; }
+.abas.arrastando .aba { pointer-events: none; }
+.abas.mais-dir { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+.abas.mais-esq { -webkit-mask-image: linear-gradient(to left, #000 82%, transparent); mask-image: linear-gradient(to left, #000 82%, transparent); }
+.abas.mais-esq.mais-dir { -webkit-mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent); }
+.aba { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 7px 12px 6px; border: 0;
+  border-bottom: 2px solid transparent; background: none; color: var(--suave); font: 13px var(--fonte); cursor: pointer; white-space: nowrap; }
+.aba { position: relative; }
+.aba + .aba::before { content: ""; position: absolute; left: 0; top: 30%; height: 40%; border-left: 1px solid var(--linha); }
+.aba:hover { color: var(--texto); }
+.aba.ativa { color: var(--titulo); border-bottom-color: var(--acento); font-weight: 700; }
 .aba-badge { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--nok); color: #fff; font-size: 10px;
   font-weight: 700; line-height: 16px; text-align: center; }
 .parada { padding: 5px 0; border-bottom: 1px solid var(--linha); font-size: 12px; }
