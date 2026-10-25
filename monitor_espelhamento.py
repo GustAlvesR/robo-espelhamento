@@ -51,6 +51,7 @@ import contatos
 import alternativa
 import geo_tomtom
 import noticias
+import paradas
 import pendencias
 import rotograma
 
@@ -1244,6 +1245,7 @@ def resultados_finalizados(state: dict, ativos: set, realizados, now: datetime) 
         colunas_realizadas(r, dados)
         coluna_motorista(r, dados)
         ajustar_risco(r, dados, now)
+        paradas.resumo({**dados, "parada_aberta": None}, r, corte)  # aberta na saída é a descarga
         saida.append(r)
     return saida
 
@@ -1728,6 +1730,19 @@ def _job():
             coluna_motorista(r, state.get(r["Trip Number"], {}))
             ajustar_risco(r, state.get(r["Trip Number"], {}), now)
             alerta_acidente(r, state.get(r["Trip Number"], {}), geo_por_trip.get(r["Trip Number"]), now)
+        # Paradas da viagem e tempo parado total (depois do Alerta Acidente e do rotograma).
+        try:
+            for r in resultados:
+                dados = state.get(r["Trip Number"], {})
+                g = geo_por_trip.setdefault(r["Trip Number"], {})
+                rot = rotogramas_mapa.get((g.get("rotograma") or {}).get("chave", "")) or {}
+                paradas.atualizar(dados, r, g, rot, viagem_iniciada(r, dados, now))
+                g["paradas"] = paradas.resumo(dados, r, now)
+        except Exception:
+            logging.exception("Falha na etapa de paradas; seguindo sem ela.")
+            for r in resultados:
+                for c in ("Tempo Parado Total", "Paradas Indevidas"):
+                    r.setdefault(c, "")
         quedas_gerais = []
         try:
             grupos_gerais = pendencias.grupos_abertos(state, ativos)
