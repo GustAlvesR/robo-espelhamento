@@ -251,7 +251,8 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
                  "tomtom": snap.get("tomtom", {}), "rotas": rotas,
                  "clima": snap.get("clima", []), "clima_erro": snap.get("clima_erro", ""),
                  "clima_lido_em": snap.get("clima_lido_em", ""),
-                 "rotogramas": snap.get("rotogramas", {}), "queda_geral": snap.get("queda_geral", [])}
+                 "rotogramas": snap.get("rotogramas", {}), "queda_geral": snap.get("queda_geral", []),
+                 "contatos_nacional": snap.get("contatos_nacional", [])}
         # allow_nan=False + _limpar: um NaN vindo da planilha geraria JSON inválido
         # e quebraria a página inteira.
         return json.dumps(_limpar(corpo), ensure_ascii=False, allow_nan=False, default=str)

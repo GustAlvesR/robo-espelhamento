@@ -379,6 +379,7 @@ let soNoticia = false;
 let soSaida = false;
 let soGeral = null;  // rotas da queda geral escolhida na faixa
 let quedasGerais = [];
+let contatosNacional = [];
 // Rota alternativa calculada pelo robô para a torre levar ao GR (grupo Alinhamento GR).
 const alternativaDe = (r) => (r._geo || {}).alternativa || null;
 // "Alerta Acidente": o aviso do motorista vem primeiro ("Motorista: ..."); o resto é da TomTom.
@@ -572,6 +573,7 @@ function desenharDetalhe() {
       ...linha("Fim previsto", r["Fim Previsto"]),
     ),
     ...secaoPendencias(g),
+    ...secaoContatos(r, g),
     el("div", { class: "sec" }, "Espelhamento"),
     el("dl", {},
       ...linha("Status geral", statusDe(r)),
@@ -657,6 +659,46 @@ function secaoPendencias(g) {
           el("button", { type: "button", class: "botao-alt cobranca",
             onclick: (e) => copiarTexto(p.mensagem, e.currentTarget) }, "Copiar cobrança")) : null),
     ])),
+  ];
+}
+
+// Contatos da Shopee (aba Contatos_Shopee): quem está no turno agora aparece primeiro; os
+// outros ficam recolhidos. "No turno" sai da escala da base (12x36 sem dia par/ímpar vale
+// só pelo horário).
+function itemContato(c) {
+  const fone = String(c.telefone || "").replace(/\D/g, "");
+  return el("div", { class: `contato ${c.no_turno ? "agora" : ""}` },
+    el("div", { class: "contato-nome" }, c.nome, c.no_turno ? el("span", { class: "tag no-turno" }, "no turno") : null),
+    el("span", { class: "pend-info" }, [c.funcao, c.horario].filter(Boolean).join(" · ")),
+    fone ? el("span", { class: "botoes-cobranca contato-acoes" },
+      el("a", { class: "botao-alt cobranca", href: `tel:+55${fone}` }, c.telefone),
+      el("a", { class: "botao-alt whats cobranca", href: `https://wa.me/55${fone}`, target: "_blank", rel: "noopener" },
+        "WhatsApp"))
+      : el("span", { class: "pend-info" }, "Sem telefone na base"));
+}
+
+function blocoContatos(titulo, lista) {
+  const agora = lista.filter((c) => c.no_turno);
+  const outros = lista.filter((c) => !c.no_turno);
+  return [
+    el("div", { class: "contato-titulo" }, titulo),
+    ...(lista.length ? [] : [el("span", { class: "pend-info" }, "Estação fora da base de contatos")]),
+    ...agora.map(itemContato),
+    ...(outros.length ? [el("details", { class: "contatos-mais" },
+      el("summary", {}, `${agora.length ? "Outros turnos" : "Ninguém no turno agora"} (${outros.length})`),
+      ...outros.map(itemContato))] : []),
+  ];
+}
+
+function secaoContatos(r, g) {
+  const [origem, destino] = g.contatos || [];
+  if (!origem && !contatosNacional.length) return [];
+  return [
+    el("div", { class: "sec" }, "Contatos Shopee"),
+    ...blocoContatos(`Origem · ${estacaoComLocal(r["Origin Station Code"], r._origem_local)}`, (origem || {}).contatos || []),
+    ...blocoContatos(`Destino · ${estacaoComLocal(r["Destination Station Code"], r._destino_local)}`,
+      (destino || {}).contatos || []),
+    ...(contatosNacional.length ? blocoContatos("Reversa / Monitoramento (nacional)", contatosNacional) : []),
   ];
 }
 
@@ -944,6 +986,7 @@ function aplicarDados(j) {
   alertasClima = j.clima || [];
   rotogramas = j.rotogramas || {};
   quedasGerais = j.queda_geral || [];
+  contatosNacional = j.contatos_nacional || [];
   desenharFaixaGeral();
   erroClima = j.clima_erro || "";
   climaLidoEm = j.clima_lido_em || "";

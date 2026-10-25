@@ -138,6 +138,13 @@ button, input, select { font: inherit; color: inherit; }
 .pend-info { display: block; margin-top: 2px; color: var(--suave); font-size: 11px; }
 .botoes-cobranca { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .botao-alt.cobranca { padding: 3px 8px; font-size: 11px; }
+.contato-titulo { margin: 8px 0 2px; font-size: 12px; font-weight: 700; color: var(--titulo); }
+.contato { padding: 5px 0; border-bottom: 1px solid var(--linha); font-size: 12px; }
+.contato-nome { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.contato-acoes { justify-content: flex-start; }
+.tag.no-turno { border-color: var(--ok); color: var(--ok); font-weight: 700; }
+.contatos-mais { margin: 2px 0 4px; font-size: 12px; }
+.contatos-mais > summary { cursor: pointer; color: var(--link); padding: 4px 0; }
 .faixa-geral { display: grid; gap: 4px; padding: 6px 16px; background: color-mix(in srgb, var(--acento) 16%, var(--painel));
   border-bottom: 1px solid var(--acento); color: var(--texto); font-size: 13px; }
 .faixa-geral[hidden] { display: none; }

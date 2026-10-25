@@ -47,6 +47,7 @@ from google.oauth2.service_account import Credentials
 from gspread.exceptions import APIError, WorksheetNotFound
 
 import clima
+import contatos
 import alternativa
 import geo_tomtom
 import noticias
@@ -1513,6 +1514,7 @@ CLIMA = clima.AlertasInmet()
 ROTOGRAMAS = rotograma.Rotogramas()
 NOTICIAS_ATIVO = os.getenv("NOTICIAS_ATIVO", "1") != "0"
 NOTICIAS = noticias.NoticiasRodovias()
+CONTATOS = contatos.Contatos()
 _SNAPSHOT = {}  # lido pelo site; trocado inteiro a cada ciclo (atribuição é atômica)
 
 
@@ -1587,11 +1589,12 @@ def atualizar_trilhas(state: dict, resultados: list, geo_por_trip: dict, now: da
 
 
 def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_rastreamento=None,
-                      rotogramas=None, quedas_gerais=None) -> None:
+                      rotogramas=None, quedas_gerais=None, contatos_nacional=None) -> None:
     global _SNAPSHOT
     _SNAPSHOT = {
         "rotogramas": rotogramas or {},
         "queda_geral": quedas_gerais or [],
+        "contatos_nacional": contatos_nacional or [],
         "atualizado_em": _fmt(now),
         "angellira_em": _fmt(ref_rastreamento),
         "resultados": resultados,
@@ -1745,6 +1748,20 @@ def _job():
             for r in resultados:
                 for c in ("Causa NOK", "Alerta Saída", "Acionar"):
                     r.setdefault(c, "")
+        # Contatos da Shopee da origem e do destino (aba Contatos_Shopee), só para o site.
+        contatos_nacional = []
+        try:
+            CONTATOS.atualizar(client.open_by_key(RESULTS_SPREADSHEET_ID), now)
+            por_estacao = {}
+            for r in resultados:
+                codigos = [str(r.get(c) or "").strip().upper() for c in ("Origin Station Code", "Destination Station Code")]
+                for c in codigos:
+                    if c not in por_estacao:
+                        por_estacao[c] = CONTATOS.da_estacao(c, now)
+                geo_por_trip.setdefault(r["Trip Number"], {})["contatos"] = [por_estacao[c] for c in codigos]
+            contatos_nacional = CONTATOS.nacional(now)
+        except Exception:
+            logging.exception("Falha na etapa de contatos; seguindo sem ela.")
         # Em todo ciclo, mesmo zerado: é por aqui que se confere a leitura do trânsito da TomTom.
         consultadas = [g for g in geo_por_trip.values() if g and "transito" in g]
         transito = [t for g in consultadas for t in g["transito"]]
@@ -1785,7 +1802,8 @@ def _job():
         append_events(client_escrita, eventos_do_ciclo)
         append_fechamentos(client_escrita, fechadas)
 
-        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa, quedas_gerais)
+        publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa, quedas_gerais,
+                          contatos_nacional)
 
         logging.info(
             "Ciclo concluído: %s rota(s) processada(s), %s finalizada(s), %s evento(s) de sinal registrado(s), "
