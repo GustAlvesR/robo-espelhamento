@@ -245,6 +245,18 @@ function aguardandoInicio(r) {
   return ini !== null && Date.now() < ini.getTime();
 }
 
+// O % da Shopee só conta a partir do início da janela; antes disso o 100% não diz nada.
+function janelaNaoIniciada(r) {
+  const ini = parseBr(r["Início da Contagem"]);
+  return !!ini && ini > new Date();
+}
+function textoPct(r) {
+  if (janelaNaoIniciada(r)) return "janela não iniciada";
+  if (!r["% Espelhamento"]) return "– espelhado";
+  const agora = r["% Até Agora"];
+  return agora && agora !== r["% Espelhamento"] ? `${agora} até agora (${r["% Espelhamento"]} final)` : `${r["% Espelhamento"]} espelhado`;
+}
+
 function gravidade(r) {
   if (cancelada(r)) return 4;
   if (acidenteMotorista(r)) return -1;
@@ -481,7 +493,7 @@ function desenharLista(lista) {
           cancelada(r) ? tag : null, tagRotograma(r), tagNoticia(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
-        + ` · ${r["% Espelhamento"] || "–"} espelhado`),
+        + ` · ${textoPct(r)}`),
       // O nome só aparece na lista quando foi ele que a busca encontrou.
       motoristaBate(r, q) ? el("div", { class: "l2" }, `Motorista: ${r["Motorista"]}`) : null,
     );
@@ -565,8 +577,12 @@ function desenharDetalhe() {
       ...linha("Status geral", statusDe(r)),
       ...linha("Agora", r["Espelhamento Atual"]),
       ...linha("SLA 1h30", r["SLA 1h30 Cumprido"]),
-      ...linha("% espelhado", r["% Espelhamento"]),
-      ...linha("Tempo sem sinal", r["Tempo Sem Sinal"]),
+      ...linha("% espelhado", janelaNaoIniciada(r) ? `Janela não iniciada (começa às ${r["Início da Contagem"]})`
+        : r["% Espelhamento"] && `${r["% Espelhamento"]} final (melhor caso)`),
+      ...linha("% até agora", janelaNaoIniciada(r) ? "" : r["% Até Agora"]),
+      ...linha("Tempo sem sinal", janelaNaoIniciada(r) ? "" : r["Tempo Sem Sinal"]),
+      ...linha("Sem sinal desde", r["Sem Sinal Desde"] && (janelaNaoIniciada(r)
+        ? `${r["Sem Sinal Desde"]} (a contagem começa às ${r["Início da Contagem"]})` : r["Sem Sinal Desde"])),
       ...linha("Quedas", r["Qtd. Quedas de Sinal"]),
     ),
     el("div", { class: "sec" }, "Rastreamento (Angellira)"),

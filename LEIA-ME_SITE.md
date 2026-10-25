@@ -93,6 +93,10 @@ Quatro colunas no fim de `Resultado_Espelhamento` e do histórico:
   - Antes do fim previsto: `Atraso provável` (previsão da TomTom passa da tolerância),
     `No prazo`, `No destino` (a até 5 km do destino), `Posição antiga`, `Sem posição`,
     `Sem coord. da estação`.
+- `% Até Agora` e `Sem Sinal Desde` (só para o site): o `% Espelhamento` é o da regra da
+  Shopee, sobre a janela inteira (o resultado final no melhor caso, e é ele que vai para o
+  BSC); o `% Até Agora` conta só o tempo já decorrido da janela. Antes do início da janela,
+  o site mostra "Janela não iniciada" em vez de 100%, com a hora em que a rota está sem sinal.
 - `Status Viagem`: cópia da coluna `status_corrigido` da Telemetria (PRE VIAGEM,
   EM TRANSITO). Se a coluna sumir, sai vazia e o site usa o horário de início previsto.
 - `Alerta Chuva (INMET)` (última coluna): alertas de chuva do INMET cuja área o

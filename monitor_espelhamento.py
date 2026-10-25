@@ -1025,6 +1025,7 @@ def montar_resultado(trip_number: str, dados: dict, status_atual: str, corte: da
     duracao_janela = None
     tempo_sem_sinal_total = dados["total_loss_seconds"]  # bruto, sem recorte
     percentual_espelhamento = None
+    percentual_ate_agora = None  # só o tempo já decorrido da janela (o outro é o melhor caso final)
 
     if inicio_previsto and fim_previsto:
         inicio_janela, fim_janela = janela_shopee(inicio_previsto, fim_previsto, cpt, chegada, now)
@@ -1048,6 +1049,9 @@ def montar_resultado(trip_number: str, dados: dict, status_atual: str, corte: da
             percentual_espelhamento = max(
                 0.0, min(100.0, 100.0 * (1 - sem_sinal_janela / duracao_janela))
             )
+        decorrido = (min(corte, fim_janela) - inicio_janela).total_seconds()
+        if decorrido > 0:
+            percentual_ate_agora = max(0.0, min(100.0, 100.0 * (1 - sem_sinal_janela / decorrido)))
 
     # --- Quedas contabilizadas: Qtd., Última Perda e Último Retorno ----------
     # Só contam a partir do início da janela. Queda que termina antes disso é
@@ -1104,6 +1108,9 @@ def montar_resultado(trip_number: str, dados: dict, status_atual: str, corte: da
         "Último Retorno": _fmt(ultimo_retorno),
         "Status Geral": status_geral,
         "Atualizado Em": _fmt(now),
+        # Só para o site: o % acima é o da regra da Shopee (vai para o BSC).
+        "% Até Agora": f"{percentual_ate_agora:.1f}%" if percentual_ate_agora is not None else "",
+        "Sem Sinal Desde": _fmt(_parse_iso(dados["current_loss_start"])) if dados["current_loss_start"] else "",
         # Colunas informativas, ao final para não deslocar as letras das colunas existentes.
         **base.get("info", {}),
     }
