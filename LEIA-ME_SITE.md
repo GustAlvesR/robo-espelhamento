@@ -303,11 +303,14 @@ e `Acionar`. A busca do site aceita o responsável ("angellira", "GR", "transpor
 
 ## Painel da rota (abas)
 
-Ao clicar numa rota ou num caminhão, o painel mostra o número da viagem, as placas e o
-trecho, e as abas: Resumo (pendências e o essencial da viagem), Telemetria (espelhamento da
-Shopee), Rastreamento (Angellira), Paradas, Rota (previsão, acidentes e trânsito, rota
-alternativa, rotograma, chuva e notícias) e Contatos. O número na aba é a quantidade de
-alertas dela. A aba escolhida fica ao trocar de rota e ao recarregar (neste navegador).
+Ao clicar numa rota ou num caminhão, o painel mostra no topo (fixo, não sai ao rolar) o
+número da viagem, as placas, o trecho e as abas numa linha só: Resumo (pendências e o
+essencial da viagem), Telemetria (espelhamento da Shopee), Rastreamento (Angellira), Paradas,
+Rota (previsão, acidentes e trânsito, rota alternativa, rotograma, chuva e notícias) e
+Contatos. Quando as abas não cabem, a borda esmaece do lado que tem mais: arraste a barra
+com o mouse (ou o dedo no celular), ou use a roda do mouse em cima dela. O número na aba é a
+quantidade de alertas dela. A aba escolhida fica ao trocar de rota e ao recarregar (neste
+navegador).
 
 ## Paradas
 
