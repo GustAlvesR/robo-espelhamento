@@ -25,7 +25,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 
 TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "").strip()
 TOMTOM_BASE = os.getenv("TOMTOM_BASE", "https://api.tomtom.com")
@@ -208,7 +208,8 @@ class GeoTomTom:
         self.etas = {}              # trip -> {"chave", "calc_em", "travel_s"}
         self.dia = date.today()
         self.chamadas_hoje = 0
-        self.ultimo_erro = ""
+        self.erros = {}             # serviço -> (texto, quando em UTC); some quando o serviço volta a responder
+        self.falhas_ciclo = {}      # serviço -> falhas desde o último log do ciclo
 
     # ------------------------------------------------------------------ HTTP
     @staticmethod
@@ -230,21 +231,42 @@ class GeoTomTom:
         with self._lock:
             if date.today() != self.dia:
                 self.dia, self.chamadas_hoje = date.today(), 0
+                self.erros.pop("teto", None)
             if self.chamadas_hoje >= TOMTOM_MAX_CHAMADAS_DIA:
-                self.ultimo_erro = "Teto diário de chamadas atingido"
+                self.erros["teto"] = ("Teto diário de chamadas atingido", datetime.now(timezone.utc))
                 return None
             self.chamadas_hoje += 1
+        servico = caminho.split("/")[1]
         params = {**params, "key": self.key}
         url = f"{TOMTOM_BASE}{caminho}?{urllib.parse.urlencode(params)}"
         try:
-            return self._http_post(url, corpo) if corpo is not None else self._http_get(url)
+            dados = self._http_post(url, corpo) if corpo is not None else self._http_get(url)
+            self.erros.pop(servico, None)
+            return dados
         except urllib.error.HTTPError as e:
-            self.ultimo_erro = f"HTTP {e.code} em {caminho.split('/')[1]}"
-            logging.warning("TomTom %s: HTTP %s.", caminho.split("/")[1], e.code)
+            self._falhou(servico, f"HTTP {e.code} em {servico}")
+            logging.warning("TomTom %s: HTTP %s.", servico, e.code)
+        except json.JSONDecodeError as e:
+            self._falhou(servico, f"resposta inválida em {servico}")
+            logging.warning("TomTom %s: resposta não é JSON (%s); início: %r", servico, e, e.doc[:200])
         except Exception as e:
-            self.ultimo_erro = f"{type(e).__name__} em {caminho.split('/')[1]}"
-            logging.warning("TomTom falhou (%s).", e)
+            self._falhou(servico, f"{type(e).__name__} em {servico}")
+            logging.warning("TomTom %s falhou (%s).", servico, e)
         return None
+
+    def _falhou(self, servico: str, texto: str) -> None:
+        with self._lock:
+            self.erros[servico] = (texto, datetime.now(timezone.utc))
+            self.falhas_ciclo[servico] = self.falhas_ciclo.get(servico, 0) + 1
+
+    def erro_atual(self):
+        """(texto, quando em UTC) do erro mais recente que ainda não se resolveu, ou None."""
+        return max(self.erros.values(), key=lambda e: e[1], default=None)
+
+    def falhas_do_ciclo(self) -> dict:
+        with self._lock:
+            falhas, self.falhas_ciclo = self.falhas_ciclo, {}
+        return falhas
 
     # ----------------------------------------------------------- Geocoding
     def geocodificar(self, consulta: str):

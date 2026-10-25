@@ -1257,6 +1257,14 @@ def _txt(value) -> str:
     return str(value).strip()
 
 
+def _erro_tomtom() -> str:
+    erro = GEO.erro_atual()
+    if not erro:
+        return ""
+    texto, quando = erro
+    return f"{texto} às {quando.astimezone(ZoneInfo(TIMEZONE)):%H:%M}"
+
+
 def _fmt(value) -> str:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
@@ -1541,8 +1549,10 @@ def enriquecer_geo(client, df: pd.DataFrame, resultados: list, now: datetime) ->
         coords = geo_tomtom.sincronizar_estacoes(GEO, planilha, nomes)
         geo_por_trip = geo_tomtom.calcular_geo(GEO, resultados, coords, now)
         geo_tomtom.salvar_geocache(GEO, planilha)
-        logging.info("TomTom: %s chamada(s) hoje, %s estação(ões) com coordenadas.",
-                     GEO.chamadas_hoje, len(coords))
+        falhas = GEO.falhas_do_ciclo()
+        logging.info("TomTom: %s chamada(s) hoje, %s estação(ões) com coordenadas.%s", GEO.chamadas_hoje, len(coords),
+                     " Falhas desde o ciclo anterior: " + ", ".join(f"{s} {n}" for s, n in falhas.items()) + "."
+                     if falhas else "")
         return geo_por_trip
     except Exception:
         logging.exception("Falha na etapa de mapa/TomTom; seguindo sem ela.")
@@ -1604,7 +1614,7 @@ def publicar_snapshot(resultados: list, geo_por_trip: dict, now: datetime, ref_r
         "clima": CLIMA.para_mapa() if INMET_ATIVO else [],
         "clima_erro": CLIMA.ultimo_erro if INMET_ATIVO else "",
         "clima_lido_em": _fmt(CLIMA.lido_em) if INMET_ATIVO else "",
-        "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": GEO.ultimo_erro},
+        "tomtom": {"chamadas_hoje": GEO.chamadas_hoje, "ultimo_erro": _erro_tomtom()},
     }
 
 
