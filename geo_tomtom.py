@@ -241,7 +241,8 @@ class GeoTomTom:
         url = f"{TOMTOM_BASE}{caminho}?{urllib.parse.urlencode(params)}"
         try:
             dados = self._http_post(url, corpo) if corpo is not None else self._http_get(url)
-            self.erros.pop(servico, None)
+            with self._lock:
+                self.erros.pop(servico, None)
             return dados
         except urllib.error.HTTPError as e:
             self._falhou(servico, f"HTTP {e.code} em {servico}")
@@ -261,7 +262,8 @@ class GeoTomTom:
 
     def erro_atual(self):
         """(texto, quando em UTC) do erro mais recente que ainda não se resolveu, ou None."""
-        return max(self.erros.values(), key=lambda e: e[1], default=None)
+        with self._lock:
+            return max(self.erros.values(), key=lambda e: e[1], default=None)
 
     def falhas_do_ciclo(self) -> dict:
         with self._lock:
