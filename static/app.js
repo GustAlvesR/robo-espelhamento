@@ -653,9 +653,8 @@ function secaoPendencias(g) {
       el("dd", {}, p.texto,
         p.acionar ? el("span", { class: "pend-info" }, `Acionar: ${p.acionar}`) : null,
         p.mensagem ? el("span", { class: "botoes-cobranca" },
-          el("a", { class: "botao-alt whats cobranca", href: `https://wa.me/?text=${encodeURIComponent(p.mensagem)}`,
-            target: "_blank", rel: "noopener", title: "Abre o WhatsApp com a mensagem pronta: escolha o contato ou o grupo" },
-            "WhatsApp"),
+          botaoWhats("botao-alt whats cobranca", "WhatsApp", "Abre o WhatsApp com a mensagem pronta: escolha o contato ou o grupo",
+            p.mensagem),
           el("button", { type: "button", class: "botao-alt cobranca",
             onclick: (e) => copiarTexto(p.mensagem, e.currentTarget) }, "Copiar cobrança")) : null),
     ])),
@@ -672,8 +671,7 @@ function itemContato(c) {
     el("span", { class: "pend-info" }, [c.funcao, c.horario].filter(Boolean).join(" · ")),
     fone ? el("span", { class: "botoes-cobranca contato-acoes" },
       el("a", { class: "botao-alt cobranca", href: `tel:+55${fone}` }, c.telefone),
-      el("a", { class: "botao-alt whats cobranca", href: `https://wa.me/55${fone}`, target: "_blank", rel: "noopener" },
-        "WhatsApp"))
+      botaoWhats("botao-alt whats cobranca", "WhatsApp", `Abre a conversa com ${c.nome}`, "", fone))
       : el("span", { class: "pend-info" }, "Sem telefone na base"));
 }
 
@@ -711,8 +709,7 @@ function desenharFaixaGeral() {
       + " na Angellira. Provável falha da Shopee ou da integração, não dos caminhões. Acionar: Shopee / Angellira."),
     el("button", { type: "button", class: "botao-alt", onclick: () => { aplicarFiltro(); soGeral = q.rotas; render(); } },
       "Ver rotas"),
-    el("a", { class: "botao-alt whats", href: `https://wa.me/?text=${encodeURIComponent(q.mensagem)}`, target: "_blank",
-      rel: "noopener", title: "Abre o WhatsApp com o aviso pronto: escolha o contato ou o grupo" }, "WhatsApp"),
+    botaoWhats("botao-alt whats", "WhatsApp", "Abre o WhatsApp com o aviso pronto: escolha o contato ou o grupo", q.mensagem),
     el("button", { type: "button", class: "botao-alt", onclick: (e) => copiarTexto(q.mensagem, e.currentTarget) },
       "Copiar aviso"))));
 }
@@ -749,11 +746,40 @@ function secaoAlternativa(r, g) {
     ),
     el("div", { class: "botoes-alt" },
       el("a", { class: "botao-alt", href: a.link, target: "_blank", rel: "noopener" }, "Abrir no Google Maps"),
-      el("a", { class: "botao-alt whats", href: `https://wa.me/?text=${encodeURIComponent(a.mensagem)}`, target: "_blank",
-        rel: "noopener", title: "Abre o WhatsApp com a mensagem pronta: escolha o grupo Alinhamento GR" }, "Enviar ao GR (WhatsApp)"),
+      botaoWhats("botao-alt whats", "Enviar ao GR (WhatsApp)", "Abre o WhatsApp com a mensagem pronta: escolha o grupo Alinhamento GR",
+        a.mensagem),
       copiar,
     ),
   ];
+}
+
+// WhatsApp: no computador abre o WhatsApp Web, sempre na mesma aba (o site só consegue
+// reaproveitar a aba que ele mesmo abriu); no celular, o aplicativo. O menu do usuário
+// deixa escolher; a escolha fica neste navegador.
+const CHAVE_WHATS = "torreLH.whatsapp";
+function modoWhats() {
+  try {
+    const v = localStorage.getItem(CHAVE_WHATS);
+    if (v === "web" || v === "app") return v;
+  } catch (e) { /* sem armazenamento: automático */ }
+  return matchMedia("(pointer: coarse)").matches ? "app" : "web";
+}
+function urlWhats(texto, fone) {
+  const numero = fone ? `55${fone}` : "";
+  const texto_ = texto ? encodeURIComponent(texto) : "";
+  if (modoWhats() === "web") {
+    return "https://web.whatsapp.com/send?" + [numero && `phone=${numero}`, texto_ && `text=${texto_}`].filter(Boolean).join("&");
+  }
+  return `https://wa.me/${numero}${texto_ ? `?text=${texto_}` : ""}`;
+}
+function botaoWhats(classe, rotulo, titulo, texto, fone = "") {
+  return el("a", { class: classe, href: urlWhats(texto, fone), target: "_blank", rel: "noopener", title: titulo,
+    onclick: (e) => {
+      if (modoWhats() !== "web") return;
+      e.preventDefault();
+      const aba = window.open(urlWhats(texto, fone), "torreLH_whatsapp");
+      if (aba) aba.focus();
+    } }, rotulo);
 }
 
 function copiarTexto(texto, botao) {
@@ -1085,6 +1111,16 @@ const legenda = document.getElementById("legenda");
 try { legenda.open = localStorage.getItem("torreLH.legenda") === "aberta"; } catch (e) { /* sem armazenamento */ }
 legenda.addEventListener("toggle", () => {
   try { localStorage.setItem("torreLH.legenda", legenda.open ? "aberta" : "fechada"); } catch (e) { /* idem */ }
+});
+
+const seletorWhats = document.getElementById("whats");
+try { seletorWhats.value = localStorage.getItem(CHAVE_WHATS) || ""; } catch (e) { /* automático */ }
+seletorWhats.addEventListener("change", () => {
+  try {
+    if (seletorWhats.value) localStorage.setItem(CHAVE_WHATS, seletorWhats.value);
+    else localStorage.removeItem(CHAVE_WHATS);
+  } catch (e) { /* sem armazenamento: vale até recarregar */ }
+  render();
 });
 
 const seletorTema = document.getElementById("tema");

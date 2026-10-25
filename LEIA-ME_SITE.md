@@ -301,6 +301,14 @@ e `Acionar`. A busca do site aceita o responsável ("angellira", "GR", "transpor
     ficam de fora.
 - O indicador "Saída / SM pendente" filtra as rotas com alerta de saída ou SM.
 
+## Botões de WhatsApp
+
+No computador, os botões de WhatsApp (cobranças, rota alternativa, queda geral e contatos)
+abrem o WhatsApp Web, sempre na mesma aba: o primeiro clique abre, os seguintes reaproveitam
+essa aba. No celular, abrem o aplicativo. No menu do usuário, "WhatsApp: navegador" ou
+"aplicativo" muda isso (a escolha fica no navegador de cada um). O site não consegue usar
+uma aba do WhatsApp Web aberta à mão, só a que ele mesmo abriu.
+
 ## Contatos Shopee
 
 No detalhe da rota, a seção "Contatos Shopee" mostra o Field e o Senior - Suporte da origem
