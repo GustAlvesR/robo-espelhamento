@@ -233,6 +233,25 @@ button, input, select { font: inherit; color: inherit; }
 .detalhe dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
 .detalhe dt { color: var(--suave); } .detalhe dd { margin: 0; text-align: right; }
 .detalhe .sec { margin: 12px 0 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--titulo); }
+.detalhe-sub { margin: -4px 0 6px; font-size: 12px; color: var(--suave); }
+/* Abas do painel da rota: ficam presas no topo ao rolar o conteúdo. */
+.abas { position: sticky; top: -12px; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  margin: 0 -2px 8px; padding: 6px 2px; background: var(--painel); border-bottom: 1px solid var(--linha); }
+.aba { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 4px; border: 1px solid var(--linha);
+  border-radius: 6px; background: var(--painel-2); color: var(--texto); font: 12px var(--fonte); cursor: pointer; }
+.aba:hover { border-color: var(--acento); }
+.aba.ativa { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 16%, var(--painel)); font-weight: 700; }
+.aba-badge { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--nok); color: #fff; font-size: 10px;
+  font-weight: 700; line-height: 16px; text-align: center; }
+.parada { padding: 5px 0; border-bottom: 1px solid var(--linha); font-size: 12px; }
+.parada-topo { display: flex; justify-content: space-between; gap: 8px; }
+.parada.indevida b { color: var(--nok); }
+.parada.nao-conta b { color: var(--suave); font-weight: 400; }
+.parada-marca { display: grid; place-items: center; }
+.parada-marca span { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--marinho);
+  color: #fff; font: 700 10px/1 var(--fonte); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+.parada-marca.indevida span { background: var(--nok); }
+.parada-marca.nao-conta span { background: var(--pend); }
 .fechar { background: none; border: 0; cursor: pointer; color: var(--suave); font-size: 18px; line-height: 1; }
 
 /* --- Login -------------------------------------------------------------- */

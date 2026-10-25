@@ -559,68 +559,151 @@ function desenharDetalhe() {
   if (g.destino) L.circleMarker(g.destino, { ...marco, fillColor: "#fff" }).bindTooltip("Destino").addTo(camadaSel);
 
   const desvio = r["Desvio vs Fim Previsto (min)"];
+  const pendencias = (g.pendencias || []).filter((p) => p.texto);
+  const par = g.paradas || {};
+  const alertasRota = (acidenteDe(r) ? acidenteDe(r).split("; ").length : 0) + alertasRotograma(r).length
+    + noticiasDe(r).filter((n) => n.tipo !== "liberada").length + (g.clima || []).length + (alternativaDe(r) ? 1 : 0);
+  const abas = [
+    { id: "resumo", rotulo: "Resumo", badge: pendencias.length, conteudo: () => [
+      ...(pendencias.length ? secaoPendencias(g) : [el("p", { class: "pend-info" }, "Nenhuma pendência nesta rota.")]),
+      el("div", { class: "sec" }, "Viagem"),
+      el("dl", {},
+        ...linha("Motorista", r["Motorista"] && (r["Fonte Motorista"] && r["Fonte Motorista"] !== "Rastreador"
+          ? `${r["Motorista"]} (${r["Fonte Motorista"]})` : r["Motorista"])),
+        ...linha("Cancelamento", r["Cancelamento"]),
+        ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
+        ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
+        ...linha("Destino", estacaoComLocal(r["Destination Station Code"], r._destino_local)),
+        ...linha("Início previsto", r["Início Previsto"]),
+        ...linha("Fim previsto", r["Fim Previsto"]),
+        ...linha("Chegada prevista", r["Previsão TomTom"] && `${r["Previsão TomTom"]} (${r["Risco de Atraso"] || "sem risco"})`),
+        ...linha("Espelhamento", textoPct(r)),
+        ...linha("Agora", [r["Cidade/UF"], r["Data da Posição"]].filter(Boolean).join(" às ")),
+        ...linha("Tempo parado", par.total_min ? `${hhmm(par.total_min)} (${hhmm(par.indevida_min)} fora de ponto autorizado)` : ""),
+      ),
+    ] },
+    { id: "telemetria", rotulo: "Telemetria", badge: r["Espelhamento Atual"] === "NOK" ? "!" : 0, conteudo: () => [
+      el("dl", {},
+        ...linha("Status geral", statusDe(r)),
+        ...linha("Agora", r["Espelhamento Atual"]),
+        ...linha("SLA 1h30", r["SLA 1h30 Cumprido"]),
+        ...linha("% espelhado", janelaNaoIniciada(r) ? `Janela não iniciada (começa às ${r["Início da Contagem"]})`
+          : r["% Espelhamento"] && `${r["% Espelhamento"]} final (melhor caso)`),
+        ...linha("% até agora", janelaNaoIniciada(r) ? "" : r["% Até Agora"]),
+        ...linha("Tempo sem sinal", janelaNaoIniciada(r) ? "" : r["Tempo Sem Sinal"]),
+        ...linha("Sem sinal desde", r["Sem Sinal Desde"] && (janelaNaoIniciada(r)
+          ? `${r["Sem Sinal Desde"]} (a contagem começa às ${r["Início da Contagem"]})` : r["Sem Sinal Desde"])),
+        ...linha("Quedas", r["Qtd. Quedas de Sinal"]),
+        ...linha("Causa", r["Causa NOK"]),
+      ),
+    ] },
+    { id: "rastreamento", rotulo: "Rastreamento", badge: 0, conteudo: () => [
+      el("dl", {},
+        ...linha("Situação", r["Rastreamento"]),
+        ...linha("Posição", r["Posição Atual"]),
+        ...linha("Cidade/UF", r["Cidade/UF"]),
+        ...linha("Data da posição", r["Data da Posição"]),
+        ...linha("Idade da posição", idade(g.idade_pos_min)),
+        ...linha("Precisão no mapa", g.precisao),
+        ...linha("Posições guardadas", (g.trilha || []).length || ""),
+        ...linha("Ignição", r["Ignição"]),
+        ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
+        ...linha("Tempo parado", r["Tempo Parado"]),
+        ...linha("Última mensagem", r["Última Mensagem"]),
+      ),
+    ] },
+    { id: "paradas", rotulo: "Paradas", badge: par.indevida_min ? "!" : 0, conteudo: () => secaoParadas(g) },
+    { id: "rota", rotulo: "Rota", badge: alertasRota, conteudo: () => [
+      el("dl", {},
+        ...linha("Risco", r["Risco de Atraso"]),
+        ...linha("Chegada prevista", r["Previsão TomTom"]),
+        ...linha("Desvio", desvio !== "" && desvio !== undefined ? `${desvio > 0 ? "+" : ""}${desvio} min` : ""),
+        ...linha("Rota TomTom", g.rota_tomtom_min ? idade(g.rota_tomtom_min) : ""),
+        ...linha("Caminho até o destino", g.rota_atual_km ? `${g.rota_atual_km} km, calculado às ${g.rota_atual_em}` : ""),
+        ...linha("Trânsito no caminho", g.transito_min ? `+${g.transito_min} min` : ""),
+        ...linha("Planejado", g.planejado_min ? idade(g.planejado_min) : ""),
+      ),
+      ...secaoAcidente(r, g),
+      ...secaoAlternativa(r, g),
+      ...secaoRotograma(r, g),
+      ...(g.clima && g.clima.length ? [
+        el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
+        el("dl", {}, ...g.clima.flatMap((a) => linha(a.rotulo,
+          [a.evento, a.inicio && `de ${a.inicio}`, a.fim && `até ${a.fim}`].filter(Boolean).join(" ")))),
+      ] : []),
+      ...secaoNoticias(g),
+    ] },
+    { id: "contatos", rotulo: "Contatos", badge: 0, conteudo: () => secaoContatos(r, g) },
+  ];
+  const ativa = abas.find((a) => a.id === abaDetalhe) || abas[0];
+  if (ativa.id === "paradas") desenharParadas(par);
+  // A cada atualização (1 min) o painel é refeito: na mesma rota e aba, a rolagem fica.
+  const rolagem = box.dataset.trip === r["Trip Number"] && box.dataset.aba === ativa.id ? box.scrollTop : 0;
   box.replaceChildren(
     el("h3", {}, r["Trip Number"], el("button", { class: "fechar", "aria-label": "Fechar", onclick: () => selecionar(null) }, "×")),
-    el("dl", {},
-      ...linha("Placa", [r["Placa"], r["Placa 2"]].filter(Boolean).join(" / ")),
-      ...linha("Motorista", r["Motorista"] && (r["Fonte Motorista"] && r["Fonte Motorista"] !== "Rastreador"
-        ? `${r["Motorista"]} (${r["Fonte Motorista"]})` : r["Motorista"])),
-      ...linha("Cancelamento", r["Cancelamento"]),
-      ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
-      ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
-      ...linha("Destino", estacaoComLocal(r["Destination Station Code"], r._destino_local)),
-      ...linha("Início previsto", r["Início Previsto"]),
-      ...linha("Fim previsto", r["Fim Previsto"]),
-    ),
-    ...secaoPendencias(g),
-    ...secaoContatos(r, g),
-    el("div", { class: "sec" }, "Espelhamento"),
-    el("dl", {},
-      ...linha("Status geral", statusDe(r)),
-      ...linha("Agora", r["Espelhamento Atual"]),
-      ...linha("SLA 1h30", r["SLA 1h30 Cumprido"]),
-      ...linha("% espelhado", janelaNaoIniciada(r) ? `Janela não iniciada (começa às ${r["Início da Contagem"]})`
-        : r["% Espelhamento"] && `${r["% Espelhamento"]} final (melhor caso)`),
-      ...linha("% até agora", janelaNaoIniciada(r) ? "" : r["% Até Agora"]),
-      ...linha("Tempo sem sinal", janelaNaoIniciada(r) ? "" : r["Tempo Sem Sinal"]),
-      ...linha("Sem sinal desde", r["Sem Sinal Desde"] && (janelaNaoIniciada(r)
-        ? `${r["Sem Sinal Desde"]} (a contagem começa às ${r["Início da Contagem"]})` : r["Sem Sinal Desde"])),
-      ...linha("Quedas", r["Qtd. Quedas de Sinal"]),
-    ),
-    el("div", { class: "sec" }, "Rastreamento (Angellira)"),
-    el("dl", {},
-      ...linha("Situação", r["Rastreamento"]),
-      ...linha("Posição", r["Posição Atual"]),
-      ...linha("Cidade/UF", r["Cidade/UF"]),
-      ...linha("Data da posição", r["Data da Posição"]),
-      ...linha("Idade da posição", idade(g.idade_pos_min)),
-      ...linha("Precisão no mapa", g.precisao),
-      ...linha("Posições guardadas", (g.trilha || []).length || ""),
-      ...linha("Ignição", r["Ignição"]),
-      ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
-      ...linha("Última mensagem", r["Última Mensagem"]),
-    ),
-    ...secaoAcidente(r, g),
-    ...secaoNoticias(g),
-    ...secaoAlternativa(r, g),
-    ...secaoRotograma(r, g),
-    ...(g.clima && g.clima.length ? [
-      el("div", { class: "sec" }, "Chuva no caminho (INMET)"),
-      el("dl", {}, ...g.clima.flatMap((a) => linha(a.rotulo,
-        [a.evento, a.inicio && `de ${a.inicio}`, a.fim && `até ${a.fim}`].filter(Boolean).join(" ")))),
-    ] : []),
-    el("div", { class: "sec" }, "Previsão TomTom"),
-    el("dl", {},
-      ...linha("Risco", r["Risco de Atraso"]),
-      ...linha("Chegada prevista", r["Previsão TomTom"]),
-      ...linha("Desvio", desvio !== "" && desvio !== undefined ? `${desvio > 0 ? "+" : ""}${desvio} min` : ""),
-      ...linha("Rota TomTom", g.rota_tomtom_min ? idade(g.rota_tomtom_min) : ""),
-      ...linha("Caminho até o destino", g.rota_atual_km ? `${g.rota_atual_km} km, calculado às ${g.rota_atual_em}` : ""),
-      ...linha("Trânsito no caminho", g.transito_min ? `+${g.transito_min} min` : ""),
-      ...linha("Planejado", g.planejado_min ? idade(g.planejado_min) : ""),
-    ),
+    el("div", { class: "detalhe-sub" }, [[r["Placa"], r["Placa 2"]].filter(Boolean).join(" / "), trechoDe(r)].filter(Boolean).join(" · ")),
+    el("div", { class: "abas", role: "tablist" }, ...abas.map((a) => el("button", {
+      type: "button", role: "tab", class: `aba ${a === ativa ? "ativa" : ""}`, "aria-selected": String(a === ativa),
+      onclick: () => trocarAba(a.id) }, a.rotulo, a.badge ? el("span", { class: "aba-badge" }, String(a.badge)) : null))),
+    el("div", { class: "aba-conteudo", role: "tabpanel" }, ...ativa.conteudo()),
   );
+  box.dataset.trip = r["Trip Number"];
+  box.dataset.aba = ativa.id;
   box.hidden = false;
+  box.scrollTop = rolagem;
+}
+
+// Aba aberta no painel da rota: fica a mesma ao trocar de rota e ao recarregar (neste navegador).
+const CHAVE_ABA = "torreLH.aba";
+let abaDetalhe = (() => { try { return localStorage.getItem(CHAVE_ABA) || "resumo"; } catch (e) { return "resumo"; } })();
+function trocarAba(id) {
+  abaDetalhe = id;
+  try { localStorage.setItem(CHAVE_ABA, id); } catch (e) { /* sem armazenamento: vale até recarregar */ }
+  desenharDetalhe();
+}
+
+const hhmm = (min) => `${Math.floor(min / 60)}h${String(Math.round(min % 60)).padStart(2, "0")}`;
+
+// Paradas da viagem (robô, paradas.py): da saída da origem até a chegada, de 10 min ou mais.
+function secaoParadas(g) {
+  const p = g.paradas;
+  if (!p || (!(p.lista || []).length && !p.aberta)) {
+    return [el("p", { class: "pend-info" }, "Nenhuma parada registrada nesta viagem. Contam as paradas de 10 min ou mais"
+      + " entre a saída da origem e a chegada.")];
+  }
+  return [
+    el("dl", {},
+      ...linha("Tempo parado total", hhmm(p.total_min)),
+      ...linha("Fora de ponto autorizado", hhmm(p.indevida_min)),
+      ...linha("Trânsito e acidente (não contam)", hhmm(p.nao_conta_min)),
+    ),
+    ...(p.aberta ? [
+      el("div", { class: "sec" }, "Parado agora"),
+      el("dl", {},
+        ...linha("Desde", `${p.aberta.inicio} (${hhmm(p.aberta.min)})`),
+        ...linha("Motivo provável", p.aberta.tipo),
+        ...linha("Local", [p.aberta.local, p.aberta.cidade].filter(Boolean).join(" · ")),
+      ),
+    ] : []),
+    el("div", { class: "sec" }, "Por motivo"),
+    el("dl", {}, ...p.por_tipo.flatMap((t) => linha(t.rotulo, `${t.qtd}x · ${hhmm(t.min)}${t.conta ? "" : " (não conta)"}`))),
+    el("div", { class: "sec" }, "Paradas"),
+    ...p.lista.map((x) => el("div", { class: `parada ${x.tipo === "Fora de ponto autorizado" ? "indevida" : ""} ${x.conta ? "" : "nao-conta"}` },
+      el("div", { class: "parada-topo" }, el("b", {}, x.tipo), el("span", {}, hhmm(x.min))),
+      el("span", { class: "pend-info" }, `${x.inicio} → ${x.fim.slice(-5)}`),
+      el("span", { class: "pend-info" }, [x.local, x.cidade, x.macro].filter(Boolean).join(" · ")))),
+  ];
+}
+
+function desenharParadas(p) {
+  for (const x of p.lista || []) {
+    if (x.lat == null || x.lon == null) continue;
+    L.marker([x.lat, x.lon], { keyboard: false,
+      icon: L.divIcon({ className: `parada-marca ${x.tipo === "Fora de ponto autorizado" ? "indevida" : x.conta ? "" : "nao-conta"}`,
+        html: "<span>P</span>", iconSize: [18, 18], iconAnchor: [9, 9] }) })
+      .bindTooltip(`${escHtml(`${x.tipo}: ${hhmm(x.min)}`)}<br>${escHtml(`${x.inicio} → ${x.fim.slice(-5)}`)}<br>${escHtml(x.local || "")}`)
+      .addTo(camadaSel);
+  }
 }
 
 // Já percorrido = posições reais recebidas da Angellira, ligadas em linha reta

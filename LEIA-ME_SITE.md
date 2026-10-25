@@ -301,6 +301,32 @@ e `Acionar`. A busca do site aceita o responsável ("angellira", "GR", "transpor
     ficam de fora.
 - O indicador "Saída / SM pendente" filtra as rotas com alerta de saída ou SM.
 
+## Painel da rota (abas)
+
+Ao clicar numa rota ou num caminhão, o painel mostra o número da viagem, as placas e o
+trecho, e as abas: Resumo (pendências e o essencial da viagem), Telemetria (espelhamento da
+Shopee), Rastreamento (Angellira), Paradas, Rota (previsão, acidentes e trânsito, rota
+alternativa, rotograma, chuva e notícias) e Contatos. O número na aba é a quantidade de
+alertas dela. A aba escolhida fica ao trocar de rota e ao recarregar (neste navegador).
+
+## Paradas
+
+O robô registra cada parada de 10 min ou mais (`PARADAS_MIN_MIN`) entre a saída da origem
+e a chegada, com as leituras da Angellira a cada ciclo: parado = velocidade até 5 km/h. O
+início vem do "Tempo Parado" da Angellira; o fim, da primeira leitura em movimento (precisão
+de alguns minutos). Paradas perto da origem ou do destino são carga e descarga e ficam de fora.
+
+- Motivo, nesta ordem: macro do motorista (refeição, pernoite, descanso, abastecimento,
+  fiscalização, mecânica, acidente); acidente avisado pelo motorista ou pela TomTom a até
+  3 km; unidade Shopee; posto (texto da posição); ponto autorizado do rotograma; trânsito
+  (fila da TomTom a até 3 km, ou parada de até 20 min com o motor ligado, sem macro e fora de
+  lugar conhecido); o resto é "Fora de ponto autorizado". A macro só vale se mudou desde a
+  última leitura em movimento (a de antes não explica a parada).
+- Trânsito, acidente na via e unidade Shopee não contam no total.
+- Na planilha: `Tempo Parado Total` (o que conta) e `Paradas Indevidas` (fora de ponto
+  autorizado), também no Fechamento_Rotas. No site, a aba Paradas traz o total, a parada
+  atual, o tempo por motivo, a lista e os pontos "P" no mapa.
+
 ## Botões de WhatsApp
 
 No computador, os botões de WhatsApp (cobranças, rota alternativa, queda geral e contatos)
