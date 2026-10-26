@@ -25,6 +25,8 @@ RAIO_ESTACAO_KM = rotograma.RAIO_ESTACAO_KM
 RAIO_TRANSITO_KM = 3
 # Parada curta com o motor ligado, sem macro e sem lugar conhecido: fila de trânsito.
 TRANSITO_MAX_MIN = int(os.getenv("PARADAS_TRANSITO_MAX_MIN", "20"))
+# Posição mais velha que isto não diz se o veículo está parado ou andando agora.
+SITUACAO_POSICAO_MAX_MIN = int(os.getenv("SITUACAO_POSICAO_MAX_MIN", "60"))
 MAX_PARADAS = 80
 
 # (chave, rótulo, conta no total)
@@ -56,6 +58,10 @@ def _dt(iso):
 def _hhmm(minutos) -> str:
     h, m = divmod(int(round(minutos)), 60)
     return f"{h}h{m:02d}"
+
+
+def _duracao(minutos) -> str:
+    return f"{int(round(minutos))} min" if minutos < 60 else _hhmm(minutos)
 
 
 def _num(v):
@@ -191,3 +197,43 @@ def resumo(dados: dict, r: dict, now: datetime) -> dict:
                    "macro": (p.get("macros") or [""])[-1].title(), "lat": p.get("lat"), "lon": p.get("lon")}
                   for p in reversed(paradas)][:40],
     }
+
+
+def situacao(dados: dict, r: dict, info: dict, em_viagem: bool, now: datetime):
+    """Veículo agora: em movimento, parado (há quanto tempo, motor ligado ou desligado e onde)
+    ou sem posição recente. Preenche 'Situação Veículo'; só vale da saída até a chegada."""
+    r["Situação Veículo"] = ""
+    chegou = (dados.get("chegada_realizada") or dados.get("sm_encerrada_em")
+              or r.get("Risco de Atraso") in ("No destino", "Encerrada"))
+    quando = geo_tomtom._parse_br(r.get("Data da Posição"))
+    # Relatório da Angellira velho: a posição antiga é do robô, não do veículo.
+    if not em_viagem or chegou or r.get("Cancelamento") or not quando or r.get("Rastreamento") != "OK":
+        return None
+    idade = max(0.0, (now - quando).total_seconds() / 60)
+    if idade > SITUACAO_POSICAO_MAX_MIN:
+        s = {"estado": "sem_posicao", "min": round(idade), "texto": f"Sem posição há {_duracao(idade)}"}
+    else:
+        vel = _num(r.get("Velocidade (km/h)"))
+        ignicao = r.get("Ignição") or ""
+        if vel is not None and vel > VEL_PARADO:
+            s = {"estado": "movimento", "min": 0, "ignicao": ignicao, "texto": f"Em movimento · {int(vel)} km/h"}
+        else:
+            aberta = dados.get("parada_aberta")
+            tempo = rotograma._minutos(r.get("Tempo Parado"))
+            if aberta:
+                minutos = (max(now, _dt(aberta["ultima"])) - _dt(aberta["inicio"])).total_seconds() / 60
+            else:
+                # Tempo Parado é o da hora da posição: soma o tempo desde ela (sem posição nova, segue parado).
+                minutos = (tempo or 0) + idade
+            v = info.get("veiculo")
+            if v and info.get("origem") and geo_tomtom.distancia_km(v, info["origem"]) <= RAIO_ESTACAO_KM:
+                onde = "na origem"
+            elif v and info.get("destino") and geo_tomtom.distancia_km(v, info["destino"]) <= RAIO_ESTACAO_KM:
+                onde = "no destino"
+            else:
+                onde = ROTULO[_classificar({**aberta, "min": round(minutos)})] if aberta else ""
+            motor = {"Ligada": "motor ligado", "Desligada": "motor desligado"}.get(ignicao, "")
+            s = {"estado": "parado", "min": round(minutos), "ignicao": ignicao, "onde": onde,
+                 "texto": " · ".join(t for t in (f"Parado há {_duracao(minutos)}", motor, onde) if t)}
+    r["Situação Veículo"] = s["texto"]
+    return s

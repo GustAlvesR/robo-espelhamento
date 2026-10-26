@@ -327,13 +327,14 @@ function filtrar() {
     if (soAlternativa && (!alternativaDe(r) || cancelada(r))) return false;
     if (soNoticia && (!noticiaAtiva(r) || cancelada(r))) return false;
     if (soSaida && (!r["Alerta Saída"] || cancelada(r))) return false;
+    if (soParado && (!paradoAgora(r) || cancelada(r))) return false;
     if (soGeral && !soGeral.includes(r["Trip Number"])) return false;
     if (fs && statusDe(r) !== fs) return false;
     if (fr && r["Risco de Atraso"] !== fr) return false;
     if (ft && trechoDe(r) !== ft) return false;
     if (!q) return true;
     return ["Trip Number", "Placa", "Placa 2", "Motorista", "Origin Station Code", "Destination Station Code",
-      "Cidade/UF", "_origem_local", "_destino_local", "Acionar"]
+      "Cidade/UF", "_origem_local", "_destino_local", "Acionar", "TSP"]
       .some((c) => semAcento(r[c]).includes(q));
   }).sort((a, b) => gravidade(a) - gravidade(b));
 }
@@ -358,6 +359,8 @@ function desenharKpis() {
   if (nAcid) kpis.splice(1, 0, ["Acidente no caminho", nAcid, "nok", () => aplicarFiltro(null, null, false, false, false, true)]);
   const nSaida = cont((r) => !!r["Alerta Saída"]);
   if (nSaida) kpis.push(["Saída / SM pendente", nSaida, "nok", () => aplicarFiltro(null, null, false, false, false, false, false, false, true)]);
+  const nParado = cont(paradoAgora);
+  if (nParado) kpis.push(["Parados agora", nParado, "alerta", () => aplicarFiltro(null, null, false, false, false, false, false, false, false, true)]);
   const nRot = cont((r) => alertasRotograma(r).length > 0);
   if (nRot) kpis.push(["Alerta rotograma", nRot, "nok", () => aplicarFiltro(null, null, false, false, true)]);
   const nNot = cont(noticiaAtiva);
@@ -377,6 +380,7 @@ let soAcidente = false;
 let soAlternativa = false;
 let soNoticia = false;
 let soSaida = false;
+let soParado = false;
 let soGeral = null;  // rotas da queda geral escolhida na faixa
 let quedasGerais = [];
 let contatosNacional = [];
@@ -389,14 +393,18 @@ const acidenteMotorista = (r) => acidenteDe(r).startsWith("Motorista:");
 const noticiasDe = (r) => (r._geo || {}).noticias || [];
 // "Pista liberada" aparece na rota, mas não conta no indicador.
 const noticiaAtiva = (r) => noticiasDe(r).some((n) => n.tipo !== "liberada");
+// Situação do veículo agora (robô, paradas.py): parado conta a partir de PARADA_MIN (10 min).
+const situacaoDe = (r) => (r._geo || {}).situacao || null;
+const paradoAgora = (r) => { const s = situacaoDe(r); return !!s && s.estado === "parado" && s.min >= 10; };
 const textoNoticia = (n) => `${n.tipo} em ${n.cidade}, a ${n.km} km${n.desde || ""} (${n.fonte || "notícia"}, ${n.quando}): ${n.titulo}`;
 function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false, noticia = false,
-  saida = false) {
+  saida = false, parado = false) {
   soRotograma = rot;
   soAcidente = acidente;
   soAlternativa = alt;
   soNoticia = noticia;
   soSaida = saida;
+  soParado = parado;
   soGeral = null;
   for (const f of ["fStatus", "fRisco"]) document.getElementById(f).value = "";
   if (id) document.getElementById(id).value = valor;
@@ -439,6 +447,13 @@ function tagSaida(r) {
     : /^SM no procedimento/.test(texto) ? "SM errada" : "Sem SM";
   return el("span", { class: "tag saida", title: texto.split("; ").join("\n") + (r["Acionar"] ? `\nAcionar: ${r["Acionar"]}` : "") },
     rotulo);
+}
+
+function tagParado(r) {
+  const s = situacaoDe(r);
+  if (!paradoAgora(r) || cancelada(r)) return null;
+  return el("span", { class: `tag parado ${s.ignicao === "Desligada" ? "desligado" : ""}`, title: s.texto },
+    `Parado ${s.min < 60 ? `${s.min} min` : hhmm(s.min)}${s.ignicao === "Ligada" ? " · motor ligado" : ""}`);
 }
 
 function tagNoticia(r) {
@@ -491,7 +506,7 @@ function desenharLista(lista) {
     },
       el("div", { class: "l1" }, el("span", {}, r["Trip Number"]),
         el("span", { class: "tags" }, ...tagsResumidas([tagAcidente(r), tagSaida(r), tagCausa(r), tagAlternativa(r), tagCls === "atrasada" || tagCls === "atraso" ? tag : null,
-          cancelada(r) ? tag : null, tagRotograma(r), tagNoticia(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
+          cancelada(r) ? tag : null, tagRotograma(r), tagParado(r), tagNoticia(r), tagChuva(r), tagCls === "atrasada" || tagCls === "atraso" || cancelada(r) ? null : tag]))),
       el("div", { class: "l2" },
         `${r["Placa"] || "sem placa"} · ${r["Origin Station Code"] || "?"} → ${r["Destination Station Code"] || "?"}`
         + ` · ${textoPct(r)}`),
@@ -570,6 +585,7 @@ function desenharDetalhe() {
       el("dl", {},
         ...linha("Motorista", r["Motorista"] && (r["Fonte Motorista"] && r["Fonte Motorista"] !== "Rastreador"
           ? `${r["Motorista"]} (${r["Fonte Motorista"]})` : r["Motorista"])),
+        ...linha("TSP", r["TSP"]),
         ...linha("Cancelamento", r["Cancelamento"]),
         ...linha("Status viagem", r["Status Viagem"] || (aguardandoInicio(r) ? "Antes do início previsto" : "")),
         ...linha("Origem", estacaoComLocal(r["Origin Station Code"], r._origem_local)),
@@ -579,6 +595,7 @@ function desenharDetalhe() {
         ...linha("Chegada prevista", r["Previsão TomTom"] && `${r["Previsão TomTom"]} (${r["Risco de Atraso"] || "sem risco"})`),
         ...linha("Espelhamento", textoPct(r)),
         ...linha("Agora", [r["Cidade/UF"], r["Data da Posição"]].filter(Boolean).join(" às ")),
+        ...linha("Situação", (situacaoDe(r) || {}).texto),
         ...linha("Tempo parado", par.total_min ? `${hhmm(par.total_min)} (${hhmm(par.indevida_min)} fora de ponto autorizado)` : ""),
       ),
     ] },
@@ -606,6 +623,7 @@ function desenharDetalhe() {
         ...linha("Idade da posição", idade(g.idade_pos_min)),
         ...linha("Precisão no mapa", g.precisao),
         ...linha("Posições guardadas", (g.trilha || []).length || ""),
+        ...linha("Veículo agora", (situacaoDe(r) || {}).texto),
         ...linha("Ignição", r["Ignição"]),
         ...linha("Velocidade", r["Velocidade (km/h)"] !== "" && r["Velocidade (km/h)"] != null ? `${r["Velocidade (km/h)"]} km/h` : ""),
         ...linha("Tempo parado", r["Tempo Parado"]),

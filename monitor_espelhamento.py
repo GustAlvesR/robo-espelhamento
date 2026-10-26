@@ -584,7 +584,7 @@ TRACKING_OUTPUT = [
 # Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
 TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", ""),
                     ("trk_saida", ""), ("trk_situacao", ""), ("trk_fresco", ""), ("trk_ref", ""),
-                    ("trk_outro_proc", "")]
+                    ("trk_outro_proc", ""), ("trk_tsp", "")]
 # Fim de viagem = SM encerrada na Angellira. O relatório do Tracking só traz SMs em
 # andamento, então a SM encerrada é a viagem que some dele. A macro "FIM DE VIAGEM" do
 # motorista não encerra: a SM segue "Em Viagem" depois dela.
@@ -702,6 +702,7 @@ def carregar_rastreamento(client):
             "origem_nome": cel(l, "ORIGEM"),
             "destino_nome": cel(l, "CLIENTE"),
             "motorista": cel(l, "MOTORISTA"),
+            "transportador": cel(l, "TRANSPORTADOR"),
             "situacao": cel(l, "SITUACAO"),
         })
     return registros, (max(referencias) if referencias else None), outros
@@ -785,6 +786,7 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
             df.at[i, "trk_origem_nome"] = reg["origem_nome"]
             df.at[i, "trk_destino_nome"] = reg["destino_nome"]
             df.at[i, "trk_motorista"] = reg["motorista"]
+            df.at[i, "trk_tsp"] = reg["transportador"].strip()
             df.at[i, "trk_saida"] = reg["saida"].isoformat() if reg["saida"] else ""
             df.at[i, "trk_situacao"] = reg["situacao"]
         # Relatório atualizado e com linhas: só nele o sumiço de uma viagem quer dizer SM encerrada.
@@ -973,6 +975,8 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
             )
 
     motorista = nome_motorista(row.get("driver_name")) or nome_motorista(row.get("trk_motorista"))
+    if _txt(row.get("trk_tsp")):
+        dados["tsp"] = _txt(row.get("trk_tsp"))  # fica a última conhecida se a SM sair do relatório
     dados["base"] = {
         "inicio": _iso(inicio_previsto),
         "fim": _iso(fim_previsto),
@@ -1133,6 +1137,7 @@ def coluna_motorista(resultado: dict, dados: dict) -> None:
     resultado["Motorista"] = nome_motorista(base.get("motorista"))
     resultado["Fonte Motorista"] = base.get("motorista_fonte", "") if resultado["Motorista"] else ""
     resultado["SM Encerrada Em"] = _fmt(_parse_iso(dados.get("sm_encerrada_em")))
+    resultado["TSP"] = dados.get("tsp", "")  # transportadora da SM na Angellira
 
 
 def completar_motoristas(state: dict, motoristas: dict) -> None:
@@ -1394,6 +1399,7 @@ def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str):
     linha = {"Fechada Em": _fmt(now), "Motivo": motivo,
              "% Final": round(pct, 1) if pct is not None else "", **resultado}
     alertas.no_fechamento(dados, linha)
+    linha.pop("Situação Veículo", None)  # é do momento; no fechamento não diz nada
     return linha
 
 
@@ -1760,12 +1766,14 @@ def _job():
                 dados = state.get(r["Trip Number"], {})
                 g = geo_por_trip.setdefault(r["Trip Number"], {})
                 rot = rotogramas_mapa.get((g.get("rotograma") or {}).get("chave", "")) or {}
-                paradas.atualizar(dados, r, g, rot, viagem_iniciada(r, dados, now))
+                em_viagem = viagem_iniciada(r, dados, now)
+                paradas.atualizar(dados, r, g, rot, em_viagem)
                 g["paradas"] = paradas.resumo(dados, r, now)
+                g["situacao"] = paradas.situacao(dados, r, g, em_viagem, now)
         except Exception:
             logging.exception("Falha na etapa de paradas; seguindo sem ela.")
             for r in resultados:
-                for c in ("Tempo Parado Total", "Paradas Indevidas"):
+                for c in ("Tempo Parado Total", "Paradas Indevidas", "Situação Veículo"):
                     r.setdefault(c, "")
         quedas_gerais = []
         try:
@@ -1831,6 +1839,10 @@ def _job():
         except Exception:
             logging.exception("Falha no histórico de alertas; seguindo sem ele.")
             novos_alertas = []
+        # Colunas mais novas no fim da aba, para não deslocar as letras das que já existiam.
+        for r in resultados:
+            for c in ("TSP", "Situação Veículo"):
+                r[c] = r.pop(c, "")
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
