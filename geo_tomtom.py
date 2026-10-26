@@ -15,6 +15,8 @@ Princípios:
 
 import csv
 import functools
+import gzip
+import http.client
 import json
 import logging
 import math
@@ -213,47 +215,61 @@ class GeoTomTom:
 
     # ------------------------------------------------------------------ HTTP
     @staticmethod
-    def _http_get_real(url: str):
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    def _ler(req):
+        # Resposta compactada: rota longa com o desenho do trajeto passa de 700 KB e chegava cortada.
+        req.add_header("Accept", "application/json")
+        req.add_header("Accept-Encoding", "gzip")
         with urllib.request.urlopen(req, timeout=20) as r:
-            return json.loads(r.read().decode("utf-8"))
+            corpo = r.read()
+            if r.headers.get("Content-Encoding", "").lower() == "gzip":
+                corpo = gzip.decompress(corpo)
+        return json.loads(corpo.decode("utf-8"))
+
+    @staticmethod
+    def _http_get_real(url: str):
+        return GeoTomTom._ler(urllib.request.Request(url))
 
     @staticmethod
     def _http_post_real(url: str, corpo: dict):
-        req = urllib.request.Request(url, data=json.dumps(corpo).encode("utf-8"), method="POST",
-                                     headers={"Accept": "application/json", "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return json.loads(r.read().decode("utf-8"))
+        return GeoTomTom._ler(urllib.request.Request(url, data=json.dumps(corpo).encode("utf-8"), method="POST",
+                                                     headers={"Content-Type": "application/json"}))
 
     def _chamar(self, caminho: str, params: dict, corpo: dict = None):
         if not self.key:
             return None
-        with self._lock:
-            if date.today() != self.dia:
-                self.dia, self.chamadas_hoje = date.today(), 0
-                self.erros.pop("teto", None)
-            if self.chamadas_hoje >= TOMTOM_MAX_CHAMADAS_DIA:
-                self.erros["teto"] = ("Teto diário de chamadas atingido", datetime.now(timezone.utc))
-                return None
-            self.chamadas_hoje += 1
         servico = caminho.split("/")[1]
         params = {**params, "key": self.key}
         url = f"{TOMTOM_BASE}{caminho}?{urllib.parse.urlencode(params)}"
-        try:
-            dados = self._http_post(url, corpo) if corpo is not None else self._http_get(url)
+        for tentativa in (1, 2):
             with self._lock:
-                self.erros.pop(servico, None)
-            return dados
-        except urllib.error.HTTPError as e:
-            self._falhou(servico, f"HTTP {e.code} em {servico}")
-            logging.warning("TomTom %s: HTTP %s.", servico, e.code)
-        except json.JSONDecodeError as e:
-            self._falhou(servico, f"resposta inválida em {servico}")
-            logging.warning("TomTom %s: resposta não é JSON (%s); início: %r", servico, e, e.doc[:200])
-        except Exception as e:
-            self._falhou(servico, f"{type(e).__name__} em {servico}")
-            logging.warning("TomTom %s falhou (%s).", servico, e)
-        return None
+                if date.today() != self.dia:
+                    self.dia, self.chamadas_hoje = date.today(), 0
+                    self.erros.pop("teto", None)
+                if self.chamadas_hoje >= TOMTOM_MAX_CHAMADAS_DIA:
+                    self.erros["teto"] = ("Teto diário de chamadas atingido", datetime.now(timezone.utc))
+                    return None
+                self.chamadas_hoje += 1
+            try:
+                dados = self._http_post(url, corpo) if corpo is not None else self._http_get(url)
+                with self._lock:
+                    self.erros.pop(servico, None)
+                return dados
+            except urllib.error.HTTPError as e:
+                self._falhou(servico, f"HTTP {e.code} em {servico}")
+                logging.warning("TomTom %s: HTTP %s.", servico, e.code)
+                return None
+            except (http.client.IncompleteRead, json.JSONDecodeError, EOFError, gzip.BadGzipFile) as e:
+                # Resposta cortada no caminho: costuma vir inteira na segunda vez.
+                detalhe = f"{e}; início: {e.doc[:200]!r}" if isinstance(e, json.JSONDecodeError) else repr(e)
+                if tentativa == 1:
+                    logging.info("TomTom %s: resposta incompleta (%s); tentando de novo.", servico, detalhe)
+                    continue
+                self._falhou(servico, f"resposta incompleta em {servico}")
+                logging.warning("TomTom %s: resposta incompleta de novo (%s).", servico, detalhe)
+            except Exception as e:
+                self._falhou(servico, f"{type(e).__name__} em {servico}")
+                logging.warning("TomTom %s falhou (%s).", servico, e)
+            return None
 
     def _falhou(self, servico: str, texto: str) -> None:
         with self._lock:
