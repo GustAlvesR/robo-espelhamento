@@ -144,6 +144,16 @@ Rota cancelada (abaixo) fecha sem linha: não pontua.
 Cada rota fecha uma vez só. Se ela voltar à Telemetria depois de fechada, não
 ganha uma segunda linha.
 
+`Alerta Notícia` e `Rota Alternativa` trazem a viagem inteira (quantidade e o
+último alerta), não a foto da chegada, quando esses alertas já não são procurados.
+
+### Histórico de alertas (`Historico_Alertas`)
+Uma linha a cada notícia no caminho e a cada rota alternativa sugerida ao GR,
+no ciclo em que aparecem: viagem, placa, trecho, motorista, detalhe, cidade e km
+à frente (notícia), economia e as duas chegadas previstas (rota alternativa) e o
+link. A mesma notícia entra uma vez por viagem. A rota alternativa entra de novo
+quando muda o tipo, a economia muda mais de 15 min ou ela some por mais de 1 h.
+
 ### Rotas canceladas
 A cada ciclo o robô consulta, na planilha de origem, `DBLH` (`status_agrupado`)
 e `LH SEMANA ATUAL` (`STATUS REAL`). Se qualquer uma marcar a rota como

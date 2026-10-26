@@ -48,6 +48,7 @@ from gspread.exceptions import APIError, WorksheetNotFound
 
 import clima
 import contatos
+import alertas
 import alternativa
 import geo_tomtom
 import noticias
@@ -1389,8 +1390,10 @@ def _fechar(dados: dict, resultado: dict, now: datetime, motivo: str):
         dados["cancelada"] = resultado["Cancelamento"]
         return None
     pct = _num(str(resultado.get("% Espelhamento", "")).replace("%", ""))
-    return {"Fechada Em": _fmt(now), "Motivo": motivo,
-            "% Final": round(pct, 1) if pct is not None else "", **resultado}
+    linha = {"Fechada Em": _fmt(now), "Motivo": motivo,
+             "% Final": round(pct, 1) if pct is not None else "", **resultado}
+    alertas.no_fechamento(dados, linha)
+    return linha
 
 
 def fechar_rotas(state: dict, resultados: list, finalizados: list, now: datetime) -> list:
@@ -1436,6 +1439,16 @@ def append_fechamentos(client: gspread.Client, fechadas: list) -> None:
     cabecalho = _preparar_cabecalho(ws, cabecalho)
     ws.append_rows([[_texto(f.get(c, "")) for c in cabecalho] for f in fechadas],
                    value_input_option="USER_ENTERED")
+
+
+@gspread_retry()
+def append_alertas(client: gspread.Client, linhas: list) -> None:
+    if not linhas:
+        return
+    ws = get_or_create_worksheet(client.open_by_key(RESULTS_SPREADSHEET_ID), alertas.ABA)
+    cabecalho = _preparar_cabecalho(ws, alertas.COLUNAS)
+    ws.append_rows([[_texto(l.get(c, "")) for c in cabecalho] for l in linhas], value_input_option="USER_ENTERED")
+    logging.info("Histórico de alertas: %s linha(s) nova(s) na aba %s.", len(linhas), alertas.ABA)
 
 
 def _letra_coluna(indice: int) -> str:
@@ -1812,6 +1825,11 @@ def _job():
             logging.exception("Falha na etapa de rota alternativa; seguindo sem ela.")
             for r in resultados:
                 r.setdefault("Rota Alternativa", "")
+        try:
+            novos_alertas = alertas.registrar(state, resultados, geo_por_trip, now)
+        except Exception:
+            logging.exception("Falha no histórico de alertas; seguindo sem ele.")
+            novos_alertas = []
 
         # Depois da etapa TomTom: o retrato final e o guardado no estado saem completos.
         trip_numbers_ativos = set(df["trip_number"].astype(str).str.strip())
@@ -1826,6 +1844,10 @@ def _job():
         write_results(client_escrita, resultados + finalizados)
         append_events(client_escrita, eventos_do_ciclo)
         append_fechamentos(client_escrita, fechadas)
+        try:
+            append_alertas(client_escrita, novos_alertas)
+        except Exception:
+            logging.exception("Falha ao gravar a aba %s.", alertas.ABA)
 
         publicar_snapshot(resultados, geo_por_trip, now, ref_rastreamento, rotogramas_mapa, quedas_gerais,
                           contatos_nacional)
