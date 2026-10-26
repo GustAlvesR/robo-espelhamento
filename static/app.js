@@ -393,9 +393,13 @@ const acidenteMotorista = (r) => acidenteDe(r).startsWith("Motorista:");
 const noticiasDe = (r) => (r._geo || {}).noticias || [];
 // "Pista liberada" aparece na rota, mas não conta no indicador.
 const noticiaAtiva = (r) => noticiasDe(r).some((n) => n.tipo !== "liberada");
-// Situação do veículo agora (robô, paradas.py): parado conta a partir de PARADA_MIN (10 min).
+// Situação do veículo agora (robô, paradas.py). Alerta só com o motor desligado (10 min ou mais)
+// ou no mesmo lugar com o motor ligado há 60 min ou mais (SITUACAO_MESMO_LOCAL_MIN).
 const situacaoDe = (r) => (r._geo || {}).situacao || null;
-const paradoAgora = (r) => { const s = situacaoDe(r); return !!s && s.estado === "parado" && s.min >= 10; };
+const paradoAgora = (r) => {
+  const s = situacaoDe(r);
+  return !!s && ((s.estado === "desligado" && s.min >= 10) || s.estado === "mesmo_local");
+};
 const textoNoticia = (n) => `${n.tipo} em ${n.cidade}, a ${n.km} km${n.desde || ""} (${n.fonte || "notícia"}, ${n.quando}): ${n.titulo}`;
 function aplicarFiltro(id, valor, sinal = false, chuva = false, rot = false, acidente = false, alt = false, noticia = false,
   saida = false, parado = false) {
@@ -452,8 +456,9 @@ function tagSaida(r) {
 function tagParado(r) {
   const s = situacaoDe(r);
   if (!paradoAgora(r) || cancelada(r)) return null;
-  return el("span", { class: `tag parado ${s.ignicao === "Desligada" ? "desligado" : ""}`, title: s.texto },
-    `Parado ${s.min < 60 ? `${s.min} min` : hhmm(s.min)}${s.ignicao === "Ligada" ? " · motor ligado" : ""}`);
+  const tempo = s.min < 60 ? `${s.min} min` : hhmm(s.min);
+  return el("span", { class: `tag parado ${s.estado === "desligado" ? "desligado" : ""}`, title: s.texto },
+    s.estado === "desligado" ? `Motor desligado ${tempo}` : `Mesmo local ${tempo}`);
 }
 
 function tagNoticia(r) {

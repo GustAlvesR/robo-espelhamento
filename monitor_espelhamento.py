@@ -584,7 +584,7 @@ TRACKING_OUTPUT = [
 # Usadas só internamente (nomes das estações para geocodificar), não vão à planilha.
 TRACKING_INTERNO = [("trk_origem_nome", ""), ("trk_destino_nome", ""), ("trk_motorista", ""),
                     ("trk_saida", ""), ("trk_situacao", ""), ("trk_fresco", ""), ("trk_ref", ""),
-                    ("trk_outro_proc", ""), ("trk_tsp", "")]
+                    ("trk_outro_proc", ""), ("trk_tsp", ""), ("trk_odometro", "")]
 # Fim de viagem = SM encerrada na Angellira. O relatório do Tracking só traz SMs em
 # andamento, então a SM encerrada é a viagem que some dele. A macro "FIM DE VIAGEM" do
 # motorista não encerra: a SM segue "Em Viagem" depois dela.
@@ -703,6 +703,7 @@ def carregar_rastreamento(client):
             "destino_nome": cel(l, "CLIENTE"),
             "motorista": cel(l, "MOTORISTA"),
             "transportador": cel(l, "TRANSPORTADOR"),
+            "odometro": cel(l, "DISTANCIATOTALPERCORRIDA"),
             "situacao": cel(l, "SITUACAO"),
         })
     return registros, (max(referencias) if referencias else None), outros
@@ -787,6 +788,7 @@ def enriquecer_com_rastreamento(client, df: pd.DataFrame, now: datetime):
             df.at[i, "trk_destino_nome"] = reg["destino_nome"]
             df.at[i, "trk_motorista"] = reg["motorista"]
             df.at[i, "trk_tsp"] = reg["transportador"].strip()
+            df.at[i, "trk_odometro"] = reg["odometro"].strip()
             df.at[i, "trk_saida"] = reg["saida"].isoformat() if reg["saida"] else ""
             df.at[i, "trk_situacao"] = reg["situacao"]
         # Relatório atualizado e com linhas: só nele o sumiço de uma viagem quer dizer SM encerrada.
@@ -977,6 +979,8 @@ def process_trip(row: pd.Series, state: dict, now: datetime, eventos: list, real
     motorista = nome_motorista(row.get("driver_name")) or nome_motorista(row.get("trk_motorista"))
     if _txt(row.get("trk_tsp")):
         dados["tsp"] = _txt(row.get("trk_tsp"))  # fica a última conhecida se a SM sair do relatório
+    # Km rodados da SM na Angellira: é por ele que o robô sabe se o veículo saiu do lugar.
+    dados["odometro"] = _num(row.get("trk_odometro"))
     dados["base"] = {
         "inicio": _iso(inicio_previsto),
         "fim": _iso(fim_previsto),
@@ -1767,6 +1771,7 @@ def _job():
                 g = geo_por_trip.setdefault(r["Trip Number"], {})
                 rot = rotogramas_mapa.get((g.get("rotograma") or {}).get("chave", "")) or {}
                 em_viagem = viagem_iniciada(r, dados, now)
+                paradas.acompanhar(dados, r)
                 paradas.atualizar(dados, r, g, rot, em_viagem)
                 g["paradas"] = paradas.resumo(dados, r, now)
                 g["situacao"] = paradas.situacao(dados, r, g, em_viagem, now)

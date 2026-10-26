@@ -315,9 +315,12 @@ navegador).
 ## Paradas
 
 O robô registra cada parada de 10 min ou mais (`PARADAS_MIN_MIN`) entre a saída da origem
-e a chegada, com as leituras da Angellira a cada ciclo: parado = velocidade até 5 km/h. O
-início vem do "Tempo Parado" da Angellira; o fim, da primeira leitura em movimento (precisão
-de alguns minutos). Paradas perto da origem ou do destino são carga e descarga e ficam de fora.
+e a chegada, com as leituras da Angellira a cada ciclo: parado = os km rodados da SM não
+andaram 1 km desde a leitura anterior (sem eles, a posição ficou no mesmo ponto de referência).
+A velocidade não serve: a Angellira a deixa em branco na maioria das leituras, até com o
+caminhão andando. O início é a chegada ao lugar; o fim, a primeira leitura fora dele (precisão
+de uma leitura, alguns minutos). O histórico anterior a 26/10, medido pela velocidade, foi
+descartado: abria paradas que não fechavam. Paradas perto da origem ou do destino são carga e descarga e ficam de fora.
 
 - Motivo, nesta ordem: macro do motorista (refeição, pernoite, descanso, abastecimento,
   fiscalização, mecânica, acidente); acidente avisado pelo motorista ou pela TomTom a até
@@ -332,15 +335,19 @@ de alguns minutos). Paradas perto da origem ou do destino são carga e descarga 
 
 ## Veículo parado agora e TSP
 
-Da saída até a chegada, o robô diz como o veículo está agora, pela última leitura da
-Angellira: "Em movimento · 72 km/h", "Parado há 1h43 · motor desligado · Posto /
-abastecimento" ou "Sem posição há 1h10" (posição de mais de 60 min, `SITUACAO_POSICAO_MAX_MIN`).
-Parado = velocidade até 5 km/h; o tempo vem da parada em aberto ou do "Tempo Parado" da
-Angellira somado ao tempo desde a posição; o motor vem da ignição; o lugar, da origem, do
-destino ou do motivo da parada. Com o relatório da Angellira desatualizado, fica em branco.
+Da saída até a chegada, o robô avisa só dois casos, pela última leitura da Angellira:
 
-- Na lista, a etiqueta "Parado 34 min · motor ligado" (amarela) ou "Parado 1h43" (cinza, motor
-  desligado) aparece a partir de 10 min parado. O indicador "Parados agora" filtra essas rotas.
+- Motor desligado (ignição desligada): "Motor desligado há 1h20 · Posto / abastecimento". O
+  tempo vem do "Tempo Parado" da Angellira ou da primeira leitura com o motor desligado.
+- No mesmo lugar há 60 min ou mais com o motor ligado (`SITUACAO_MESMO_LOCAL_MIN`): "No mesmo
+  local há 1h22 · motor ligado". Mesmo lugar = os km rodados da SM não andaram 1 km.
+
+Fora disso a coluna diz "Em movimento", "No mesmo local há 20 min · motor ligado" (sem
+alerta) ou "Sem posição há 1h10" (posição de mais de 60 min). Na primeira leitura de uma rota
+e com o relatório da Angellira desatualizado, fica em branco.
+
+- Na lista, as etiquetas "Motor desligado 1h20" (cinza, a partir de 10 min) e "Mesmo local
+  1h22" (amarela). O indicador "Parados agora" filtra essas rotas.
 - No painel da rota: "Situação" no Resumo e "Veículo agora" no Rastreamento.
 - TSP: a transportadora da SM na Angellira (coluna TRANSPORTADOR), no Resumo, na busca e nas
   mensagens de WhatsApp (cobranças e rota alternativa).

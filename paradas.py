@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Paradas da viagem e tempo parado total, montados a cada ciclo com as leituras da Angellira.
 
-Parada = leituras seguidas com o veículo parado (velocidade até VEL_PARADO; a Angellira deixa a
-velocidade em branco quando é zero). O início vem do "Tempo Parado" da Angellira quando ele é
-coerente com as leituras (senão, a primeira leitura parada); o fim, da primeira leitura em
-movimento. Só conta da saída da origem até a chegada; parada perto da origem ou do destino é
+Parada = leituras seguidas no mesmo lugar: os km rodados da SM (Angellira) não andaram 1 km
+ou, sem eles, a posição ficou no mesmo ponto de referência. A velocidade não serve: a Angellira
+a deixa em branco na maioria das leituras, até com o caminhão andando. O início é a primeira
+leitura no lugar; o fim, a primeira leitura fora dele (afinado pelo "Tempo Parado"). Só conta da saída da origem até a chegada; parada perto da origem ou do destino é
 carga e descarga e fica de fora. Precisão: a de uma leitura (alguns minutos).
 
 O motivo sai, nesta ordem, da macro do motorista (refeição, abastecimento...), do aviso de
@@ -27,6 +27,12 @@ RAIO_TRANSITO_KM = 3
 TRANSITO_MAX_MIN = int(os.getenv("PARADAS_TRANSITO_MAX_MIN", "20"))
 # Posição mais velha que isto não diz se o veículo está parado ou andando agora.
 SITUACAO_POSICAO_MAX_MIN = int(os.getenv("SITUACAO_POSICAO_MAX_MIN", "60"))
+# Andar menos que isto entre leituras é ficar no mesmo lugar (folga para o GPS).
+MESMO_LOCAL_KM = 1.0
+# Tempo no mesmo lugar, com o motor ligado, para o site avisar.
+MESMO_LOCAL_MIN = int(os.getenv("SITUACAO_MESMO_LOCAL_MIN", "60"))
+# Versão do histórico de paradas: a anterior media pela velocidade e abriu paradas que não fechavam.
+VERSAO = 2
 MAX_PARADAS = 80
 
 # (chave, rótulo, conta no total)
@@ -71,6 +77,49 @@ def _num(v):
         return None
 
 
+def _ponto(dados: dict, r: dict) -> dict:
+    """Onde o veículo está nesta leitura: km rodados da SM, referência da posição e cidade.
+    'Posição Atual' vem como '0.03 Km - POSTO TURMALINA - FREI INOCENCIO/MG'."""
+    m = re.match(r"\s*(\d+(?:[.,]\d+)?)\s*km\s*-\s*(.*)", str(r.get("Posição Atual") or ""), re.I)
+    return {"odo": dados.get("odometro") or None, "km": _num(m.group(1)) if m else None,
+            "ref": _norm(m.group(2) if m else r.get("Posição Atual")), "cidade": _norm(r.get("Cidade/UF"))}
+
+
+def _andou(antes: dict, agora: dict) -> bool:
+    if antes.get("odo") and agora.get("odo"):
+        return agora["odo"] - antes["odo"] >= MESMO_LOCAL_KM
+    if agora["ref"] != antes.get("ref") or agora["cidade"] != antes.get("cidade"):
+        return True
+    return agora["km"] is not None and antes.get("km") is not None and abs(agora["km"] - antes["km"]) > MESMO_LOCAL_KM
+
+
+def acompanhar(dados: dict, r: dict) -> None:
+    """A cada leitura nova da Angellira: desde quando o veículo está no mesmo lugar
+    ('pos_ancora') e desde quando o motor está desligado ('ign_desligada_desde')."""
+    quando = geo_tomtom._parse_br(r.get("Data da Posição"))
+    ultima = _dt(dados.get("pos_leitura"))
+    if not quando or (ultima and quando <= ultima):
+        return  # sem leitura nova: vale o que a última disse
+    dados["pos_leitura"] = quando.isoformat()
+    agora, ancora = _ponto(dados, r), dados.get("pos_ancora")
+    andou = _andou(ancora, agora) if ancora else None
+    if andou or not ancora:
+        # Chegou ao lugar depois da leitura anterior; o "Tempo Parado" da Angellira diz quando.
+        tempo = rotograma._minutos(r.get("Tempo Parado"))
+        desde = quando - timedelta(minutes=tempo) if tempo else quando
+        if ultima and desde < ultima:
+            desde = ultima
+        dados["pos_ancora"] = {**agora, "desde": desde.isoformat()}
+    else:
+        ancora["odo"] = ancora.get("odo") or agora["odo"]
+    dados["pos_andou"] = andou
+    ign = r.get("Ignição")
+    if ign == "Desligada":
+        dados.setdefault("ign_desligada_desde", quando.isoformat())
+    elif ign == "Ligada":
+        dados.pop("ign_desligada_desde", None)
+
+
 def _em_ponto_autorizado(info: dict, r: dict, rot: dict) -> bool:
     v = info.get("veiculo")
     texto = _norm(r.get("Posição Atual"))
@@ -112,6 +161,10 @@ def atualizar(dados: dict, r: dict, info: dict, rot: dict, em_viagem: bool) -> N
                         for e in (info.get("origem"), info.get("destino")))
     chegou = (dados.get("chegada_realizada") or dados.get("sm_encerrada_em")
               or r.get("Risco de Atraso") in ("No destino", "Encerrada"))
+    if dados.get("paradas_v") != VERSAO:
+        for k in ("parada_aberta", "paradas", "paradas_leitura", "paradas_movimento", "paradas_msg_movimento"):
+            dados.pop(k, None)
+        dados["paradas_v"] = VERSAO
     if not em_viagem or chegou:
         dados.pop("parada_aberta", None)  # parada que segue até a chegada é a descarga
         return
@@ -120,15 +173,18 @@ def atualizar(dados: dict, r: dict, info: dict, rot: dict, em_viagem: bool) -> N
         return  # mesma leitura de antes: nada de novo
     dados["paradas_leitura"] = quando.isoformat()
     vel = _num(r.get("Velocidade (km/h)"))
-    parado = (vel is None or vel <= VEL_PARADO) and not perto_estacao
+    andou = dados.get("pos_andou")
+    if andou is None and not (vel and vel > VEL_PARADO):
+        return  # primeira leitura acompanhada: ainda não dá para saber se saiu do lugar
+    parado = not andou and not (vel and vel > VEL_PARADO) and not perto_estacao
     aberta = dados.get("parada_aberta")
     movimento = _dt(dados.get("paradas_movimento"))
     if parado:
         if not aberta:
-            tempo = rotograma._minutos(r.get("Tempo Parado"))
-            inicio = quando - timedelta(minutes=tempo) if tempo is not None else quando
+            # Desde a primeira leitura neste lugar (a de antes já estava aqui).
+            inicio = _dt((dados.get("pos_ancora") or {}).get("desde")) or quando
             if movimento and inicio < movimento:
-                inicio = movimento  # não estava parado quando a leitura anterior o viu andando
+                inicio = movimento
             aberta = dados["parada_aberta"] = {
                 "inicio": inicio.isoformat(), "local": r.get("Posição Atual") or "", "cidade": r.get("Cidade/UF") or "",
                 "lat": (info.get("veiculo") or [None, None])[0], "lon": (info.get("veiculo") or [None, None])[1],
@@ -200,8 +256,9 @@ def resumo(dados: dict, r: dict, now: datetime) -> dict:
 
 
 def situacao(dados: dict, r: dict, info: dict, em_viagem: bool, now: datetime):
-    """Veículo agora: em movimento, parado (há quanto tempo, motor ligado ou desligado e onde)
-    ou sem posição recente. Preenche 'Situação Veículo'; só vale da saída até a chegada."""
+    """O que a torre precisa saber do veículo agora: motor desligado (há quanto tempo) ou
+    no mesmo lugar há MESMO_LOCAL_MIN ou mais com o motor ligado; senão, em movimento.
+    Preenche 'Situação Veículo'; só vale da saída até a chegada."""
     r["Situação Veículo"] = ""
     chegou = (dados.get("chegada_realizada") or dados.get("sm_encerrada_em")
               or r.get("Risco de Atraso") in ("No destino", "Encerrada"))
@@ -212,28 +269,38 @@ def situacao(dados: dict, r: dict, info: dict, em_viagem: bool, now: datetime):
     idade = max(0.0, (now - quando).total_seconds() / 60)
     if idade > SITUACAO_POSICAO_MAX_MIN:
         s = {"estado": "sem_posicao", "min": round(idade), "texto": f"Sem posição há {_duracao(idade)}"}
+        r["Situação Veículo"] = s["texto"]
+        return s
+    v = info.get("veiculo")
+    if v and info.get("origem") and geo_tomtom.distancia_km(v, info["origem"]) <= RAIO_ESTACAO_KM:
+        onde = "na origem"
+    elif v and info.get("destino") and geo_tomtom.distancia_km(v, info["destino"]) <= RAIO_ESTACAO_KM:
+        onde = "no destino"
+    elif dados.get("parada_aberta"):
+        aberta = dados["parada_aberta"]
+        onde = ROTULO[_classificar({**aberta, "min": (now - _dt(aberta["inicio"])).total_seconds() / 60})]
     else:
+        onde = ""
+    desde_local = _dt((dados.get("pos_ancora") or {}).get("desde"))
+    no_local = (now - desde_local).total_seconds() / 60 if desde_local else 0
+    if r.get("Ignição") == "Desligada":
+        tempo = rotograma._minutos(r.get("Tempo Parado"))
+        inicios = [d for d in (_dt(dados.get("ign_desligada_desde")),
+                               quando - timedelta(minutes=tempo) if tempo else None) if d]
+        minutos = (now - min(inicios)).total_seconds() / 60 if inicios else idade
+        s = {"estado": "desligado", "min": round(minutos), "onde": onde,
+             "texto": " · ".join(t for t in (f"Motor desligado há {_duracao(minutos)}", onde) if t)}
+    elif no_local >= MESMO_LOCAL_MIN:
+        s = {"estado": "mesmo_local", "min": round(no_local), "onde": onde,
+             "texto": " · ".join(t for t in (f"No mesmo local há {_duracao(no_local)}", "motor ligado", onde) if t)}
+    elif dados.get("pos_andou") is None:
+        return None  # primeira leitura acompanhada: ainda não dá para saber se saiu do lugar
+    elif dados.get("pos_andou"):
         vel = _num(r.get("Velocidade (km/h)"))
-        ignicao = r.get("Ignição") or ""
-        if vel is not None and vel > VEL_PARADO:
-            s = {"estado": "movimento", "min": 0, "ignicao": ignicao, "texto": f"Em movimento · {int(vel)} km/h"}
-        else:
-            aberta = dados.get("parada_aberta")
-            tempo = rotograma._minutos(r.get("Tempo Parado"))
-            if aberta:
-                minutos = (max(now, _dt(aberta["ultima"])) - _dt(aberta["inicio"])).total_seconds() / 60
-            else:
-                # Tempo Parado é o da hora da posição: soma o tempo desde ela (sem posição nova, segue parado).
-                minutos = (tempo or 0) + idade
-            v = info.get("veiculo")
-            if v and info.get("origem") and geo_tomtom.distancia_km(v, info["origem"]) <= RAIO_ESTACAO_KM:
-                onde = "na origem"
-            elif v and info.get("destino") and geo_tomtom.distancia_km(v, info["destino"]) <= RAIO_ESTACAO_KM:
-                onde = "no destino"
-            else:
-                onde = ROTULO[_classificar({**aberta, "min": round(minutos)})] if aberta else ""
-            motor = {"Ligada": "motor ligado", "Desligada": "motor desligado"}.get(ignicao, "")
-            s = {"estado": "parado", "min": round(minutos), "ignicao": ignicao, "onde": onde,
-                 "texto": " · ".join(t for t in (f"Parado há {_duracao(minutos)}", motor, onde) if t)}
+        s = {"estado": "movimento", "min": 0,
+             "texto": "Em movimento" + (f" · {int(vel)} km/h" if vel and vel > VEL_PARADO else "")}
+    else:  # parada curta com o motor ligado: só informa, sem alerta
+        s = {"estado": "parado", "min": round(no_local), "onde": onde,
+             "texto": " · ".join(t for t in (f"No mesmo local há {_duracao(no_local)}", "motor ligado", onde) if t)}
     r["Situação Veículo"] = s["texto"]
     return s
