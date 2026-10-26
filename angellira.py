@@ -31,6 +31,8 @@ from collections import Counter, defaultdict
 from datetime import date, datetime
 from urllib.parse import urlparse
 
+import memoria
+
 URL_LOGIN = os.getenv("ANGELLIRA_URL_LOGIN", "https://auth.angellira.com.br/")
 URL_HOME = os.getenv("ANGELLIRA_URL_HOME", "https://logistica.angellira.com.br/liralog/home")
 URL_TRACKING = os.getenv("ANGELLIRA_URL_TRACKING", "https://logistica.angellira.com.br/tracking/home")
@@ -144,6 +146,8 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
     with sync_playwright() as pw:
         navegador = pw.chromium.launch(
             headless=not visivel, executable_path=os.getenv("ANGELLIRA_CHROMIUM") or None,
+            # Opções de economia (--single-process, sem zygote, sem isolamento de sites) foram
+            # medidas e mudam menos de 5%: o grosso é a própria página do Tracking.
             args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"])
         try:
             # Imagens, fontes e vídeos não fazem falta para exportar e pesam na memória:
@@ -583,8 +587,10 @@ def baixar_em_processo(usuario_env: str, senha_env: str, pasta: str, estado=None
     cmd = [sys.executable, os.path.abspath(__file__), "--processo-filho", pasta]
     cmd += ["--visivel"] * visivel + ["--completo"] * (not leve) + ["--registrar-rede"] * registrar_rede
     env = {**os.environ, "ANGELLIRA_USUARIO": usuario_env, "ANGELLIRA_SENHA": senha_env}
+    memoria.liberar()
     proc = subprocess.Popen(cmd, env=env, start_new_session=True)
     inicio = time.monotonic()
+    pico = {"navegador": 0, "robo": 0, "container": 0}
     while True:
         try:
             proc.wait(timeout=5)
@@ -592,6 +598,10 @@ def baixar_em_processo(usuario_env: str, senha_env: str, pasta: str, estado=None
         except subprocess.TimeoutExpired:
             descendentes = _descendentes(proc.pid)
             _baixar_prioridade(descendentes)
+            uso, _limite = memoria.container_mb()
+            for chave, valor in (("navegador", sum(memoria.processo_mb(p) for p in [proc.pid] + descendentes)),
+                                 ("robo", memoria.processo_mb()), ("container", uso or 0)):
+                pico[chave] = max(pico[chave], valor)
             if time.monotonic() - inicio > LIMITE_RODADA_S:
                 for pid in [proc.pid] + descendentes:
                     try:
@@ -609,6 +619,11 @@ def baixar_em_processo(usuario_env: str, senha_env: str, pasta: str, estado=None
                 erro = ErroAngellira(f"a rodada passou de {LIMITE_RODADA_S / 60:g} min e o navegador foi encerrado{onde}")
                 erro.estado = estado
                 raise erro from None
+    if pico["navegador"]:  # rodada de menos de 5 s não tem amostra
+        uso, limite = memoria.container_mb()
+        logging.info("Angellira: pico de memória na rodada: navegador %s MB, robô %s MB%s.", pico["navegador"],
+                     pico["robo"], f", container {pico['container']} MB" + (f" de {limite} MB" if limite else "")
+                     if uso is not None else "")
     try:
         with open(saida, encoding="utf-8") as f:
             resultado = json.load(f)

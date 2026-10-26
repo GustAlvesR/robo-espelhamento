@@ -50,6 +50,7 @@ import clima
 import contatos
 import alertas
 import alternativa
+import memoria
 import geo_tomtom
 import noticias
 import paradas
@@ -1858,6 +1859,8 @@ def _job():
             len(resultados), len(finalizados), len(eventos_do_ciclo), len(fechadas),
             sum(1 for r in resultados if r["Cancelamento"]),
         )
+        memoria.liberar()
+        logging.info("Memória depois do ciclo: %s.", memoria.resumo())
 
     except Exception:
         # Nunca deixa uma exceção matar o loop principal — apenas loga e
@@ -1897,6 +1900,7 @@ def _loop_self_ping():
 
 
 def main():
+    memoria.limitar_arenas()
     setup_logging()
     start_http_server()
     logging.info(
