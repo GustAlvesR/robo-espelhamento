@@ -129,6 +129,7 @@ def _mensagem(titulo: str, subtitulo: str, r: dict, linhas: list, pedido: str) -
         f"🚛 *Viagem:* {r['Trip Number']}",
         f"🔖 *Placas:* {_placas(r)}",
         f"👤 *Motorista:* {motorista}" if motorista else None,
+        f"🏢 *TSP:* {r['TSP']}" if r.get("TSP") else None,
         f"🛣️ *Trecho:* {_estacao(r.get('Origin Station Code'))} ➜ {_estacao(r.get('Destination Station Code'))}",
         *linhas, "",
         f"👉 *{pedido}*",

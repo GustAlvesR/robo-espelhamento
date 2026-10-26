@@ -330,6 +330,23 @@ de alguns minutos). Paradas perto da origem ou do destino são carga e descarga 
   autorizado), também no Fechamento_Rotas. No site, a aba Paradas traz o total, a parada
   atual, o tempo por motivo, a lista e os pontos "P" no mapa.
 
+## Veículo parado agora e TSP
+
+Da saída até a chegada, o robô diz como o veículo está agora, pela última leitura da
+Angellira: "Em movimento · 72 km/h", "Parado há 1h43 · motor desligado · Posto /
+abastecimento" ou "Sem posição há 1h10" (posição de mais de 60 min, `SITUACAO_POSICAO_MAX_MIN`).
+Parado = velocidade até 5 km/h; o tempo vem da parada em aberto ou do "Tempo Parado" da
+Angellira somado ao tempo desde a posição; o motor vem da ignição; o lugar, da origem, do
+destino ou do motivo da parada. Com o relatório da Angellira desatualizado, fica em branco.
+
+- Na lista, a etiqueta "Parado 34 min · motor ligado" (amarela) ou "Parado 1h43" (cinza, motor
+  desligado) aparece a partir de 10 min parado. O indicador "Parados agora" filtra essas rotas.
+- No painel da rota: "Situação" no Resumo e "Veículo agora" no Rastreamento.
+- TSP: a transportadora da SM na Angellira (coluna TRANSPORTADOR), no Resumo, na busca e nas
+  mensagens de WhatsApp (cobranças e rota alternativa).
+- Na planilha: colunas `TSP` e `Situação Veículo` no fim do Resultado_Espelhamento; a TSP
+  também no Fechamento_Rotas.
+
 ## Botões de WhatsApp
 
 No computador, os botões de WhatsApp (cobranças, rota alternativa, queda geral e contatos)

@@ -162,6 +162,7 @@ def mensagem(r: dict, s: dict, noticias=()) -> str:
         f"🚛 *Viagem:* {r['Trip Number']}",
         f"🔖 *Placas:* {placas}",
         f"👤 *Motorista:* {motorista}",
+        f"🏢 *TSP:* {r['TSP']}" if r.get("TSP") else None,
         f"🛣️ *Trecho:* {origem}{local(origem)} ➜ {destino}{local(destino)}",
         f"📄 *SM:* {s['sm']}" if s.get("sm") else None,
         f"📍 *Posição:* {posicao}",

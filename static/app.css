@@ -135,6 +135,9 @@ button, input, select { font: inherit; color: inherit; }
 .tag.causa.integracao, .tag.causa.geral { border-color: var(--acento); color: var(--acento); }
 .tag.causa.rastreador { border-color: var(--alerta); color: var(--alerta-texto); }
 .tag.causa.sm { border-color: var(--nok); color: var(--nok); }
+/* Parado agora (motor ligado em amarelo; desligado, neutro). */
+.tag.parado { border-color: var(--alerta); color: var(--alerta-texto); font-weight: 700; }
+.tag.parado.desligado { border-color: var(--pend); color: var(--suave); }
 .pend-info { display: block; margin-top: 2px; color: var(--suave); font-size: 11px; }
 .botoes-cobranca { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .botao-alt.cobranca { padding: 3px 8px; font-size: 11px; }
