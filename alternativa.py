@@ -27,6 +27,9 @@ DESVIO_KM = float(os.getenv("ALTERNATIVA_DESVIO_KM", "5"))
 EVITAR_KM = float(os.getenv("ALTERNATIVA_EVITAR_KM", "6"))
 RECALCULO_MIN = int(os.getenv("ALTERNATIVA_RECALCULO_MIN", "30"))
 MAX_CHAMADAS_CICLO = int(os.getenv("ALTERNATIVA_MAX_CHAMADAS_CICLO", "6"))
+# Ponto do rotograma é "visitado" pela alternativa a até esta distância (a coordenada de muitos
+# pontos é a da cidade, não a da rodovia).
+PONTO_ROTOGRAMA_KM = float(os.getenv("ALTERNATIVA_PONTO_ROTOGRAMA_KM", "8"))
 MAX_PONTOS_GOOGLE = 8  # o link do Google Maps aceita até 9 pontos de passagem
 
 _cache = {}  # trip -> {"chave", "em", "sugestao"}
@@ -54,6 +57,24 @@ def afastamento_km(caminho: list, referencia: list) -> float:
         return math.inf
     ref = referencia[::2] + [referencia[-1]]
     return max(distancia_ao_caminho(p, ref) for p in caminho[::3] + [caminho[-1]])
+
+
+def _indice(caminho: list, ponto) -> int:
+    return min(range(len(caminho)), key=lambda k: _dist(caminho[k], ponto))
+
+
+def segue_rotograma(alternativa: list, rot: dict, veiculo) -> bool:
+    """A alternativa passa por todos os pontos do rotograma que ainda estão à frente: o
+    motorista já passaria por eles, então não é rota alternativa para o GR. Sem ponto à
+    frente, vale ficar no corredor do rotograma."""
+    linha = rot.get("linha") or []
+    if len(linha) < 2 or not alternativa:
+        return False
+    iv = _indice(linha, veiculo)
+    frente = [(p[0], p[1]) for p in rot.get("pontos") or [] if _indice(linha, (p[0], p[1])) > iv]
+    if frente:
+        return all(distancia_ao_caminho(p, alternativa) <= PONTO_ROTOGRAMA_KM for p in frente)
+    return afastamento_km(alternativa, linha[iv:]) <= DESVIO_KM
 
 
 def _amostrar(pontos: list, cada_km: float, maximo: int) -> list:
@@ -221,6 +242,10 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
             antes = geo.chamadas_hoje
             s = _calcular(geo, veiculo, destino, eta, ref_frente, motorista, desviou, now)
             orcamento -= max(1, geo.chamadas_hoje - antes)
+            if s and segue_rotograma(s["pontos"], rot, veiculo):
+                logging.info("[%s] Rota alternativa descartada: passa pelos pontos do rotograma à frente (%s).",
+                             trip, s["motivo"])
+                s = None
             if s:
                 s.update(link=link_google(veiculo, destino, s["pontos"], ref_frente),
                          referencia="rotograma" if rot.get("linha") else "rota planejada", sm=rot.get("sm", ""),
