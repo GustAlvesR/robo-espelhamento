@@ -1,0 +1,99 @@
+{
+ "origem": "XPT-LPE-92",
+ "destino": "SOC-PE2",
+ "sm": "39473722",
+ "origem_nome": "[8631]XPT_PE_PALMARES_02",
+ "destino_nome": "SOC_PE_JABOATÃO DOS GUARARAPES",
+ "distancia_km": 105.55,
+ "pontos": [
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY II",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR COTEGY ESCADA",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY I",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "SÃO CRISTOVÃO II (ESCADA)",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "PICHILAU II (RECIFE)",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "PICHILAU II RECIFE/PE",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PICHILAU II RECIFE/PE",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PICHILAU II",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  }
+ ],
+ "riscos": [],
+ "passos": [
+  {
+   "instrucao": "Vire à esquerda para permanecer na BR-101",
+   "km": 68.38
+  },
+  {
+   "instrucao": "Curva suave à direita em direção à Rodovia Antiga",
+   "km": 0.1
+  }
+ ],
+ "importado_em": "29/10/2026 18:40"
+}
