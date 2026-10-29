@@ -3,7 +3,8 @@ Guarda só a rota: SM, origem, destino, pontos autorizados, áreas de risco e a 
 detalhada. Motorista, CPF, placas e telefones não vão para o arquivo.
 Uso: pip install pdfplumber && python importar_rotograma.py SM39635748.PDF [...]
      (--origem SOC-SP8 --destino SOC-MG4 se o nome da estação não for reconhecido)
-Um rotograma novo do mesmo trecho substitui o anterior."""
+Um rotograma de SM mais nova substitui o do mesmo trecho; um de SM mais antiga é ignorado
+(--forcar grava assim mesmo)."""
 
 import argparse
 import csv
@@ -145,6 +146,7 @@ def main():
     ap.add_argument("pdfs", nargs="+")
     ap.add_argument("--origem")
     ap.add_argument("--destino")
+    ap.add_argument("--forcar", action="store_true", help="grava mesmo se o trecho já tiver SM mais nova")
     args = ap.parse_args()
     os.makedirs(SAIDA, exist_ok=True)
     for caminho in args.pdfs:
@@ -157,6 +159,12 @@ def main():
         dados = {"origem": origem, "destino": destino, **dados,
                  "importado_em": datetime.now().strftime("%d/%m/%Y %H:%M")}
         arquivo = os.path.join(SAIDA, f"{origem}__{destino}.json")
+        if os.path.exists(arquivo) and not args.forcar:
+            with open(arquivo, encoding="utf-8") as f:
+                atual = json.load(f).get("sm", "")
+            if atual.isdigit() and str(dados["sm"]).isdigit() and int(atual) > int(dados["sm"]):
+                print(f"SM {dados['sm']}: {origem} -> {destino} ignorado; o trecho já tem a SM {atual}, mais nova.")
+                continue
         with open(arquivo, "w", encoding="utf-8") as f:
             json.dump(dados, f, ensure_ascii=False, indent=1)
         print(f"SM {dados['sm']}: {origem} -> {destino}, {len(dados['pontos'])} pontos autorizados, "
