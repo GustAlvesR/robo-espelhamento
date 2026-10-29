@@ -32,6 +32,8 @@ from datetime import datetime, timedelta, date, timezone
 TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "").strip()
 TOMTOM_BASE = os.getenv("TOMTOM_BASE", "https://api.tomtom.com")
 TOMTOM_MAX_CHAMADAS_DIA = int(os.getenv("TOMTOM_MAX_CHAMADAS_DIA", "2000"))
+# Serviço que respondeu 401/403 (chave sem acesso) fica parado este tempo antes de tentar de novo.
+TOMTOM_PAUSA_403_MIN = int(os.getenv("TOMTOM_PAUSA_403_MIN", "60"))
 ETA_RECALCULO_MIN = int(os.getenv("ETA_RECALCULO_MIN", "30"))
 # Posição mais velha que isso não gera ETA (o caminhão já pode estar longe).
 ETA_MAX_IDADE_POSICAO_MIN = int(os.getenv("ETA_MAX_IDADE_POSICAO_MIN", "180"))
@@ -212,6 +214,7 @@ class GeoTomTom:
         self.chamadas_hoje = 0
         self.erros = {}             # serviço -> (texto, quando em UTC); some quando o serviço volta a responder
         self.falhas_ciclo = {}      # serviço -> falhas desde o último log do ciclo
+        self.pausado_ate = {}       # serviço -> datetime UTC: chave sem acesso a ele, não adianta tentar
 
     # ------------------------------------------------------------------ HTTP
     @staticmethod
@@ -238,6 +241,8 @@ class GeoTomTom:
         if not self.key:
             return None
         servico = caminho.split("/")[1]
+        if datetime.now(timezone.utc) < self.pausado_ate.get(servico, datetime.min.replace(tzinfo=timezone.utc)):
+            return None
         params = {**params, "key": self.key}
         url = f"{TOMTOM_BASE}{caminho}?{urllib.parse.urlencode(params)}"
         for tentativa in (1, 2):
@@ -256,7 +261,14 @@ class GeoTomTom:
                 return dados
             except urllib.error.HTTPError as e:
                 self._falhou(servico, f"HTTP {e.code} em {servico}")
-                logging.warning("TomTom %s: HTTP %s.", servico, e.code)
+                if e.code in (401, 403):
+                    # Chave sem permissão para o serviço: repetir só gasta o teto diário,
+                    # que a rota e a previsão também usam.
+                    self.pausado_ate[servico] = datetime.now(timezone.utc) + timedelta(minutes=TOMTOM_PAUSA_403_MIN)
+                    logging.warning("TomTom %s: HTTP %s (a chave não tem acesso a esse serviço?); %s pausado "
+                                    "por %s min.", servico, e.code, servico, TOMTOM_PAUSA_403_MIN)
+                else:
+                    logging.warning("TomTom %s: HTTP %s.", servico, e.code)
                 return None
             except (http.client.IncompleteRead, json.JSONDecodeError, EOFError, gzip.BadGzipFile) as e:
                 # Resposta cortada no caminho: costuma vir inteira na segunda vez.
