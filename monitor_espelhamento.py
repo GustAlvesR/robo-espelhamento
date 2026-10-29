@@ -94,9 +94,11 @@ CANCELAMENTO_FONTES = [
 # por último, a DBLH (a aba DBLH espelha a CEVA_LH). Vale a primeira aba com o nome.
 MOTORISTA_FONTES = [
     ("LH SEMANA ATUAL", ("LH TRIP",), ("MOTORISTA",)),
-    ("LH PROXIMA SEMANA", ("LH TRIP",), ("MOTORISTA",)),
+    ("LH PROXIMA SEMANA", ("LH TRIP",), ("MOTORISTA",)),  # opcional: nem sempre existe
     ("DBLH", ("trip_number",), ("driver_name",)),
 ]
+# Sem ela, valem a LH SEMANA ATUAL e a DBLH, sem aviso no log.
+ABAS_OPCIONAIS = {"LH PROXIMA SEMANA"}
 # Comparados sem acento/espaço (ver _norm_chave). DELETADA fica de fora de propósito.
 STATUS_CANCELAMENTO = {"CANCELADO", "CANCELADA", "NOSHOW", "INFRUTIFERA", "NAOCONSUMIDA"}
 # Uma linha por rota, gravada uma vez quando ela termina (retrato final).
@@ -1475,7 +1477,7 @@ def _ler_pares(client, fontes: list, assunto: str) -> list:
     (aba, cabeçalhos aceitos para o trip, cabeçalhos aceitos para o valor). Duas leituras em lote."""
     planilha = client.open_by_key(SOURCE_SPREADSHEET_ID)
     abas = {ws.title for ws in planilha.worksheets()}
-    for aba in sorted({f[0] for f in fontes} - abas):
+    for aba in sorted({f[0] for f in fontes} - abas - ABAS_OPCIONAIS):
         logging.warning("Aba de %s '%s' não encontrada; ignorada.", assunto, aba)
     fontes = [f for f in fontes if f[0] in abas]
     if not fontes:
