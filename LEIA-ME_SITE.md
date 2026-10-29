@@ -249,6 +249,11 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
   motorista, o ETA do trajeto atual não inclui a retenção do acidente, que ninguém sabe
   quanto dura; quando o contorno custa tempo, a mensagem diz a partir de quantos minutos
   de retenção ele compensa.
+- Mesma rota do rotograma não vira sugestão: se a alternativa passa por todos os pontos
+  do rotograma que ainda estão à frente (a até 8 km, `ALTERNATIVA_PONTO_ROTOGRAMA_KM`,
+  porque muitos pontos têm a coordenada da cidade), o motorista já passaria por eles e o
+  robô descarta (o log registra "Rota alternativa descartada"). Sem ponto à frente, vale
+  ficar a até 5 km da linha do rotograma. Sem rotograma, nada muda.
 - A mensagem ao GR vem formatada para o WhatsApp (negrito, emojis e uma informação por
   linha): viagem, placas, motorista, trecho, SM, posição, chegada planejada, ocorrência,
   os dois ETAs com km, o ganho ou custo e o link do trajeto.

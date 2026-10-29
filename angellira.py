@@ -734,6 +734,11 @@ class AtualizadorAngellira:
                 raise
             self._falhas = 0
             linhas = ler_arquivo(caminho)
+        # Exportar antes de a tabela carregar devolve só o cabeçalho; gravar isso apagaria as
+        # posições de todas as rotas até a próxima rodada.
+        if len(linhas) <= 1:
+            raise ErroAngellira("o relatório veio sem linhas (a tabela do Tracking não tinha carregado); "
+                                f"a aba {ABA} ficou com o relatório anterior")
         validar(linhas)
         gravar_na_aba(self._get_client().open_by_key(self._spreadsheet_id), linhas)
         self.ultimo_ok, self.ultimo_erro = datetime.now(), ""
