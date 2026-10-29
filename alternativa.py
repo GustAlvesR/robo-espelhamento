@@ -27,7 +27,7 @@ ECONOMIA_MIN = int(os.getenv("ALTERNATIVA_ECONOMIA_MIN", "30"))
 DESVIO_KM = float(os.getenv("ALTERNATIVA_DESVIO_KM", "5"))
 EVITAR_KM = float(os.getenv("ALTERNATIVA_EVITAR_KM", "6"))
 RECALCULO_MIN = int(os.getenv("ALTERNATIVA_RECALCULO_MIN", "30"))
-MAX_CHAMADAS_CICLO = int(os.getenv("ALTERNATIVA_MAX_CHAMADAS_CICLO", "6"))
+MAX_CHAMADAS_CICLO = int(os.getenv("ALTERNATIVA_MAX_CHAMADAS_CICLO", "3"))
 # Ponto do rotograma é "visitado" pela alternativa a até esta distância (a coordenada de muitos
 # pontos é a da cidade, não a da rodovia).
 PONTO_ROTOGRAMA_KM = float(os.getenv("ALTERNATIVA_PONTO_ROTOGRAMA_KM", "8"))
@@ -221,6 +221,12 @@ def sugerir(geo, resultados: list, geo_por_trip: dict, rotogramas_mapa: dict, in
         if (r.get("Cancelamento") or not iniciada(r) or not (veiculo and destino and info.get("rota_atual"))
                 or not (eta and eta.get("pontos") and eta.get("travel_s"))):
             continue
+        # A previsão pode ser de uma posição anterior (geo_tomtom recalcula a cada
+        # ETA_RECALCULO_MIN): desconta o tempo já andado desde ela.
+        dt_pos = geo_tomtom._parse_br(r.get("Data da Posição"))
+        if eta.get("dt_pos") and dt_pos and tuple(eta["chave"][0]) != tuple(veiculo[:2]):
+            andado = max(0.0, (dt_pos - eta["dt_pos"]).total_seconds())
+            eta = {**eta, "travel_s": max(60.0, eta["travel_s"] - andado)}
         rot = rotogramas_mapa.get((info.get("rotograma") or {}).get("chave", "")) or {}
         ref_frente = a_frente(rot.get("linha") or info.get("pontos") or [], veiculo)
         if len(ref_frente) < 2:

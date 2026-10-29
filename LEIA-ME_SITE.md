@@ -40,6 +40,10 @@ para quem está logado.
 Opcionais: `TOMTOM_MAX_CHAMADAS_DIA` (padrão 2000), `TOLERANCIA_ATRASO_MIN` (30),
 `ETA_MAX_IDADE_POSICAO_MIN` (180), `ETA_RECALCULO_MIN` (30).
 
+A previsão de chegada de cada rota é recalculada no máximo a cada `ETA_RECALCULO_MIN`, mesmo
+com posição nova da Angellira (que chega a cada 15 min); entre um cálculo e outro, a previsão
+conta a partir da posição usada no cálculo. Assim o consumo da TomTom fica perto da metade.
+
 ## 3. Usuários
 
 Aba `Usuarios_Site` da planilha Acompanhamento Telemetria:
@@ -257,7 +261,7 @@ validar (grupo Alinhamento GR). Nada vai direto para o motorista.
 - A mensagem ao GR vem formatada para o WhatsApp (negrito, emojis e uma informação por
   linha): viagem, placas, motorista, trecho, SM, posição, chegada planejada, ocorrência,
   os dois ETAs com km, o ganho ou custo e o link do trajeto.
-- Custo: só esses dois casos chamam a TomTom, no máximo 6 vezes por ciclo
+- Custo: só esses dois casos chamam a TomTom, no máximo 3 vezes por ciclo
   (`ALTERNATIVA_MAX_CHAMADAS_CICLO`). O desvio da TomTom é comum (em metade das rotas,
   num dia normal) e muda devagar, então cada rota é recalculada só a cada 30 min
   (`ALTERNATIVA_RECALCULO_MIN`), mesmo com o caminhão andando. Com aviso do motorista,

@@ -482,7 +482,10 @@ class GeoTomTom:
     def eta_da_posicao(self, trip, posicao, destino, dt_pos: datetime, now: datetime):
         chave = (tuple(posicao[:2]), tuple(destino), dt_pos.isoformat())
         atual = self.etas.get(trip)
-        if atual and atual["chave"] == chave and now - atual["calc_em"] < timedelta(minutes=ETA_RECALCULO_MIN):
+        # Posição nova chega a cada 15 min; recalcular a cada uma dobrava as chamadas. Dentro do
+        # prazo vale o cálculo anterior, contado da posição dele ("dt_pos"), e não da nova.
+        if (atual and tuple(atual["chave"][1]) == tuple(destino)
+                and now - atual["calc_em"] < timedelta(minutes=ETA_RECALCULO_MIN)):
             return atual
         # Mesma chamada de antes, agora com o desenho: é o caminho mais rápido com o
         # trânsito do momento, da posição até o destino.
@@ -490,7 +493,7 @@ class GeoTomTom:
                        max_pontos=MAX_PONTOS_ROTA_ATUAL, secoes_transito=True)
         if not r:
             return atual  # mantém o último cálculo válido, se houver
-        novo = {"chave": chave, "calc_em": now, "travel_s": r["dur_s"],
+        novo = {"chave": chave, "calc_em": now, "dt_pos": dt_pos, "travel_s": r["dur_s"],
                 "atraso_transito_s": r["atraso_transito_s"], "dist_m": r["dist_m"], "pontos": r["pontos"],
                 "transito": r["transito"], "trechos_brutos": r["trechos_brutos"]}
         self.etas[trip] = novo
@@ -717,7 +720,7 @@ def calcular_geo(geo: GeoTomTom, resultados: list, coords_estacoes: dict, now: d
                         parado = vel == 0 if vel is not None else r.get("Ignição") == "Desligada"
                         # Parado: sai "agora". Em movimento: o tempo de viagem conta da hora da posição.
                         # Parado antes do início previsto: assume saída no horário previsto.
-                        base = max(now, inicio or now) if parado else dt_pos
+                        base = max(now, inicio or now) if parado else eta.get("dt_pos", dt_pos)
                         # Quem não chegou não chega no passado (posição de horas atrás).
                         previsao = max(base + timedelta(seconds=eta["travel_s"]), now)
             elif info["rota_tomtom_min"] is not None and inicio and (not dt_pos) and now < inicio:
