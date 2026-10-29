@@ -21,6 +21,7 @@ import urllib.parse
 from datetime import timedelta
 
 import geo_tomtom
+import rotograma
 
 ECONOMIA_MIN = int(os.getenv("ALTERNATIVA_ECONOMIA_MIN", "30"))
 DESVIO_KM = float(os.getenv("ALTERNATIVA_DESVIO_KM", "5"))
@@ -41,10 +42,7 @@ def _dist(a, b) -> float:
 
 def a_frente(caminho: list, ponto) -> list:
     """Pedaço do caminho a partir do ponto mais próximo do caminhão."""
-    if not caminho:
-        return []
-    i = min(range(len(caminho)), key=lambda k: _dist(caminho[k], ponto))
-    return caminho[i:]
+    return caminho[_indice(caminho, ponto):] if caminho else []
 
 
 def distancia_ao_caminho(ponto, caminho: list) -> float:
@@ -71,9 +69,10 @@ def segue_rotograma(alternativa: list, rot: dict, veiculo) -> bool:
     if len(linha) < 2 or not alternativa:
         return False
     iv = _indice(linha, veiculo)
-    frente = [(p[0], p[1]) for p in rot.get("pontos") or [] if _indice(linha, (p[0], p[1])) > iv]
+    pontos = [(p[0], p[1]) for p in rot.get("pontos") or []]
+    frente = [p for p in pontos if _indice(linha, p) > iv]
     if frente:
-        return all(distancia_ao_caminho(p, alternativa) <= PONTO_ROTOGRAMA_KM for p in frente)
+        return all(rotograma.distancia_a_linha_km(p, alternativa) <= PONTO_ROTOGRAMA_KM for p in frente)
     return afastamento_km(alternativa, linha[iv:]) <= DESVIO_KM
 
 

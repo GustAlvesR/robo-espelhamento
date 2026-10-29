@@ -87,13 +87,14 @@ SELETOR_EXPORTAR = "svg[data-testid='FileDownloadOutlinedIcon']"
 ESPERA_LINHAS_S = int(os.getenv("ANGELLIRA_ESPERA_LINHAS_S", "90"))
 # Retrato da tela antes de exportar: o site mostra em /diagnostico/angellira (só logado).
 TELA_DIAGNOSTICO = os.path.join(tempfile.gettempdir(), "torre_angellira_tela.png")
+ARQ_DIAGNOSTICO = "diagnostico.txt"  # na pasta da rodada: o processo do navegador escreve, o robô lê
 # Linhas da tabela do Tracking com dado (5 células ou mais): a linha de "sem registros" e
 # cabeçalhos não contam. O Exportar monta o arquivo com o que já carregou.
 _JS_LINHAS = """() => [...document.querySelectorAll("tr, [role=row]")].filter(r => {
     const b = r.getBoundingClientRect();
     return b.width > 0 && b.height > 0 && r.querySelectorAll("td, [role=cell], [role=gridcell]").length >= 5;
 }).length"""
-_JS_DIAGNOSTICO = """() => {
+_JS_DIAGNOSTICO = """seletorExportar => {
     const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
     const linhas = (%s)();
     const vazio = [...document.querySelectorAll("body *")].find(e => vis(e) && !e.children.length &&
@@ -101,7 +102,7 @@ _JS_DIAGNOSTICO = """() => {
     const camadas = [...document.querySelectorAll(".MuiModal-root, .MuiPopover-root, .MuiBackdrop-root, [aria-modal=true]")]
         .filter(vis).map(m => (String(m.className).split(" ")[0] || m.tagName) + ": " +
             ((m.innerText || "").trim().replace(/\\s+/g, " ").slice(0, 80) || "sem texto"));
-    const icone = document.querySelector("svg[data-testid='FileDownloadOutlinedIcon']");
+    const icone = document.querySelector(seletorExportar);
     let porCima = "";
     if (icone) {
         const r = icone.getBoundingClientRect();
@@ -131,22 +132,14 @@ def _aguardar_tela(pagina, timeout_ms=None) -> str:
     return "desconhecida"
 
 
-def _aguardar_linhas(pagina) -> int:
+def _aguardar_linhas(pagina) -> None:
     """Espera a tabela do Tracking ter linhas (até ESPERA_LINHAS_S). Sem linhas no prazo,
     segue: o relatório vazio é recusado depois, sem apagar o anterior."""
-    fim = time.monotonic() + ESPERA_LINHAS_S
-    n = 0
-    while time.monotonic() < fim:
-        try:
-            n = pagina.evaluate(_JS_LINHAS)
-        except Exception:
-            n = 0
-        if n:
-            return n
-        pagina.wait_for_timeout(1000)
-    logging.info("Angellira: a tabela do Tracking não mostrou linhas em %s s; exportando assim mesmo.",
-                 ESPERA_LINHAS_S)
-    return 0
+    try:
+        pagina.wait_for_function(f"({_JS_LINHAS})() > 0", timeout=ESPERA_LINHAS_S * 1000, polling=1000)
+    except Exception:
+        logging.info("Angellira: a tabela do Tracking não mostrou linhas em %s s; exportando assim mesmo.",
+                     ESPERA_LINHAS_S)
 
 
 def _retrato(pagina, pasta: str) -> None:
@@ -157,10 +150,10 @@ def _retrato(pagina, pasta: str) -> None:
     except Exception as e:
         logging.info("Angellira: print da tela não saiu (%s).", _motivo_playwright(e))
     try:
-        texto = pagina.evaluate(_JS_DIAGNOSTICO)
+        texto = f"{pagina.evaluate(_JS_DIAGNOSTICO, SELETOR_EXPORTAR)}; {_raio_x(pagina)}"
     except Exception as e:
         texto = f"diagnóstico não saiu ({_motivo_playwright(e)})"
-    with open(os.path.join(pasta, "diagnostico.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(pasta, ARQ_DIAGNOSTICO), "w", encoding="utf-8") as f:
         f.write(texto)
 
 
@@ -599,7 +592,12 @@ def ler_arquivo(caminho: str) -> list:
     return [(list(l) + [""] * largura)[:largura] for l in linhas]
 
 
-def validar(linhas: list) -> None:
+def validar(linhas: list, detalhe: str = "") -> None:
+    # Exportar antes de a tabela carregar devolve só o cabeçalho; gravar isso apagaria as
+    # posições de todas as rotas até a próxima rodada.
+    if len(linhas) <= 1:
+        raise ErroAngellira(f"o relatório veio sem linhas; a aba {ABA} ficou com o relatório anterior"
+                            + (f" ({detalhe})" if detalhe else ""))
     cab = {_norm(c) for c in linhas[0]}
     faltam = [c for c in OBRIGATORIAS if c not in cab]
     if faltam:
@@ -801,16 +799,11 @@ class AtualizadorAngellira:
             self._falhas = 0
             linhas = ler_arquivo(caminho)
             try:
-                with open(os.path.join(pasta, "diagnostico.txt"), encoding="utf-8") as f:
+                with open(os.path.join(pasta, ARQ_DIAGNOSTICO), encoding="utf-8") as f:
                     diagnostico = f.read()
             except OSError:
                 diagnostico = "sem diagnóstico"
-        # Exportar antes de a tabela carregar devolve só o cabeçalho; gravar isso apagaria as
-        # posições de todas as rotas até a próxima rodada.
-        if len(linhas) <= 1:
-            raise ErroAngellira(f"o relatório veio sem linhas; a aba {ABA} ficou com o relatório anterior "
-                                f"(tela antes de exportar: {diagnostico}; print em /diagnostico/angellira)")
-        validar(linhas)
+        validar(linhas, f"tela antes de exportar: {diagnostico}; print em /diagnostico/angellira")
         gravar_na_aba(self._get_client().open_by_key(self._spreadsheet_id), linhas)
         self.ultimo_ok, self.ultimo_erro = datetime.now(), ""
         logging.info("Angellira: relatório com %s linha(s) e %s coluna(s) gravado na aba %s (%.0f s).",
