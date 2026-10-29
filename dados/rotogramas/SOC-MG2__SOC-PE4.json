@@ -1,7 +1,7 @@
 {
  "origem": "SOC-MG2",
  "destino": "SOC-PE4",
- "sm": "39636792",
+ "sm": "39673112",
  "origem_nome": "SOC_MG_BETIM",
  "destino_nome": "SOC_PE_RECIFE_04",
  "distancia_km": 2084.57,
@@ -1581,5 +1581,5 @@
    "km": 1.0
   }
  ],
- "importado_em": "21/10/2026 13:38"
+ "importado_em": "29/10/2026 18:20"
 }
