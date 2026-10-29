@@ -478,7 +478,12 @@ Exportar colunas, "Todas as colunas", Exportar.
   o relatório não usa e que disputam CPU com o robô no plano gratuito. Se o Tracking
   não abrir assim, o robô volta sozinho ao modo completo e avisa no log. Para desligar
   de vez: `ANGELLIRA_MODO_LEVE=0`. Na primeira exportação depois de cada reinício, o
-  log lista os domínios que a página carregou e o que o botão Exportar chamou.
+  log lista os domínios que a página carregou e o que o botão Exportar chamou. O modo
+  leve também bloqueia o aviso de cookies (`politicacookies.angellira.com.br`), que
+  ficava por cima do botão de exportar, e abre a página em 1280x720.
+- Antes de exportar, o robô espera a tabela do Tracking mostrar linhas (até 90 s,
+  `ANGELLIRA_ESPERA_LINHAS_S`): o Exportar monta o arquivo com o que já carregou. Se o
+  relatório vier mesmo assim sem linhas, ele não é gravado e a aba fica com o anterior.
 
 ### Configuração no Render (uma vez)
 

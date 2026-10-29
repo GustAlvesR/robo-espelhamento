@@ -48,7 +48,9 @@ ABA = os.getenv("TRACKING_WORKSHEET_NAME", "Rastreamento_Angellira")
 HOSTS_DISPENSAVEIS = ("maps.googleapis.com", "maps.gstatic.com", "google-analytics.com",
                       "googletagmanager.com", "doubleclick.net", "hotjar.com", "clarity.ms",
                       "tawk.to", "zdassets.com", "intercom.io", "crisp.chat", "jivosite.com",
-                      "octadesk.com", "movidesk.com", "hs-scripts.com", "hubspot.com")
+                      "octadesk.com", "movidesk.com", "hs-scripts.com", "hubspot.com",
+                      # Aviso de cookies: fica por cima do botão de exportar e pesa na memória.
+                      "politicacookies.angellira.com.br")
 # Sem estas colunas o robô não usa o relatório (ver carregar_rastreamento): não grava.
 OBRIGATORIAS = ("PROCEDIMENTO DE EMBARQUE", "VEICULO", "DATA POSICAO")
 
@@ -82,6 +84,10 @@ def _no_tracking(url) -> bool:
 
 
 SELETOR_EXPORTAR = "svg[data-testid='FileDownloadOutlinedIcon']"
+# Linhas da tabela do Tracking (tabela comum ou grade do MUI): o Exportar monta o arquivo com
+# o que já carregou, então exportar antes delas sai só o cabeçalho.
+SELETOR_LINHAS = "tbody tr, .MuiDataGrid-row, [role='row'][data-rowindex]"
+ESPERA_LINHAS_S = int(os.getenv("ANGELLIRA_ESPERA_LINHAS_S", "90"))
 
 
 def _aguardar_tela(pagina, timeout_ms=None) -> str:
@@ -100,6 +106,24 @@ def _aguardar_tela(pagina, timeout_ms=None) -> str:
             pass  # página trocando no meio da consulta
         pagina.wait_for_timeout(500)
     return "desconhecida"
+
+
+def _aguardar_linhas(pagina) -> int:
+    """Espera a tabela do Tracking ter linhas (até ESPERA_LINHAS_S). Sem linhas no prazo,
+    segue: o relatório vazio é recusado depois, sem apagar o anterior."""
+    fim = time.monotonic() + ESPERA_LINHAS_S
+    n = 0
+    while time.monotonic() < fim:
+        try:
+            n = pagina.locator(SELETOR_LINHAS).count()
+        except Exception:
+            n = 0
+        if n:
+            return n
+        pagina.wait_for_timeout(1000)
+    logging.info("Angellira: a tabela do Tracking não mostrou linhas em %s s; exportando assim mesmo.",
+                 ESPERA_LINHAS_S)
+    return 0
 
 
 def _texto_da_tela(pagina) -> str:
@@ -166,7 +190,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
             def novo_contexto(sessao):
                 ctx = navegador.new_context(storage_state=sessao, accept_downloads=True,
-                                            locale="pt-BR", viewport={"width": 1366, "height": 768})
+                                            locale="pt-BR", viewport={"width": 1280, "height": 720})
                 ctx.route("**/*", rotear)
                 pg = ctx.new_page()
                 pg.set_default_timeout(TIMEOUT_MS)
@@ -191,6 +215,9 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
                 raise ErroAngellira(f"o Tracking não abriu: {motivo} (página: {_url_sem_parametros(pagina.url)}; "
                                     f"tela: {_texto_da_tela(pagina)!r})")
             no_tracking = True
+
+            marcar("esperando a tabela carregar")
+            _aguardar_linhas(pagina)
 
             marcar("clicando em exportar colunas")
             rotulo = _abrir_exportacao(pagina)
