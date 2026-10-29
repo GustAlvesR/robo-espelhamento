@@ -20,6 +20,7 @@ from flask import (Flask, Response, abort, jsonify, redirect, render_template,
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import angellira
 import geo_tomtom
 
 USUARIOS_WORKSHEET_NAME = os.getenv("USUARIOS_WORKSHEET_NAME", "Usuarios_Site")
@@ -139,6 +140,19 @@ def create_app(get_snapshot, get_client, results_spreadsheet_id, tomtom_key):
     @app.get("/health")
     def health():
         return "ok"
+
+    @app.get("/diagnostico/angellira")
+    @exige_login
+    def diagnostico_angellira():
+        """Print da tela da Angellira antes da última exportação (tem placas e motoristas)."""
+        try:
+            with open(angellira.TELA_DIAGNOSTICO, "rb") as f:
+                corpo = f.read()
+        except OSError:
+            return "Ainda não há print da Angellira: ele sai a cada rodada (15 min).", 404
+        resp = Response(corpo, mimetype="image/png")
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
 
     @app.route("/login", methods=["GET", "POST"])
     def login():

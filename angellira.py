@@ -84,10 +84,33 @@ def _no_tracking(url) -> bool:
 
 
 SELETOR_EXPORTAR = "svg[data-testid='FileDownloadOutlinedIcon']"
-# Linhas da tabela do Tracking (tabela comum ou grade do MUI): o Exportar monta o arquivo com
-# o que já carregou, então exportar antes delas sai só o cabeçalho.
-SELETOR_LINHAS = "tbody tr, .MuiDataGrid-row, [role='row'][data-rowindex]"
 ESPERA_LINHAS_S = int(os.getenv("ANGELLIRA_ESPERA_LINHAS_S", "90"))
+# Retrato da tela antes de exportar: o site mostra em /diagnostico/angellira (só logado).
+TELA_DIAGNOSTICO = os.path.join(tempfile.gettempdir(), "torre_angellira_tela.png")
+# Linhas da tabela do Tracking com dado (5 células ou mais): a linha de "sem registros" e
+# cabeçalhos não contam. O Exportar monta o arquivo com o que já carregou.
+_JS_LINHAS = """() => [...document.querySelectorAll("tr, [role=row]")].filter(r => {
+    const b = r.getBoundingClientRect();
+    return b.width > 0 && b.height > 0 && r.querySelectorAll("td, [role=cell], [role=gridcell]").length >= 5;
+}).length"""
+_JS_DIAGNOSTICO = """() => {
+    const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const linhas = (%s)();
+    const vazio = [...document.querySelectorAll("body *")].find(e => vis(e) && !e.children.length &&
+        /nenhum|sem (dados|registros|resultados)|no rows|não há|nao ha/i.test(e.innerText || ""));
+    const camadas = [...document.querySelectorAll(".MuiModal-root, .MuiPopover-root, .MuiBackdrop-root, [aria-modal=true]")]
+        .filter(vis).map(m => (String(m.className).split(" ")[0] || m.tagName) + ": " +
+            ((m.innerText || "").trim().replace(/\\s+/g, " ").slice(0, 80) || "sem texto"));
+    const icone = document.querySelector("svg[data-testid='FileDownloadOutlinedIcon']");
+    let porCima = "";
+    if (icone) {
+        const r = icone.getBoundingClientRect();
+        const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        if (e && !icone.contains(e) && !e.contains(icone)) porCima = e.outerHTML.slice(0, 160);
+    }
+    return `linhas com dado: ${linhas}; aviso de vazio: ${vazio ? vazio.innerText.trim().slice(0, 80) : "nenhum"}; ` +
+        `camadas abertas: ${camadas.join(" | ") || "nenhuma"}; por cima do exportar: ${porCima || "nada"}`;
+}""" % _JS_LINHAS
 
 
 def _aguardar_tela(pagina, timeout_ms=None) -> str:
@@ -115,7 +138,7 @@ def _aguardar_linhas(pagina) -> int:
     n = 0
     while time.monotonic() < fim:
         try:
-            n = pagina.locator(SELETOR_LINHAS).count()
+            n = pagina.evaluate(_JS_LINHAS)
         except Exception:
             n = 0
         if n:
@@ -124,6 +147,21 @@ def _aguardar_linhas(pagina) -> int:
     logging.info("Angellira: a tabela do Tracking não mostrou linhas em %s s; exportando assim mesmo.",
                  ESPERA_LINHAS_S)
     return 0
+
+
+def _retrato(pagina, pasta: str) -> None:
+    """Print da tela e diagnóstico (linhas, camadas por cima, aviso de vazio) antes de
+    exportar. O diagnóstico vai para o log quando o relatório vem vazio."""
+    try:
+        pagina.screenshot(path=TELA_DIAGNOSTICO, timeout=10000)
+    except Exception as e:
+        logging.info("Angellira: print da tela não saiu (%s).", _motivo_playwright(e))
+    try:
+        texto = pagina.evaluate(_JS_DIAGNOSTICO)
+    except Exception as e:
+        texto = f"diagnóstico não saiu ({_motivo_playwright(e)})"
+    with open(os.path.join(pasta, "diagnostico.txt"), "w", encoding="utf-8") as f:
+        f.write(texto)
 
 
 def _texto_da_tela(pagina) -> str:
@@ -218,6 +256,7 @@ def baixar_relatorio(usuario: str, senha: str, pasta: str, estado=None, visivel=
 
             marcar("esperando a tabela carregar")
             _aguardar_linhas(pagina)
+            _retrato(pagina, pasta)
 
             marcar("clicando em exportar colunas")
             rotulo = _abrir_exportacao(pagina)
@@ -761,11 +800,16 @@ class AtualizadorAngellira:
                 raise
             self._falhas = 0
             linhas = ler_arquivo(caminho)
+            try:
+                with open(os.path.join(pasta, "diagnostico.txt"), encoding="utf-8") as f:
+                    diagnostico = f.read()
+            except OSError:
+                diagnostico = "sem diagnóstico"
         # Exportar antes de a tabela carregar devolve só o cabeçalho; gravar isso apagaria as
         # posições de todas as rotas até a próxima rodada.
         if len(linhas) <= 1:
-            raise ErroAngellira("o relatório veio sem linhas (a tabela do Tracking não tinha carregado); "
-                                f"a aba {ABA} ficou com o relatório anterior")
+            raise ErroAngellira(f"o relatório veio sem linhas; a aba {ABA} ficou com o relatório anterior "
+                                f"(tela antes de exportar: {diagnostico}; print em /diagnostico/angellira)")
         validar(linhas)
         gravar_na_aba(self._get_client().open_by_key(self._spreadsheet_id), linhas)
         self.ultimo_ok, self.ultimo_erro = datetime.now(), ""
