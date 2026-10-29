@@ -1,0 +1,91 @@
+{
+ "origem": "SOC-PE2",
+ "destino": "XPT-LPE-92",
+ "sm": "39208747",
+ "origem_nome": "SOC_PE_JABOATÃO DOS GUARARAPES",
+ "destino_nome": "[8631]XPT_PE_PALMARES_02",
+ "distancia_km": 101.8,
+ "pontos": [
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "JABOATAO DOS GUARARAPES",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "SÃO CRISTOVÃO II (ESCADA)",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "CABO DE SANTO AGOSTINHO",
+   "uf": "PE",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR COTEGY ESCADA",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY I",
+   "cidade": "ESCADA",
+   "uf": "PE",
+   "rodovia": "BR 101",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO COTEGY II",
+   "cidade": "RIBEIRAO",
+   "uf": "PE",
+   "rodovia": "ROD BR 101 KM 133",
+   "motivo": ""
+  }
+ ],
+ "riscos": [],
+ "passos": [
+  {
+   "instrucao": "Continue para Av. Conde da Boa Vista",
+   "km": 1.36
+  },
+  {
+   "instrucao": "Continue para Antiga Estrada Rodovia",
+   "km": 1.46
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Antiga Estrada Rodovia",
+   "km": 1.3
+  },
+  {
+   "instrucao": "Vire à direita na R. do Caionco",
+   "km": 0.42
+  },
+  {
+   "instrucao": "Continue para Rua Governador Miguel Arraes de Acencar",
+   "km": 0.35
+  },
+  {
+   "instrucao": "Continue para Rua Governador Miguel",
+   "km": 1.0
+  },
+  {
+   "instrucao": "Vire à esquerda para chegar a BR-101 [8631]XPT_PE_PALMARES_02",
+   "km": 94.0
+  }
+ ],
+ "importado_em": "29/10/2026 18:21"
+}

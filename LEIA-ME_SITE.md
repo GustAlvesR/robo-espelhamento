@@ -484,6 +484,10 @@ Exportar colunas, "Todas as colunas", Exportar.
 - Antes de exportar, o robô espera a tabela do Tracking mostrar linhas (até 90 s,
   `ANGELLIRA_ESPERA_LINHAS_S`): o Exportar monta o arquivo com o que já carregou. Se o
   relatório vier mesmo assim sem linhas, ele não é gravado e a aba fica com o anterior.
+- Antes de exportar, o robô tira um print da tela do Tracking. Quem está logado no site vê
+  o último em `/diagnostico/angellira` (tem placas e motoristas, como o resto do site).
+  Com relatório vazio, o log traz o diagnóstico da tela: linhas com dado, aviso de "nenhum
+  registro", janelas abertas e o que está por cima do botão de exportar.
 
 ### Configuração no Render (uma vez)
 

@@ -1,0 +1,202 @@
+{
+ "origem": "SOC-SP18",
+ "destino": "HUB-LSP-38",
+ "sm": "39211366",
+ "origem_nome": "SOC_SP_PIRACICABA",
+ "destino_nome": "LM HUB_SP_VOTUPORANGA",
+ "distancia_km": 379.91,
+ "pontos": [
+  {
+   "nome": "GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO RODO POSTO RUBI",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "BR 364 - KM 221",
+   "motivo": ""
+  },
+  {
+   "nome": "PAU SECO",
+   "cidade": "ARARAQUARA",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "AUTO POSTO LARANJEIRAS",
+   "cidade": "TAQUARITINGA",
+   "uf": "SP",
+   "rodovia": "BR 456",
+   "motivo": ""
+  },
+  {
+   "nome": "AUTO POSTO 4CENTAO",
+   "cidade": "CATIGUA",
+   "uf": "SP",
+   "rodovia": "BR 456",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MONTE CARLO",
+   "cidade": "MIRASSOL",
+   "uf": "SP",
+   "rodovia": "BR 456 - KM 451",
+   "motivo": ""
+  },
+  {
+   "nome": "COCENZA",
+   "cidade": "MIRASSOL",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "SERTANEJO",
+   "cidade": "VOTUPORANGA",
+   "uf": "SP",
+   "rodovia": "SP 320 - KM 507",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SERTANEJO",
+   "cidade": "VOTUPORANGA",
+   "uf": "SP",
+   "rodovia": "SP 320 - KM 507",
+   "motivo": ""
+  },
+  {
+   "nome": "SIMONSEN",
+   "cidade": "VOTUPORANGA",
+   "uf": "SP",
+   "rodovia": "SP 320 - KM 510",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SIMONSEN",
+   "cidade": "VOTUPORANGA",
+   "uf": "SP",
+   "rodovia": "SP 320 - KM 510",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL",
+   "cidade": "ARARAQUARA",
+   "uf": "SP",
+   "obs": ""
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Vire à direita na Estr. Francisco Barbosa",
+   "km": 0.18
+  },
+  {
+   "instrucao": "Vire à esquerda na Rod. Margarida da Graça Martins",
+   "km": 1.66
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída e mantenha-se na Rod. Margarida da Graça Martins",
+   "km": 0.77
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na Rod. Margarida da Graça Martins",
+   "km": 0.34
+  },
+  {
+   "instrucao": "Curva suave à direita (placas para Americana/SP-304)",
+   "km": 0.056
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso para a Rod. do Açúcar",
+   "km": 1.41
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na Rod. Ernesto Paterniani",
+   "km": 3.79
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Rod. Ernesto Paterniani",
+   "km": 4.38
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída",
+   "km": 0.1
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída para a R. Anel Viário",
+   "km": 0.52
+  },
+  {
+   "instrucao": "Vire à direita na Rodovia Fausto Santo MauroEstrada com pedágio",
+   "km": 25.67
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a São Carlos/Dist. Industrial",
+   "km": 0.33
+  },
+  {
+   "instrucao": "Pegue a BR-364Estrada com pedágio",
+   "km": 120.89
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na BR-456Estrada com pedágio",
+   "km": 134.48
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-456",
+   "km": 0.85
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-456",
+   "km": 25.36
+  },
+  {
+   "instrucao": "Pegue a saída 453 A em direção a Votuporanga/Fernandópolis/Sta. Fé do Sul",
+   "km": 0.5
+  },
+  {
+   "instrucao": "Continue para Rod. Euclides da Cunha",
+   "km": 40.34
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Rod. Euclides da Cunha",
+   "km": 11.32
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Rod. Euclides da Cunha",
+   "km": 4.69
+  },
+  {
+   "instrucao": "Pegue a saída em direção a SP-479",
+   "km": 0.17
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída",
+   "km": 0.43
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída",
+   "km": 0.46
+  },
+  {
+   "instrucao": "Continue para R. Mariano Cortez",
+   "km": 0.36
+  }
+ ],
+ "importado_em": "29/10/2026 17:58"
+}

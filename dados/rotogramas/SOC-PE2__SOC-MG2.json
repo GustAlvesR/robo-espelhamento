@@ -1,7 +1,7 @@
 {
  "origem": "SOC-PE2",
  "destino": "SOC-MG2",
- "sm": "39637055",
+ "sm": "39670638",
  "origem_nome": "SOC_PE_JABOATÃO DOS GUARARAPES",
  "destino_nome": "SOC_MG_BETIM",
  "distancia_km": 2088.25,
@@ -1673,5 +1673,5 @@
    "km": 0.2
   }
  ],
- "importado_em": "21/10/2026 13:38"
+ "importado_em": "29/10/2026 18:33"
 }

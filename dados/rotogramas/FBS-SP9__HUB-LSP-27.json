@@ -1,0 +1,337 @@
+{
+ "origem": "FBS-SP9",
+ "destino": "HUB-LSP-27",
+ "sm": "39637851",
+ "origem_nome": "FBS_SP_FRANCO DA ROCHA",
+ "destino_nome": "LM HUB_SP_SÃO JOSÉ DO RIO PRETO",
+ "distancia_km": 402.26,
+ "pontos": [
+  {
+   "nome": "FRANGO ASSADO I",
+   "cidade": "CAJAMAR",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAMPEÃO 68",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAMPEÃO 80",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "PETROBRAS",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "rodovia": "SP 065",
+   "motivo": ""
+  },
+  {
+   "nome": "SUMARE ADM LOGISTICO",
+   "cidade": "SUMARE",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MONTE CARLO",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL XIV (TOPAZIO)",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "rodovia": "BR 050 - KM 140",
+   "motivo": ""
+  },
+  {
+   "nome": "GAAL BARREIRENSE",
+   "cidade": "CORDEIROPOLIS",
+   "uf": "SP",
+   "rodovia": "BR 364",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL BARREIRENSE",
+   "cidade": "CORDEIROPOLIS",
+   "uf": "SP",
+   "rodovia": "BR 364",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO RODO POSTO RUBI",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "BR 364 - KM 221",
+   "motivo": ""
+  },
+  {
+   "nome": "PAU SECO",
+   "cidade": "ARARAQUARA",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "AUTO POSTO LARANJEIRAS",
+   "cidade": "TAQUARITINGA",
+   "uf": "SP",
+   "rodovia": "BR 456",
+   "motivo": ""
+  },
+  {
+   "nome": "AUTO POSTO 4CENTAO",
+   "cidade": "CATIGUA",
+   "uf": "SP",
+   "rodovia": "BR 456",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL - P.CAMPEAO 38",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO CAMPEAO 38",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 1",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 2",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 3",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO RJ",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "AUTO POSTO LAGO AZUL",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "LOCAL PROIBIDO GERAL - AUTO POSTO LAGO AZUL",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "MACHADOEMBALAGENS",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "ATACADOECOMMERCE.COM",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO VIA CAMPOS - POSTO 7 AMERICANA 1",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO VIA CAMPOS - POSTO 7 AMERICANA 2",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO 7",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO 7",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO HS POSTO GRAAL TOPAZIO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO GRAAL TOPAZIO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL - DESVIO DE COMBUSTIVEL",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "ÁREA DE ROUBO - RUA LUÍS PESSOTO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL",
+   "cidade": "ARARAQUARA",
+   "uf": "SP",
+   "obs": ""
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Pegue a Rod. Edgard Máximo Zambotto",
+   "km": 0.76
+  },
+  {
+   "instrucao": "Curva acentuada à esquerda para permanecer na Rod. Edgard Máximo Zambotto",
+   "km": 2.93
+  },
+  {
+   "instrucao": "Vire à direita na Av. Dr. José Luíz Leme Maciel/R. Dr José Leme Maciel",
+   "km": 0.69
+  },
+  {
+   "instrucao": "Continue para Av. Pedro Celestino Leite Penteado",
+   "km": 0.66
+  },
+  {
+   "instrucao": "Continue em frente",
+   "km": 0.13
+  },
+  {
+   "instrucao": "Pegue a BR-050",
+   "km": 9.7
+  },
+  {
+   "instrucao": "Pegue a saída 49 para a Rod. dos Bandeirantes/SP-348 em direção a Bandeirantes/Aeroporto Viracopos/ItuEstrada com pedágio",
+   "km": 48.2
+  },
+  {
+   "instrucao": "Curva suave à direita na Rod. Adalberto Panzan",
+   "km": 7.28
+  },
+  {
+   "instrucao": "Continue para Via Anhanguera/BR-050/SP-330 (placas para Americana/Limeira/Rib. Preto)Estrada com pedágio",
+   "km": 21.53
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na BR-050",
+   "km": 1.85
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050",
+   "km": 16.44
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050Estrada com pedágio",
+   "km": 11.16
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Araraquara/Rio Claro/São Carlos",
+   "km": 1.06
+  },
+  {
+   "instrucao": "Continue para BR-364",
+   "km": 20.88
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-364Estrada com pedágio",
+   "km": 119.05
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na BR-456Estrada com pedágio",
+   "km": 134.48
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-456",
+   "km": 0.85
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-456",
+   "km": 3.28
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Av. Percy Gandini",
+   "km": 0.069
+  },
+  {
+   "instrucao": "Vire à esquerda na Av. Percy Gandini",
+   "km": 0.5
+  },
+  {
+   "instrucao": "Vire à direita na Av. Antônio Cabrera Mano",
+   "km": 0.25
+  }
+ ],
+ "importado_em": "29/10/2026 18:33"
+}

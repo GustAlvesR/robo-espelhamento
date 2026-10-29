@@ -1,0 +1,341 @@
+{
+ "origem": "SOC-SP25",
+ "destino": "SOC-SP10",
+ "sm": "39206984",
+ "origem_nome": "SOC_SP_CUMBICA_GUARULHOS",
+ "destino_nome": "SOC_SP_IBITINGA",
+ "distancia_km": 370.37,
+ "pontos": [
+  {
+   "nome": "POSTO CRUZEIRO DO SUL",
+   "cidade": "GUARULHOS",
+   "uf": "SP",
+   "rodovia": "AV SANTOS DUMONT",
+   "motivo": ""
+  },
+  {
+   "nome": "FRANGO ASSADO I",
+   "cidade": "CAJAMAR",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL I (67)",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "PETROBRAS",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "rodovia": "SP 065",
+   "motivo": ""
+  },
+  {
+   "nome": "SUMARE ADM LOGISTICO",
+   "cidade": "SUMARE",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MONTE CARLO",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL XIV (TOPAZIO)",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "rodovia": "BR 050 - KM 140",
+   "motivo": ""
+  },
+  {
+   "nome": "GAAL BARREIRENSE",
+   "cidade": "CORDEIROPOLIS",
+   "uf": "SP",
+   "rodovia": "BR 364",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL BARREIRENSE",
+   "cidade": "CORDEIROPOLIS",
+   "uf": "SP",
+   "rodovia": "BR 364",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO RODO POSTO RUBI",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL X (RUBI)",
+   "cidade": "SAO CARLOS",
+   "uf": "SP",
+   "rodovia": "BR 364 - KM 221",
+   "motivo": ""
+  },
+  {
+   "nome": "PAU SECO",
+   "cidade": "ARARAQUARA",
+   "uf": "SP",
+   "rodovia": "",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL - P.CAMPEAO 38",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO CAMPEAO 38",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 1",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 2",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CAMPEAO 38 3",
+   "cidade": "CAIEIRAS",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO RJ",
+   "cidade": "JUNDIAI",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "INATIVO FAVOR EXCLUIR",
+   "cidade": "LOUVEIRA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "NUTRIHEARTCOMERCIODEPRODUTO",
+   "cidade": "VINHEDO",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "TNTINFOLOJA.COM.BR",
+   "cidade": "CAMPINAS",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO VIA CAMPOS - POSTO 7 AMERICANA 1",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO VIA CAMPOS - POSTO 7 AMERICANA 2",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO 7",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO 7",
+   "cidade": "AMERICANA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "LOCAL DE ROUBO HS POSTO GRAAL TOPAZIO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO GRAAL TOPAZIO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "COMBUSTIVEL - DESVIO DE COMBUSTIVEL",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": ""
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "ÁREA DE ROUBO - RUA LUÍS PESSOTO",
+   "cidade": "LIMEIRA",
+   "uf": "SP",
+   "obs": "COMBUSTÍVEL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a R. Orlanda Bérgamo",
+   "km": 1.46
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.13
+  },
+  {
+   "instrucao": "Curva suave à esquerda em direção à R. Orlanda Bérgamo",
+   "km": 0.041
+  },
+  {
+   "instrucao": "Pegue a R. Orlanda Bérgamo",
+   "km": 1.19
+  },
+  {
+   "instrucao": "R. Orlanda Bérgamo faz uma curva à direita e se torna Av. Antônio Bardella",
+   "km": 0.87
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída",
+   "km": 2.28
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Marg. Tietê",
+   "km": 0.51
+  },
+  {
+   "instrucao": "Pegue a Rod. Ayrton Senna",
+   "km": 7.49
+  },
+  {
+   "instrucao": "Continue para Marginal Tietê",
+   "km": 5.72
+  },
+  {
+   "instrucao": "Continue para Marginal Tietê/BR-116",
+   "km": 6.45
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-116",
+   "km": 1.17
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-116",
+   "km": 2.51
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-116",
+   "km": 3.43
+  },
+  {
+   "instrucao": "Pegue a saída para a SP-330 em direção a Anhanguera/Rodoanel/Pq. S. Domingos",
+   "km": 0.7
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Via Anhanguera/BR-050/SP-330",
+   "km": 0.39
+  },
+  {
+   "instrucao": "Continue para Via Anhanguera/BR-050/SP-330",
+   "km": 0.22
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na BR-050",
+   "km": 1.2
+  },
+  {
+   "instrucao": "Curva suave à esquerda para permanecer na BR-050",
+   "km": 4.55
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050Estrada com pedágio",
+   "km": 85.24
+  },
+  {
+   "instrucao": "BR-050 faz uma curva suave à direita e se torna BR-050Estrada com pedágio",
+   "km": 21.53
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050",
+   "km": 1.85
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050",
+   "km": 16.44
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-050Estrada com pedágio",
+   "km": 11.16
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Araraquara/Rio Claro/São Carlos",
+   "km": 1.06
+  },
+  {
+   "instrucao": "Continue para BR-364Estrada com pedágio",
+   "km": 133.72
+  },
+  {
+   "instrucao": "Pegue a saída 287 em direção a G. Peixoto/Ibitinga",
+   "km": 0.94
+  },
+  {
+   "instrucao": "Continue para BR-267",
+   "km": 13.68
+  },
+  {
+   "instrucao": "Continue para BR-267",
+   "km": 26.57
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-267 em direção a Ibitinga/Bauru",
+   "km": 16.81
+  }
+ ],
+ "importado_em": "29/10/2026 18:20"
+}

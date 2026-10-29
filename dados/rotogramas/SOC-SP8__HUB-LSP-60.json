@@ -1,0 +1,105 @@
+{
+ "origem": "SOC-SP8",
+ "destino": "HUB-LSP-60",
+ "sm": "39671549",
+ "origem_nome": "SOC_SP_SÃO BERNARDO DO CAMPO",
+ "destino_nome": "LM HUB_SP_OSASCO_02",
+ "distancia_km": 60.44,
+ "pontos": [],
+ "riscos": [],
+ "passos": [
+  {
+   "instrucao": "Vire à direitaEstrada de uso restrito",
+   "km": 0.22
+  },
+  {
+   "instrucao": "Continue em frenteEstrada de uso restrito",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Pegue a Estrada Samuel Aizemberg",
+   "km": 0.16
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Rio de Janeiro",
+   "km": 0.54
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Espírito Santo",
+   "km": 0.39
+  },
+  {
+   "instrucao": "Vire à direita na R. Letício",
+   "km": 0.073
+  },
+  {
+   "instrucao": "Curva suave à direita na R. Barão de Cotegipe",
+   "km": 0.36
+  },
+  {
+   "instrucao": "Vire à direita na R. Rio de Janeiro",
+   "km": 0.59
+  },
+  {
+   "instrucao": "Vire à direita na Estrada Samuel Aizemberg",
+   "km": 0.52
+  },
+  {
+   "instrucao": "Continue para Av. Pirâmide",
+   "km": 0.36
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 3ª saída e mantenha-se na Av. Pirâmide",
+   "km": 0.18
+  },
+  {
+   "instrucao": "Curva suave à direita na rampa de acesso a SP-021/Rodoanel/Bx. Santista",
+   "km": 0.47
+  },
+  {
+   "instrucao": "Pegue a Rod. dos Imigrantes",
+   "km": 2.79
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Rodoanel Mário Covas/SP-021Estrada com pedágio",
+   "km": 0.79
+  },
+  {
+   "instrucao": "Pegue a Rodoanel Mário Covas/SP-021 pela rampa de acesso a Rodoanel/BR-116/R. Bittencourt/SP-270Estrada com pedágio",
+   "km": 46.88
+  },
+  {
+   "instrucao": "Pegue a saída 24 em direção a Osasco/CarapicuíbaEstrada com pedágio",
+   "km": 2.94
+  },
+  {
+   "instrucao": "Continue para Saída 20Estrada com pedágio",
+   "km": 0.09
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Av. Leonil Crê BortolossoEstrada com pedágio",
+   "km": 1.11
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a CarapicuibaEstrada com pedágio",
+   "km": 0.82
+  },
+  {
+   "instrucao": "Continue para Av. Leonil Crê Bortolosso",
+   "km": 0.35
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.16
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.089
+  },
+  {
+   "instrucao": "Vire à esquerdaO destino estará à direita",
+   "km": 0.23
+  }
+ ],
+ "importado_em": "29/10/2026 18:33"
+}
