@@ -1,0 +1,229 @@
+{
+ "origem": "XPT-LSC-99",
+ "destino": "SOC-PR1",
+ "sm": "39473781",
+ "origem_nome": "XPT_SC_SÃO BENTO DO SUL",
+ "destino_nome": "SOC_PR_CURITIBA",
+ "distancia_km": 146.33,
+ "pontos": [
+  {
+   "nome": "POSTO PEDRO PELANDA",
+   "cidade": "TIJUCAS DO SUL",
+   "uf": "PR",
+   "rodovia": "BR 376 - KM 641",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TIO ZICO VI",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR-376 - KM 624,9",
+   "motivo": ""
+  },
+  {
+   "nome": "TIO ZICO",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 376 - KM 624",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TIO ZICO II",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 376 - KM 624",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MAXSUL",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GP FROTA",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO LOCATELLI",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ALDO",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO ALDO LOCATELLI",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "ALDO LOCATELLI I",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TULIOLESTE",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TULIO CONTORNO",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "MEGA POSTO - CURITIBA",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SIM",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TULIO CARAGUATÁ",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO CUPIM",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CUPIM",
+   "cidade": "SAO JOSE DOS PINHAIS",
+   "uf": "PR",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO CUPIM",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "obs": "GERAL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Na rotatória, pegue a 4ª saída para a Rod. dos Móveis",
+   "km": 8.16
+  },
+  {
+   "instrucao": "Continue para Rod. Eng. Carlos Alberto Camargo Coelho",
+   "km": 9.04
+  },
+  {
+   "instrucao": "Continue para PR-281",
+   "km": 1.08
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na PR-281",
+   "km": 15.54
+  },
+  {
+   "instrucao": "Vire à direita na R. Cândido Fagundes dos Santos",
+   "km": 0.66
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Alcides de Lima Maoski/PR-281Continue na PR-281",
+   "km": 15.05
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída e mantenha-se na PR-281",
+   "km": 18.07
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída",
+   "km": 0.67
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a rampa de acesso à BR-376 para Curitiba",
+   "km": 0.3
+  },
+  {
+   "instrucao": "Pegue a BR-376Estrada com pedágio",
+   "km": 29.11
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Paranaguá/São Paulo",
+   "km": 0.6
+  },
+  {
+   "instrucao": "Pegue a BR-116",
+   "km": 33.7
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-116",
+   "km": 1.36
+  },
+  {
+   "instrucao": "Pegue a saída 67 em direção a Campina Gde. do Sul",
+   "km": 0.25
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.28
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.053
+  },
+  {
+   "instrucao": "Curva suave à direita na rampa de acesso a Curitiba",
+   "km": 0.28
+  },
+  {
+   "instrucao": "Pegue a BR-116",
+   "km": 4.2
+  },
+  {
+   "instrucao": "Curva suave à direita na rampa de acesso a Curitiba/Campina Grande do Sul",
+   "km": 0.43
+  },
+  {
+   "instrucao": "Continue para BR-116",
+   "km": 1.12
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Via Marginal",
+   "km": 0.2
+  },
+  {
+   "instrucao": "Vire à direitaEstrada de uso restrito",
+   "km": 0.28
+  }
+ ],
+ "importado_em": "29/10/2026 18:33"
+}
