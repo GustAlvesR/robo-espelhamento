@@ -1,0 +1,572 @@
+{
+ "origem": "FMH-TBA-02",
+ "destino": "SOC-MG4",
+ "sm": "39325297",
+ "origem_nome": "FM HUB_SP_TAUBATÉ_02",
+ "destino_nome": "SOC_MG_CONTAGEM_INDUSTRIAL",
+ "distancia_km": 523.74,
+ "pontos": [
+  {
+   "nome": "POSTO ESTORIL CENTEE",
+   "cidade": "TAUBATE",
+   "uf": "SP",
+   "rodovia": "SP 060",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FRANGO ASSADO",
+   "cidade": "TAUBATE",
+   "uf": "SP",
+   "rodovia": "SP 060",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "SAO SEBASTIAO DA BELA VISTA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 786",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BALANÇA HG",
+   "cidade": "SAO SEBASTIAO DA BELA VISTA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 786",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAPIXABA",
+   "cidade": "CAREACU",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MOINHO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PINHEIRINHO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO GAUCHAO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 790",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GAUCHÃO II",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "ROD. BR 381 KM 790",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR 381",
+   "cidade": "CAMPANHA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FAZENDINHA",
+   "cidade": "CAMPANHA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO TREVO DE VARGINHA",
+   "cidade": "TRES CORACOES",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 744",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GARITAO",
+   "cidade": "LAVRAS",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SANDRELE II",
+   "cidade": "LAVRAS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO CASTELO",
+   "cidade": "RIBEIRAO VERMELHO",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 674.9",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BARREIRÃO",
+   "cidade": "RIBEIRAO VERMELHO",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO TARTÁRIA",
+   "cidade": "SANTO ANTONIO DO AMPARO",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PETROBRAS",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JUA",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL XV",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL XV",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO DE OLIVEIRA",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 611",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 611",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SOL NASCENTE",
+   "cidade": "CARMOPOLIS DE MINAS",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "RIO MANSO",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "RESTAURANTE DO SEU ADAO",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "TODOS",
+   "nome": "P. MOINHO 1",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "P. MOINHO 2",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO MOINHO 1",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO MOINHO 2",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "REST. BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "REST. BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE CASA BRANCA",
+   "cidade": "ITAGUARA",
+   "uf": "MG",
+   "obs": "TENTATIVA LUNARDI"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE COSME E DAMIÃO",
+   "cidade": "ITAGUARA",
+   "uf": "MG",
+   "obs": "TENTATIVA LUNARDI"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DO PEDRO ITATIAIUÇU",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "obs": "FURTO APK"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DO PEDRO ITATIAIUÇU",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "obs": "FURTO APK"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Curva suave à esquerda para pegar a rampa de acesso a São Paulo",
+   "km": 0.1
+  },
+  {
+   "instrucao": "Pegue a BR-116/BR-383",
+   "km": 1.41
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Campos do Jordão",
+   "km": 0.56
+  },
+  {
+   "instrucao": "Pegue a BR-383",
+   "km": 11.24
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-383",
+   "km": 5.78
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-383",
+   "km": 8.54
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-383",
+   "km": 7.92
+  },
+  {
+   "instrucao": "Pegue a saída em direção a Sto Anto do Pinhal/SP-46/S. Bento de Sapucaí/Sul de Minas Gerais",
+   "km": 0.38
+  },
+  {
+   "instrucao": "Pegue a SP-046",
+   "km": 0.7
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a Av. Antônio Joaquim de Oliveira",
+   "km": 3.29
+  },
+  {
+   "instrucao": "Na Picanha & Pasta, a Av. Antônio Joaquim de Oliveira faz uma curva à direita e se torna a R. Gov. Carvalho Pinto",
+   "km": 0.91
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Cel. Sebastião Marcondes da Silva",
+   "km": 0.11
+  },
+  {
+   "instrucao": "Vire à direita na Av. Min. Nelson Hungria",
+   "km": 0.7
+  },
+  {
+   "instrucao": "Continue para Estr. Ac. p/ Sul de Minas/SP-046Continue na SP-046",
+   "km": 9.6
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída para a Estradas de Rodagem Monteiro Lobato/Rod. Monteiro Lobato",
+   "km": 1.68
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 1ª saída para a Rod. Ver. Júlio da Silva",
+   "km": 15.35
+  },
+  {
+   "instrucao": "Continue para Rod. Dep. Euclides Pereira CintraEstrada com pedágio",
+   "km": 18.34
+  },
+  {
+   "instrucao": "Curva acentuada à esquerda na Rodovia",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Vire à direita na Av. Avelino Ribeiro/Rod. Antônio Simões de Almeida/Rod. Dep. Euclides Pereira Cintra",
+   "km": 0.93
+  },
+  {
+   "instrucao": "Vire à direita na R. Cap. Antônio Augusto de Almeida/Rod. Antônio Simões de Almeida/Rod. Dep. Euclides Pereira CintraContinue na Rod. Antônio Simões de Almeida/Rod. Dep. Euclides Pereira Cintra",
+   "km": 16.02
+  },
+  {
+   "instrucao": "Rod. Antônio Simões de Almeida/Rod. Dep. Euclides Pereira Cintra faz uma curva suave à direita e se torna R. Alves Corrêa",
+   "km": 0.082
+  },
+  {
+   "instrucao": "Vire à direita na R. Mercúrio",
+   "km": 0.018
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Cassiano Pinto",
+   "km": 0.19
+  },
+  {
+   "instrucao": "Continue para R. Duque de Caxias",
+   "km": 0.36
+  },
+  {
+   "instrucao": "Vire à direita na Av. Cel. Domingos Rosa/Rod. Antônio Simões de Almeida/Rod. Dep. Euclides Pereira Cintra",
+   "km": 20.82
+  },
+  {
+   "instrucao": "Vire à esquerda em direção à BR-459",
+   "km": 0.037
+  },
+  {
+   "instrucao": "Curva suave à esquerda na BR-459Estrada com pedágio",
+   "km": 10.35
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-459",
+   "km": 1.96
+  },
+  {
+   "instrucao": "Na rotatória, pegue a 2ª saída e mantenha-se na BR-459",
+   "km": 0.25
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Três Corações/Varginha/B. Horizonte",
+   "km": 0.27
+  },
+  {
+   "instrucao": "Pegue a BR-381Estrada com pedágio",
+   "km": 75.88
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-381",
+   "km": 14.9
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-381",
+   "km": 10.69
+  },
+  {
+   "instrucao": "Continue para BR-381Estrada com pedágio",
+   "km": 248.07
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-381",
+   "km": 0.29
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-381",
+   "km": 0.8
+  },
+  {
+   "instrucao": "Curva suave à esquerda para permanecer na BR-381",
+   "km": 5.81
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-381",
+   "km": 1.73
+  },
+  {
+   "instrucao": "Pegue a saída 491 à esquerda em direção a Contagem/Brasília",
+   "km": 0.41
+  },
+  {
+   "instrucao": "Pegue a Av. Campo de Ourique",
+   "km": 0.31
+  },
+  {
+   "instrucao": "Continue para Av. Adutora Várzea das Flores",
+   "km": 1.52
+  },
+  {
+   "instrucao": "Continue para Via Expressa de Betim",
+   "km": 2.1
+  },
+  {
+   "instrucao": "Continue para Via Expressa Francisco Cleuton LopesVocê verá Lanchonete Temos Chup_Chup (à direita em 4 km)",
+   "km": 9.24
+  },
+  {
+   "instrucao": "Curva suave à esquerda na Av. Helena de Vasconcelos Costa",
+   "km": 1.54
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Av. Helena de Vasconcelos Costa",
+   "km": 0.51
+  },
+  {
+   "instrucao": "Continue para Av. Severino Ballesteros",
+   "km": 0.19
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Ceasa/Brasília",
+   "km": 0.57
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso para a BR-040/BR-135",
+   "km": 6.36
+  },
+  {
+   "instrucao": "Curva acentuada à esquerda para permanecer na BR-040/BR-135",
+   "km": 3.21
+  },
+  {
+   "instrucao": "Curva suave à direita",
+   "km": 0.2
+  }
+ ],
+ "importado_em": "29/10/2026 17:58"
+}

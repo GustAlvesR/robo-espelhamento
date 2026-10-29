@@ -1,0 +1,190 @@
+{
+ "origem": "SOC-PR1",
+ "destino": "XPT-LSC-99",
+ "sm": "39381153",
+ "origem_nome": "SOC_PR_CURITIBA",
+ "destino_nome": "XPT_SC_SÃO BENTO DO SUL",
+ "distancia_km": 129.66,
+ "pontos": [
+  {
+   "nome": "MEGA POSTO - CURITIBA",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SIM",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REDE TULIO QUATRO BARRAS",
+   "cidade": "QUATRO BARRAS",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO REDE TULIO",
+   "cidade": "CAMPINA GRANDE DO SUL",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "JASSA",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JASSA",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CDM ARCOM",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO IPIRANGA",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "rodovia": "BR 116 - KM 122",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO 21",
+   "cidade": "FAZENDA RIO GRANDE",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PELANDA",
+   "cidade": "FAZENDA RIO GRANDE",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO TABORDA",
+   "cidade": "MANDIRITUBA",
+   "uf": "PR",
+   "rodovia": "BR 116 - KM 135.5",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CTF",
+   "cidade": "MANDIRITUBA",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MICHELE",
+   "cidade": "MANDIRITUBA",
+   "uf": "PR",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO 36",
+   "cidade": "MANDIRITUBA",
+   "uf": "PR",
+   "rodovia": "BR 116",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO 47",
+   "cidade": "MANDIRITUBA",
+   "uf": "PR",
+   "rodovia": "BR 116 - KM 152.5",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO POSTIBA",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO POSTIBA",
+   "cidade": "CURITIBA",
+   "uf": "PR",
+   "obs": "GERAL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.58
+  },
+  {
+   "instrucao": "Pegue a BR-116",
+   "km": 15.06
+  },
+  {
+   "instrucao": "Curva suave à esquerda",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Pegue a BR-476",
+   "km": 2.44
+  },
+  {
+   "instrucao": "Continue para BR-116",
+   "km": 0.41
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na BR-116/BR-476Continue na BR- 116Estrada com pedágioVocê verá Jaime Santos Caminhonetes (à direita em 11,3 km)",
+   "km": 48.15
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-116",
+   "km": 6.55
+  },
+  {
+   "instrucao": "Curva suave à direita em direção à PR-419",
+   "km": 0.14
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para continuar na direção de PR-419",
+   "km": 0.043
+  },
+  {
+   "instrucao": "Vire à direita na PR-419",
+   "km": 16.28
+  },
+  {
+   "instrucao": "Continue para PR-281",
+   "km": 15.43
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na PR-281",
+   "km": 1.17
+  },
+  {
+   "instrucao": "Continue para Rod. Eng. Carlos Alberto Camargo Coelho",
+   "km": 9.09
+  },
+  {
+   "instrucao": "Rod. Eng. Carlos Alberto Camargo Coelho faz uma curva suave à direita e se torna Rod. dos Móveis",
+   "km": 8.08
+  }
+ ],
+ "importado_em": "29/10/2026 17:58"
+}

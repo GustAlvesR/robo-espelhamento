@@ -1,0 +1,847 @@
+{
+ "origem": "FMH-CPS-01",
+ "destino": "SOC-MG4",
+ "sm": "39325610",
+ "origem_nome": "FM HUB_SP_CAMPINAS",
+ "destino_nome": "SOC_MG_CONTAGEM_INDUSTRIAL",
+ "distancia_km": 580.04,
+ "pontos": [
+  {
+   "nome": "POSTO GRILL",
+   "cidade": "BRAGANCA PAULISTA",
+   "uf": "SP",
+   "rodovia": "BR 146 - KM 25",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PETROBRAS",
+   "cidade": "BRAGANCA PAULISTA",
+   "uf": "SP",
+   "rodovia": "BR 146 - KM 25",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FISCAL",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PURURUCA",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO EURONAV",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL ESTIVA",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "DOM PEDRO I (ESTIVA)",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO I (ESTIVA)",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "SAO SEBASTIAO DA BELA VISTA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 786",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BALANÇA HG",
+   "cidade": "SAO SEBASTIAO DA BELA VISTA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 786",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO CAPIXABA",
+   "cidade": "CAREACU",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO MOINHO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PINHEIRINHO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO GAUCHAO",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 790",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GAUCHÃO II",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "ROD. BR 381 KM 790",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BR 381",
+   "cidade": "CAMPANHA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO FAZENDINHA",
+   "cidade": "CAMPANHA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO TREVO DE VARGINHA",
+   "cidade": "TRES CORACOES",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 744",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GARITAO",
+   "cidade": "LAVRAS",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SANDRELE II",
+   "cidade": "LAVRAS",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO CASTELO",
+   "cidade": "RIBEIRAO VERMELHO",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 674.9",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO BARREIRÃO",
+   "cidade": "RIBEIRAO VERMELHO",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": "Eventual / Pernoite"
+  },
+  {
+   "nome": "POSTO TARTÁRIA",
+   "cidade": "SANTO ANTONIO DO AMPARO",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO PETROBRAS",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO JUA",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "GRAAL XV",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO GRAAL XV",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO DE OLIVEIRA",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 611",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "OLIVEIRA",
+   "uf": "MG",
+   "rodovia": "BR 381 - KM 611",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SOL NASCENTE",
+   "cidade": "CARMOPOLIS DE MINAS",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "POSTO SHELL",
+   "cidade": "RIO MANSO",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  },
+  {
+   "nome": "RESTAURANTE DO SEU ADAO",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "rodovia": "BR 381",
+   "motivo": ""
+  }
+ ],
+ "riscos": [
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "AUTO POSTO GIGIO",
+   "cidade": "ATIBAIA",
+   "uf": "SP",
+   "obs": "ROUBO TSB SARDINHA"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO GIGIO",
+   "cidade": "ATIBAIA",
+   "uf": "SP",
+   "obs": "TENTATIVA COVRE"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "AUTO POSTO GIGIO",
+   "cidade": "ATIBAIA",
+   "uf": "SP",
+   "obs": "ROUBO TSB SARDINHA"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "POSTO DOM PEDRO ATIBAIA",
+   "cidade": "ATIBAIA",
+   "uf": "SP",
+   "obs": "ATIBAIA/SP"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "ATIBAIA",
+   "uf": "SP",
+   "obs": "ATIBAIA/SP"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "SOMPO - POSTO FAISÃO",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO FRONTEIRA 2",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTOS FRONTEIRA",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO GERAL",
+   "nome": "POSTO FAISÃO",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "SOMPO"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO FRONTEIRA 2",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO FRONTEIRA",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO FAISÃO",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "SOMPO"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO FRONTEIRA 2",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO FRONTEIRA",
+   "cidade": "EXTREMA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO RP",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO RP",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO RP",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "REST. GORDO GRIL",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "REST. GORDO GRIL",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE GORDO GRIL",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO BATISTELA",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO BATISTELA",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO BATISTELA",
+   "cidade": "ITAPEVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO 130",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO 130",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO 130",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "CHURRASCARIA COMETA",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "CHURRASCARIA COMETA",
+   "cidade": "CAMANDUCAIA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "CASA DO QUEIJO VITORIA",
+   "cidade": "CAMBUI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "CASA DO QUEIJO VITORIA",
+   "cidade": "CAMBUI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "CASA DO QUEIJO STA. EDWIRGES",
+   "cidade": "CAMBUI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "CASA DO QUEIJO STA. EDWIRGES",
+   "cidade": "CAMBUI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO IPIRANGA",
+   "cidade": "CAMBUI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO IPIRANGA",
+   "cidade": "CAMBUÍ",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO IPIRANGA",
+   "cidade": "CAMBUÍ",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DA GRUTA",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DA GRUTA",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DA GRUTA",
+   "cidade": "ESTIVA",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "P. MOINHO 1",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "P. MOINHO 2",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO MOINHO 1",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO MOINHO 2",
+   "cidade": "SAO GONCALO DO SAPUCAI",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "REST. BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "REST. BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE BARRACAO",
+   "cidade": "PERDOES",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE CASA BRANCA",
+   "cidade": "ITAGUARA",
+   "uf": "MG",
+   "obs": "TENTATIVA LUNARDI"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "RESTAURANTE COSME E DAMIÃO",
+   "cidade": "ITAGUARA",
+   "uf": "MG",
+   "obs": "TENTATIVA LUNARDI"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DO PEDRO ITATIAIUÇU",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "obs": "FURTO APK"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DO PEDRO ITATIAIUÇU",
+   "cidade": "ITATIAIUCU",
+   "uf": "MG",
+   "obs": "FURTO APK"
+  },
+  {
+   "tipo": "ÁREA DE RISCO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "TODOS",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": ""
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL DE ROUBO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 1",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 2",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  },
+  {
+   "tipo": "LOCAL PROIBIDO",
+   "nome": "POSTO DOM PEDRO 3",
+   "cidade": "CONTAGEM",
+   "uf": "MG",
+   "obs": "GERAL"
+  }
+ ],
+ "passos": [
+  {
+   "instrucao": "Curva suave à direita",
+   "km": 0.27
+  },
+  {
+   "instrucao": "Continue em frente",
+   "km": 0.9
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.28
+  },
+  {
+   "instrucao": "Vire à esquerda na R. Nilton Graça",
+   "km": 0.48
+  },
+  {
+   "instrucao": "Vire à direita na R. Maria Mercedes Etter von Zuben",
+   "km": 1.15
+  },
+  {
+   "instrucao": "Vire à direita na Av. Eng. Antônio Francisco de Paula Souza",
+   "km": 0.059
+  },
+  {
+   "instrucao": "Pegue a Rod. Francisco Von Zuben",
+   "km": 0.38
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a SP-65/Dom Pedro I",
+   "km": 0.72
+  },
+  {
+   "instrucao": "Pegue a Rod. José Roberto Magalhães Teixeira (Sp-083)",
+   "km": 6.09
+  },
+  {
+   "instrucao": "Pegue a saída 1 para a SP-065/Rodovia D. Pedro I em direção a Atibaia/Jacareí",
+   "km": 0.73
+  },
+  {
+   "instrucao": "Pegue a Rod. Dom Pedro I/SP-065Estrada com pedágio",
+   "km": 53.56
+  },
+  {
+   "instrucao": "Pegue a saída 74 B para a BR-381/Fernão Dias em direção a Belo Horizonte",
+   "km": 0.24
+  },
+  {
+   "instrucao": "Pegue a BR-146/BR-381Continue na BR-381Estrada com pedágio",
+   "km": 122.57
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-381Estrada com pedágio",
+   "km": 88.7
+  },
+  {
+   "instrucao": "Continue em frente para permanecer na BR-381",
+   "km": 14.9
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-381",
+   "km": 10.69
+  },
+  {
+   "instrucao": "Continue para BR-381Estrada com pedágio",
+   "km": 248.07
+  },
+  {
+   "instrucao": "Mantenha-se à direita para continuar na BR-381",
+   "km": 0.29
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-381",
+   "km": 0.8
+  },
+  {
+   "instrucao": "Curva suave à esquerda para permanecer na BR-381",
+   "km": 5.81
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na BR-381",
+   "km": 1.73
+  },
+  {
+   "instrucao": "Pegue a saída 491 à esquerda em direção a Contagem/Brasília",
+   "km": 0.41
+  },
+  {
+   "instrucao": "Pegue a Av. Campo de Ourique",
+   "km": 0.31
+  },
+  {
+   "instrucao": "Continue para Av. Adutora Várzea das Flores",
+   "km": 1.52
+  },
+  {
+   "instrucao": "Continue para Via Expressa de Betim",
+   "km": 2.1
+  },
+  {
+   "instrucao": "Continue para Via Expressa Francisco Cleuton LopesVocê verá Lanchonete Temos Chup_Chup (à direita em 4 km)",
+   "km": 9.24
+  },
+  {
+   "instrucao": "Curva suave à esquerda na Av. Helena de Vasconcelos Costa",
+   "km": 1.54
+  },
+  {
+   "instrucao": "Mantenha-se à esquerda para permanecer na Av. Helena de Vasconcelos Costa",
+   "km": 0.51
+  },
+  {
+   "instrucao": "Continue para Av. Severino Ballesteros",
+   "km": 0.19
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso a Ceasa/Brasília",
+   "km": 0.57
+  },
+  {
+   "instrucao": "Pegue a rampa de acesso para a BR-040/BR-135",
+   "km": 1.7
+  },
+  {
+   "instrucao": "Curva suave à direita na Rua Presidente Getúlio Vargas",
+   "km": 0.066
+  },
+  {
+   "instrucao": "Vire à direita na R. Helena Rodrigues Barbosa",
+   "km": 0.14
+  },
+  {
+   "instrucao": "Vire à direita na Av. das Américas",
+   "km": 0.34
+  },
+  {
+   "instrucao": "Curva suave à direita na R. Ademar dos Santos Barbosa",
+   "km": 0.18
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.83
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.14
+  },
+  {
+   "instrucao": "Vire à direita",
+   "km": 0.071
+  },
+  {
+   "instrucao": "Vire à esquerda",
+   "km": 0.062
+  }
+ ],
+ "importado_em": "29/10/2026 17:58"
+}
